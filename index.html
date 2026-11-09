@@ -188,14 +188,14 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
   </aside>
 
   <div class="results paper" id="results" hidden>
-    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button onclick="clearMatch()">清除配驚</button></div>
+    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button onclick="clearMatch()">清除配對</button></div>
     <div class="results-list" id="results-list"></div>
   </div>
 
   <nav class="dock">
     <button class="btn-primary" onclick="openResume()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>
-      填寫我的履歷
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+      啟動職缺配對
     </button>
     <button class="btn-round" onclick="resetView()" title="回到全景" aria-label="回到全景">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/><circle cx="12" cy="12" r="2"/></svg>
@@ -205,12 +205,12 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
   <div class="modal" id="resume-modal" hidden>
     <div class="modal-panel paper" role="dialog" aria-modal="true" aria-labelledby="resume-title">
       <div class="modal-head">
-        <div><div class="eyebrow">求職登記卡</div><h2 id="resume-title">填寫簡單履歷</h2></div>
+        <div><div class="eyebrow">快速篩選攤位</div><h2 id="resume-title">設定你的求職條件</h2></div>
         <button class="icon-btn" onclick="closeResume()" aria-label="關閉">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
-      <p class="modal-sub">不用登入。填完後，島上適合你的攤位會跳起來向你招手。</p>
+      <p class="modal-sub">不用登入。填寫基本背景後，島上適合你的攤位會跳起來向你招手！</p>
       <label class="field"><span>年齡</span><input type="number" id="r-age" min="15" max="80" placeholder="例如 25" inputmode="numeric"></label>
       <div class="field"><span>最高學歷</span><div class="chips" id="r-edu"></div></div>
       <div class="field"><span>科系背景</span><div class="chips" id="r-major"></div></div>
