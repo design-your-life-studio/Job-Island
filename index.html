@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>2026屏東地區就業博覽會-求職島</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F2E8; --paper-2:#EEE6D6; --ink:#1E2B2F; --ink-2:#4A5559; --muted:#868C86; --line:#DCD2C0;
+  --sea:#0F5C6B; --sun:#E3793A;
+  --shadow:0 18px 40px -18px rgba(20,40,45,.55);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#d9ebf0;font-family:'Noto Sans TC',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+#canvas-container{position:fixed;inset:0;z-index:1}
+#labels{position:fixed;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none}
+#ui > *{pointer-events:auto}
+.paper{background:var(--paper);border-radius:3px;box-shadow:var(--shadow)}
+
+/* 標題 */
+.brand{position:absolute;top:20px;left:20px;padding:13px 18px 14px 18px;border-left:4px solid var(--sea);max-width:calc(100vw - 40px)}
+.brand-kicker{font-size:10.5px;font-weight:700;letter-spacing:.24em;color:var(--sun)}
+.brand h1{margin:4px 0 0;font-family:'Noto Serif TC',serif;font-weight:900;font-size:22px;letter-spacing:.03em;line-height:1.35}
+.brand .dash{margin:0 .12em;color:var(--muted);font-weight:600}
+.brand .isle{color:var(--sea)}
+
+/* 產業圖例 */
+.legend{position:absolute;left:20px;bottom:20px;width:200px}
+.legend summary{list-style:none;cursor:pointer;padding:11px 14px;font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;user-select:none}
+.legend summary::-webkit-details-marker{display:none}
+.legend summary::after{content:'＋';font-weight:400;color:var(--muted)}
+.legend[open] summary::after{content:'－'}
+.legend ul{list-style:none;margin:0;padding:0 8px 10px;max-height:38vh;overflow:auto}
+.legend li button{display:flex;align-items:center;gap:9px;width:100%;padding:6px 7px;border:0;background:none;font-size:13px;text-align:left;cursor:pointer;border-radius:2px}
+.legend li button:hover{background:var(--paper-2)}
+.legend li button.on{background:var(--ink);color:var(--paper)}
+.legend li button.on .cnt{color:var(--paper)}
+.sw{width:10px;height:10px;border-radius:2px;flex:none}
+.legend .cnt{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+
+/* 底部操作 */
+.dock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:10px;align-items:center}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:46px;padding:0 22px;border:0;border-radius:3px;background:var(--ink);color:var(--paper);font-weight:700;font-size:15px;letter-spacing:.08em;cursor:pointer;text-decoration:none;transition:background .2s,transform .15s;white-space:nowrap}
+.btn-primary:hover{background:var(--sea)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-primary svg{width:18px;height:18px}
+.dock .btn-primary{box-shadow:0 14px 30px -12px rgba(20,40,45,.75)}
+.btn-round{width:46px;height:46px;border-radius:50%;border:0;background:var(--paper);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow);color:var(--ink-2);transition:color .2s}
+.btn-round:hover{color:var(--sea)}
+.btn-round svg{width:20px;height:20px}
+
+/* 配對結果 */
+.results{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);width:min(660px,calc(100vw - 24px));padding:11px 12px 12px}
+.results-head{display:flex;align-items:baseline;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--ink-2);padding:0 2px 9px}
+.results-head b{color:var(--sun);letter-spacing:0;font-size:13px}
+.results-head button{margin-left:auto;border:0;background:none;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;letter-spacing:.05em}
+.results-list{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin}
+.r-chip{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);background:rgba(255,255,255,.5);border-radius:2px;cursor:pointer;font-size:13.5px;font-weight:500;white-space:nowrap;transition:border-color .15s}
+.r-chip:hover{border-color:var(--ink)}
+.r-chip .no{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* 廠商卡 */
+.card{position:absolute;top:20px;right:20px;width:350px;max-height:calc(100vh - 40px);overflow:auto;padding:28px 24px 22px;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s;z-index:20}
+.card.show{opacity:1;transform:none}
+.card-bar{position:absolute;left:0;top:0;right:0;height:5px}
+.card-close{position:absolute;top:14px;right:12px}
+.icon-btn{width:34px;height:34px;border:0;background:none;border-radius:50%;cursor:pointer;color:var(--muted);display:grid;place-items:center;flex:none}
+.icon-btn:hover{background:var(--paper-2);color:var(--ink)}
+.icon-btn svg{width:18px;height:18px}
+.booth{display:flex;align-items:baseline;gap:8px;color:var(--muted);font-size:11.5px;letter-spacing:.22em;font-weight:700}
+.booth b{font-family:'Noto Serif TC',serif;font-size:32px;color:var(--ink);letter-spacing:0;font-weight:900;line-height:1}
+.card h2{margin:12px 0 8px;padding-right:20px;font-family:'Noto Serif TC',serif;font-size:22px;line-height:1.4;font-weight:900}
+.card-cat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.card-cat i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.card .desc{margin:14px 0 0;font-size:14px;line-height:1.8;color:var(--ink-2)}
+.sec-title{display:flex;align-items:center;gap:10px;margin:22px 0 4px;font-size:11.5px;font-weight:700;letter-spacing:.22em;color:var(--muted)}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--line)}
+.jobs{list-style:none;margin:0;padding:0;counter-reset:j}
+.jobs li{counter-increment:j;display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px dashed var(--line)}
+.job-title{display:flex;gap:10px;font-size:15px;font-weight:700;color:var(--ink);line-height:1.4}
+.job-title::before{content:counter(j,decimal-leading-zero);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+.job-meta{display:grid;grid-template-columns:40px 1fr;gap:4px 10px;font-size:13px;color:var(--ink-2);padding-left:26px;margin:0}
+.job-meta dt{color:var(--muted)}
+.job-meta dd{margin:0;line-height:1.5}
+.card .btn-primary{width:100%;margin-top:20px}
+.card-note{margin:18px 0 0;padding:10px 12px;background:var(--paper-2);font-size:12.5px;color:var(--ink-2);border-radius:2px;line-height:1.6}
+.stamp{position:absolute;top:22px;right:58px;width:64px;height:64px;border:2px solid var(--sun);border-radius:50%;color:var(--sun);display:grid;place-items:center;text-align:center;font-family:'Noto Serif TC',serif;font-weight:900;font-size:13px;line-height:1.15;transform:rotate(-14deg);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--sun);opacity:.92}
+
+/* 履歷視窗 */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(18,32,36,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s;z-index:30}
+.modal.show{opacity:1}
+.modal-panel{width:min(450px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:26px 26px 22px;transform:translateY(10px);transition:transform .25s}
+.modal.show .modal-panel{transform:none}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.24em;color:var(--sun)}
+.modal h2{margin:5px 0 0;font-family:'Noto Serif TC',serif;font-weight:900;font-size:24px}
+.modal-sub{margin:8px 0 20px;padding-bottom:16px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink-2);line-height:1.7}
+.field{display:block;margin:0 0 20px}
+.field>span{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:8px;letter-spacing:.06em}
+.field em{font-style:normal;font-weight:400;color:var(--muted);margin-left:4px}
+.field input,.field select{width:100%;height:42px;border:0;border-bottom:1.5px solid var(--ink);background:transparent;font:inherit;font-size:16px;padding:0 2px;outline:none;border-radius:0;-webkit-appearance:none;appearance:none;color:var(--ink)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%231E2B2F' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;padding-right:26px;cursor:pointer}
+.field input:focus,.field select:focus{border-bottom-color:var(--sea);box-shadow:0 1.5px 0 var(--sea)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 12px;border:1px solid var(--line);background:transparent;border-radius:2px;font-size:13.5px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.modal-foot{display:flex;justify-content:flex-end;gap:6px;margin-top:24px}
+.btn-text{height:46px;padding:0 16px;border:0;background:none;cursor:pointer;color:var(--ink-2);font-weight:500;border-radius:3px}
+.btn-text:hover{background:var(--paper-2)}
+
+/* 3D 標籤 */
+.tag{position:absolute;left:0;top:0;transform-origin:50% 100%;display:flex;align-items:center;gap:6px;padding:4px 9px 4px 8px;border:0;border-radius:2px;background:var(--c);color:#fff;font-size:12.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap;cursor:pointer;pointer-events:auto;box-shadow:0 4px 10px -4px rgba(0,0,0,.5);transition:opacity .2s,filter .2s;will-change:transform}
+.tag::after{content:'';position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-top-color:var(--c);border-bottom:0}
+.tag .no{font-weight:500;opacity:.8;font-size:11px;font-variant-numeric:tabular-nums}
+.tag.dark{color:var(--ink)}
+.tag:hover,.tag.active,.tag.hover{filter:brightness(1.08);outline:2px solid #fff;outline-offset:1px}
+.tag.dim{opacity:.2!important}
+.tag.match{animation:tagPulse 1.2s ease-in-out infinite}
+@keyframes tagPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.95)}60%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
+.tag-info{--c:var(--paper);background:var(--paper);color:var(--ink);pointer-events:none;font-family:'Noto Serif TC',serif;letter-spacing:.12em}
+
+/* 提示與載入 */
+.toast{position:fixed;top:24px;left:50%;transform:translate(-50%,-10px);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:3px;font-size:14px;max-width:calc(100vw - 32px);width:max-content;opacity:0;pointer-events:none!important;transition:opacity .3s,transform .3s;z-index:40;text-align:center;line-height:1.6}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.loader{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#8fc6e2,#d9ebf0);z-index:50;transition:opacity .7s;font-family:'Noto Serif TC',serif;font-weight:900;font-size:17px;color:var(--ink);letter-spacing:.24em;text-align:center}
+.loader.done{opacity:0;pointer-events:none!important}
+.loader-mark{width:34px;height:34px;margin:0 auto 14px;border:3px solid var(--ink);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:720px){
+  .brand{top:12px;left:12px;right:12px;padding:10px 14px}
+  .brand h1{font-size:17px}
+  .brand-kicker{font-size:9.5px}
+  .legend{left:12px;bottom:auto;top:92px;width:170px}
+  .card{top:auto;bottom:0;left:0;right:0;width:auto;max-height:70vh;border-radius:10px 10px 0 0;transform:translateY(16px)}
+  .dock{bottom:16px}
+  .results{bottom:74px}
+  .toast{top:auto;bottom:140px}
+}
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div id="labels"></div>
+
+<div id="ui">
+  <header class="brand paper">
+    <div class="brand-kicker">PINGTUNG JOB FAIR</div>
+    <h1>2026屏東地區就業博覽會<span class="dash">-</span><span class="isle">求職島</span></h1>
+  </header>
+
+  <details class="legend paper" id="legend" open hidden>
+    <summary>產業別</summary>
+    <ul id="legend-list"></ul>
+  </details>
+
+  <aside class="card paper" id="vendor-card" hidden>
+    <div class="card-bar" id="card-bar"></div>
+    <button class="icon-btn card-close" onclick="closeVendorCard()" aria-label="關閉">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="booth">攤位 <b id="card-booth">01</b></div>
+    <div class="stamp" id="card-stamp" hidden>條件<br>相符</div>
+    <h2 id="card-name"></h2>
+    <div class="card-cat"><i id="card-dot"></i><span id="card-cat"></span></div>
+    <p class="desc" id="card-desc"></p>
+    <div class="sec-title">招募職缺</div>
+    <ul class="jobs" id="card-jobs"></ul>
+    <a id="card-link" class="btn-primary" target="_blank" rel="noopener">前往投遞履歷 ↗</a>
+    <p class="card-note" id="card-note">歡迎活動當天攜帶履歷，直接到攤位現場投遞與面談。</p>
+  </aside>
+
+  <div class="results paper" id="results" hidden>
+    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button onclick="clearMatch()">清除配對</button></div>
+    <div class="results-list" id="results-list"></div>
+  </div>
+
+  <nav class="dock">
+    <button class="btn-primary" onclick="openResume()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>
+      填寫我的履歷
+    </button>
+    <button class="btn-round" onclick="resetView()" title="回到全景" aria-label="回到全景">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/><circle cx="12" cy="12" r="2"/></svg>
+    </button>
+  </nav>
+
+  <div class="modal" id="resume-modal" hidden>
+    <div class="modal-panel paper" role="dialog" aria-modal="true" aria-labelledby="resume-title">
+      <div class="modal-head">
+        <div><div class="eyebrow">求職登記卡</div><h2 id="resume-title">填寫簡單履歷</h2></div>
+        <button class="icon-btn" onclick="closeResume()" aria-label="關閉">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p class="modal-sub">不用登入。填完後，島上適合你的攤位會跳起來向你招手。</p>
+      <label class="field"><span>年齡</span><input type="number" id="r-age" min="15" max="80" placeholder="例如 25" inputmode="numeric"></label>
+      <div class="field"><span>最高學歷</span><div class="chips" id="r-edu"></div></div>
+      <div class="field"><span>科系背景</span><div class="chips" id="r-major"></div></div>
+      <label class="field"><span>希望產業<em>選填</em></span><select id="r-ind"><option value="">不限產業</option></select></label>
+      <div class="modal-foot">
+        <button class="btn-text" onclick="closeResume()">取消</button>
+        <button class="btn-primary" onclick="submitResume()">開始配對</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="loader" id="loader"><div><div class="loader-mark"></div>求職島建造中</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+/* =========================================================
+ * 設定區
+ * 廠商資料檔：與 index.html 放在同一個資料夾，檔名「廠商資料.xlsx」
+ * ========================================================= */
+const DATA_FILE = '廠商資料.xlsx';
+
+// Excel 欄位名稱（左邊是程式用的代號，右邊是可接受的欄位標題）
+const COLS = {
+  booth:    ['攤位編號','攤位','攤位號碼'],
+  name:     ['廠商名稱','公司名稱','廠商','公司','名稱'],
+  category: ['產業類別','產業別','產業','類別','行業'],
+  desc:     ['廠商簡介','公司簡介','簡介','介紹','說明'],
+  jobs:     ['招募職缺','職缺','職缺名稱','職務'],
+  salary:   ['薪資範圍','薪資','待遇'],
+  majors:   ['科系背景','需求科系','相關科系','科系'],
+  edu:      ['學歷要求','最低學歷','學歷'],
+  link:     ['投遞連結','職缺連結','連結','網址','官網']
+};
+
+// 產業別標籤顏色（依 Excel 中產業出現順序套用，相同產業同一色）
+const INDUSTRY_COLORS = ['#C2523C','#2E6A8E','#3E7C47','#C9952B','#7A4E8F','#17877B','#D9734E','#4B5D6A','#A35C7A','#8A6A3B','#3D5A99','#6E8B2F'];
+
+// 讀不到 Excel 時使用的範例資料
+const DEMO_VENDORS = [
+  {booth:'01',name:'南州精密機械',category:'製造業',desc:'深耕屏東三十年的精密零組件製造廠，供應汽車與半導體設備關鍵零件。',jobs:[{name:'機械工程師',salary:'月薪 35,000~45,000元',edu:'專科'},{name:'品管技術員',salary:'月薪 30,000元',edu:'高中職'}],majors:['機械','電機','工業工程'],edu:'高中職',link:''},
+  {booth:'02',name:'墾丁海灣度假飯店',category:'觀光餐旅',desc:'位於恆春半島的海景度假飯店，提供完整的餐旅職涯培訓與住宿福利。',jobs:[{name:'櫃檯接待',salary:'月薪 32,000元起',edu:'專科'},{name:'餐飲服務',salary:'月薪 30,000元起',edu:'高中職'}],majors:['餐旅','觀光','外語'],edu:'高中職',link:''},
+  {booth:'03',name:'大武山農產生技',category:'食品生技',desc:'結合在地農產與生技研發，開發機能性食品與保健產品。',jobs:[{name:'研發助理',salary:'月薪 36,000元',edu:'大學'},{name:'通路業務',salary:'依業績抽成',edu:'大學'}],majors:['食品','生技','農業','行銷'],edu:'大學',link:''},
+  {booth:'04',name:'南國數位科技',category:'資訊科技',desc:'為南台灣企業打造數位轉型解決方案的軟體公司。',jobs:[{name:'前端工程師',salary:'月薪 40,000~60,000元',edu:'大學'},{name:'系統工程師',salary:'月薪 45,000元起',edu:'大學'}],majors:['資訊','資管','電機'],edu:'大學',link:''},
+  {booth:'05',name:'屏安醫療照護',category:'醫療照護',desc:'經營區域醫院與長照據點，重視在地照護人才培育。',jobs:[{name:'護理師',salary:'月薪 42,000元起',edu:'專科'},{name:'照顧服務員',salary:'月薪 35,000元',edu:'不限'}],majors:['護理','社工','長照'],edu:'專科',link:''},
+  {booth:'06',name:'恆春風光物流',category:'物流運輸',desc:'屏東在地冷鏈與宅配物流服務，路線涵蓋全台。',jobs:[{name:'物流專員',salary:'月薪 32,000元',edu:'高中職'},{name:'配送司機',salary:'月薪 40,000元起',edu:'高中職'}],majors:['不限'],edu:'高中職',link:''},
+  {booth:'07',name:'六堆文創設計',category:'文創設計',desc:'以客家文化為養分的設計工作室，承接品牌、包裝與展覽設計。',jobs:[{name:'平面設計師',salary:'月薪 35,000元',edu:'大學'},{name:'社群小編',salary:'月薪 30,000元',edu:'專科'}],majors:['設計','視覺','傳播','行銷'],edu:'大學',link:''},
+  {booth:'08',name:'東港海洋食品',category:'食品生技',desc:'東港漁港出發的水產加工品牌，產品外銷日本與東南亞。',jobs:[{name:'生產技術員',salary:'月薪 30,000元',edu:'高中職'},{name:'業務專員',salary:'月薪 35,000元起',edu:'專科'}],majors:['食品','水產','化工','不限'],edu:'高中職',link:''},
+  {booth:'09',name:'屏東綠電能源',category:'綠能科技',desc:'太陽光電案場開發與維運，推動屏東成為綠能大縣。',jobs:[{name:'案場工程師',salary:'月薪 40,000元',edu:'專科'},{name:'維運技術員',salary:'月薪 36,000元',edu:'專科'}],majors:['電機','機械','環境'],edu:'專科',link:''},
+  {booth:'10',name:'南台灣連鎖零售',category:'零售服務',desc:'南部在地連鎖量販與超市，完整的儲備幹部培訓制度。',jobs:[{name:'門市儲備幹部',salary:'月薪 35,000元',edu:'大學'},{name:'門市人員',salary:'時薪 183元起',edu:'高中職'}],majors:['不限'],edu:'高中職',link:''}
+];
+
+// 履歷：學歷與科系選項
+const EDU_LEVELS = [{lv:1,label:'高中職'},{lv:2,label:'專科'},{lv:3,label:'大學'},{lv:4,label:'碩士以上'}];
+const MAJOR_GROUPS = [
+  {id:'it',     label:'資訊・電機電子', kw:['資訊','資工','資管','電機','電子','通訊','光電','程式','軟體','電腦','資料','機電']},
+  {id:'mech',   label:'機械・工程',     kw:['機械','土木','化工','化學','材料','工業','營建','自動化','車輛','製造','模具','機電','能源']},
+  {id:'biz',    label:'商管・行銷',     kw:['商業','商管','企管','企業管理','經營','行銷','財金','財務','會計','國貿','國際貿易','經濟','金融','行政','物流']},
+  {id:'design', label:'設計・藝術',     kw:['設計','藝術','視覺','傳播','美術','多媒體','廣告','建築','數位媒體']},
+  {id:'tour',   label:'餐旅・觀光',     kw:['餐','旅','觀光','休閒','飯店','烘焙','廚藝','運動','遊憩']},
+  {id:'agri',   label:'農業・生技・食品', kw:['農','生技','生物','生科','食品','畜','水產','園藝','森林','獸醫','環境']},
+  {id:'care',   label:'醫護・社工',     kw:['醫','護','藥','社工','長照','照顧','健康','復健','幼保','營養']},
+  {id:'lang',   label:'語文・教育',     kw:['語','外文','英文','日文','中文','教育','師範','文學']},
+  {id:'other',  label:'其他',           kw:[]}
+];
+
+/* ========================================================= */
+const SEA_Y = -3;
+const SUN_DIR = new THREE.Vector3(-0.72, 0.6, -0.36).normalize();
+const HORIZON = new THREE.Color(0xd9ebf0);
+const ZENITH  = new THREE.Color(0x4f9fd6);
+const ISLAND_PROFILE = [[0,0],[40,0],[40.6,-0.3],[41.4,-0.9],[42.6,-1.5],[44.5,-2.1],[48,-3.0],[54,-4.6],[62,-8]];
+
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const smooth = (a,b,x) => { const t = clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+
+let scene, camera, renderer, controls, raycaster, mouse;
+let islandGroup;
+const clock = new THREE.Clock();
+let vendors = [], industryColor = {}, houseMeshes = [], houseSpots = [], pathRings = [];
+let infoLabels = [];
+let sea, seaN, seaXZ, seaDamp, seaBase;
+let foamRings = [], rays = [], boats = [], pods = [], splashes = [];
+let isDragging = false, pointerDownPos = {x:0,y:0};
+let currentVendor = null, activeFilter = null, tween = null;
+const form = {edu:null, major:null};
+const DEFAULT_CAM = new THREE.Vector3(0, 46, 80), DEFAULT_TARGET = new THREE.Vector3(0, 2, 0);
+
+window.addEventListener('DOMContentLoaded', async () => {
+  initScene();
+  animate();
+  const { list, demo } = await loadVendors();
+  setupVendors(list);
+  buildVegetation();
+  buildLabels();
+  buildLegend();
+  buildResumeForm();
+  setTimeout(() => $('loader').classList.add('done'), 300);
+  setTimeout(() => $('loader').hidden = true, 1100);
+  if (demo) showToast('讀不到「廠商資料.xlsx」，目前顯示範例資料');
+});
+
+/* ================= 資料讀取 ================= */
+async function loadVendors(){
+  try{
+    const res = await fetch(encodeURI(DATA_FILE) + '?v=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const wb = XLSX.read(await res.arrayBuffer(), {type:'array'});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:'', raw:false});
+    const list = parseRows(rows);
+    if(!list.length) throw new Error('沒有廠商資料');
+    return {list, demo:false};
+  }catch(err){
+    console.warn('廠商資料讀取失敗，改用範例資料：', err);
+    return {list: DEMO_VENDORS.map(v => ({...v, jobs:[...v.jobs], majors:[...v.majors]})), demo:true};
+  }
+}
+const splitList = s => String(s||'').split(/[、，;；\n\r|／\/]+/).map(x => x.trim()).filter(Boolean);
+function cleanLink(s){
+  s = String(s||'').trim();
+  if(/^https?:\/\//i.test(s)) return s;
+  if(/^www\./i.test(s)) return 'https://' + s;
+  return '';
+}
+function parseRows(rows){
+  const map = new Map(), list = [];
+  rows.forEach(row => {
+    const norm = {};
+    Object.keys(row).forEach(k => norm[String(k).replace(/[\s\u3000]/g,'')] = String(row[k] ?? '').trim());
+    const get = key => { for(const a of COLS[key]) if(norm[a]) return norm[a]; return ''; };
+    const name = get('name');
+    if(!name) return;
+    let v = map.get(name);
+    if(!v){
+      let booth = get('booth');
+      if(/^\d{1,2}$/.test(booth)) booth = booth.padStart(2,'0');
+      v = {name, booth, category:get('category')||'其他產業', desc:get('desc'), jobs:[], majors:[], edu:get('edu'), link:cleanLink(get('link'))};
+      map.set(name, v); list.push(v);
+    }else{
+      if(!v.desc) v.desc = get('desc');
+      if(!v.edu) v.edu = get('edu');
+      if(!v.link) v.link = cleanLink(get('link'));
+    }
+    const jName = get('jobs');
+    const rowSalaries = splitList(get('salary'));
+    const rowEdus = splitList(get('edu'));
+    const rowMajors = splitList(get('majors'));
+    splitList(jName).forEach((j, idx) => {
+      if(!v.jobs.find(x => x.name === j)){
+        v.jobs.push({
+          name: j,
+          salary: rowSalaries[idx] || get('salary') || '依公司規定',
+          edu: rowEdus[idx] || get('edu') || '不限',
+          major: rowMajors[idx] || get('majors') || '不限'
+        });
+      }
+    });
+    splitList(get('majors')).forEach(m => { if(!v.majors.includes(m)) v.majors.push(m); });
+  });
+  return list;
+}
+
+/* ================= 場景 ================= */
+function initScene(){
+  scene = new THREE.Scene();
+  scene.background = HORIZON.clone();
+  scene.fog = new THREE.Fog(HORIZON, 95, 340);
+
+  camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 1, 2400);
+  camera.position.copy(DEFAULT_CAM);
+
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  $('canvas-container').appendChild(renderer.domElement);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.copy(DEFAULT_TARGET);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.maxPolarAngle = Math.PI/2 - 0.14;
+  controls.minDistance = 18;
+  controls.maxDistance = 140;
+
+  // 光線：暖色太陽 + 天空半球光
+  scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+  scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x7aa36a, 0.5));
+  const sun = new THREE.DirectionalLight(0xfff0d6, 0.95);
+  sun.position.copy(SUN_DIR).multiplyScalar(110);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, {left:-55,right:55,top:55,bottom:-55,near:10,far:260});
+  sun.shadow.bias = -0.0006;
+  sun.shadow.normalBias = 0.03;
+  scene.add(sun);
+
+  islandGroup = new THREE.Group();
+  scene.add(islandGroup);
+
+  createSky();
+  createSunRays();
+  createSea();
+  createIsland();
+  createCenterBuilding();
+  createClouds();
+  createBoats();
+  createDolphins();
+
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  addEventListener('resize', onWindowResize);
+  renderer.domElement.addEventListener('pointerdown', e => {
+    isDragging = false; pointerDownPos.x = e.clientX; pointerDownPos.y = e.clientY;
+  });
+  renderer.domElement.addEventListener('pointermove', e => {
+    if(Math.abs(e.clientX-pointerDownPos.x) > 3 || Math.abs(e.clientY-pointerDownPos.y) > 3) isDragging = true;
+    onHover(e);
+  });
+  renderer.domElement.addEventListener('pointerup', onPointerClick);
+  addEventListener('keydown', e => { if(e.key === 'Escape'){ closeResume(); closeVendorCard(); } });
+}
+
+/* 天空（漸層 + 太陽光暈） */
+function createSky(){
+  const mat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite:false, fog:false,
+    uniforms:{ top:{value:ZENITH}, horizon:{value:HORIZON}, sunDir:{value:SUN_DIR}, sunColor:{value:new THREE.Color(0xfff0cc)} },
+    vertexShader:`varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader:`uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; uniform vec3 sunColor; varying vec3 vDir;
+      void main(){
+        vec3 d = normalize(vDir);
+        float h = max(d.y, 0.0);
+        vec3 col = mix(horizon, top, pow(h, 0.55));
+        float s = max(dot(d, sunDir), 0.0);
+        col += sunColor * (pow(s, 6.0)*0.32 + pow(s, 60.0)*0.55 + pow(s, 1400.0)*2.5);
+        gl_FragColor = vec4(col, 1.0);
+      }`
+  });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 32, 16), mat);
+  sky.renderOrder = -1;
+  scene.add(sky);
+}
+
+/* 穿透霧氣的太陽光束 */
+function createSunRays(){
+  const rng = mulberry32(7);
+  for(let i=0;i<7;i++){
+    const L = 150;
+    const end = new THREE.Vector3((rng()-0.5)*60, rng()*4, (rng()-0.5)*60);
+    const geo = new THREE.CylinderGeometry(2.5 + rng()*2.5, 6 + rng()*7, L, 24, 1, true);
+    const mat = new THREE.ShaderMaterial({
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, fog:false,
+      uniforms:{ uTime:{value:0}, uSeed:{value:rng()*10}, uStrength:{value:0.07 + rng()*0.05}, uColor:{value:new THREE.Color(1.0,0.93,0.76)} },
+      vertexShader:`varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+        void main(){ vUv = uv; vec4 mv = modelViewMatrix*vec4(position,1.0); vV = -mv.xyz; vN = normalMatrix*normal; gl_Position = projectionMatrix*mv; }`,
+      fragmentShader:`uniform float uTime; uniform float uSeed; uniform float uStrength; uniform vec3 uColor;
+        varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+        void main(){
+          float e = pow(abs(dot(normalize(vN), normalize(vV))), 2.4);
+          float along = smoothstep(0.0, 0.3, vUv.y) * (1.0 - smoothstep(0.7, 1.0, vUv.y));
+          float flick = 0.7 + 0.3*sin(uTime*0.5 + uSeed*6.0 + vUv.x*12.566);
+          float a = e*along*flick*uStrength;
+          gl_FragColor = vec4(uColor, a);
+        }`
+    });
+    const m = new THREE.Mesh(geo, mat);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), SUN_DIR);
+    m.position.copy(end).addScaledVector(SUN_DIR, L/2);
+    m.renderOrder = 5;
+    scene.add(m);
+    rays.push(mat);
+  }
+}
+
+/* ================= 海面 ================= */
+function waveH(x,z,t){
+  return Math.sin(x*0.09 + t*1.1)*0.45 + Math.sin(z*0.11 - t*0.9)*0.35
+       + Math.sin((x+z)*0.05 + t*0.7)*0.5 + Math.sin((x*0.7 - z)*0.17 + t*1.7)*0.15;
+}
+const dampAt = r => 0.25 + 0.75*smooth(50, 85, r);
+
+function createSea(){
+  const geo = new THREE.PlaneGeometry(820, 820, 180, 180);
+  geo.rotateX(-Math.PI/2);
+  const pos = geo.attributes.position;
+  seaN = pos.count;
+  seaXZ = new Float32Array(seaN*2);
+  seaDamp = new Float32Array(seaN);
+  seaBase = new Float32Array(seaN*3);
+  const colors = new Float32Array(seaN*3);
+  const deep = new THREE.Color(0.08,0.36,0.56), mid = new THREE.Color(0.13,0.52,0.66), shallow = new THREE.Color(0.32,0.76,0.77), c = new THREE.Color();
+  for(let i=0;i<seaN;i++){
+    const x = pos.getX(i), z = pos.getZ(i), r = Math.hypot(x,z);
+    seaXZ[2*i] = x; seaXZ[2*i+1] = z;
+    seaDamp[i] = dampAt(r);
+    c.copy(mid).lerp(shallow, 1 - smooth(48, 75, r)).lerp(deep, smooth(120, 330, r));
+    seaBase[3*i] = c.r; seaBase[3*i+1] = c.g; seaBase[3*i+2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.MeshPhongMaterial({vertexColors:true, flatShading:true, shininess:90, specular:0x88aacc});
+  sea = new THREE.Mesh(geo, mat);
+  sea.position.y = SEA_Y;
+  sea.receiveShadow = true;
+  scene.add(sea);
+
+  // 岸邊白色浪花
+  const foamTex = makeFoamTexture();
+  [[46.6, 50.6, 0.75], [48.2, 53.5, 0.45]].forEach(([inner, outer, op], i) => {
+    const tex = foamTex.clone(); tex.needsUpdate = true;
+    tex.wrapS = THREE.RepeatWrapping; tex.repeat.set(i ? 7 : 10, 1);
+    const m = new THREE.Mesh(polarRing(inner, outer, 160),
+      new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:op, depthWrite:false, side:THREE.DoubleSide}));
+    m.position.y = SEA_Y + 0.4 + i*0.02;
+    m.userData.base = op;
+    scene.add(m);
+    foamRings.push(m);
+  });
+}
+function polarRing(inner, outer, seg){
+  const pos = [], uv = [], idx = [];
+  for(let i=0;i<=seg;i++){
+    const a = i/seg*Math.PI*2, c = Math.cos(a), s = Math.sin(a);
+    pos.push(c*inner,0,s*inner, c*outer,0,s*outer);
+    uv.push(i/seg,0, i/seg,1);
+  }
+  for(let i=0;i<seg;i++){ const a=i*2; idx.push(a,a+2,a+1, a+1,a+2,a+3); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+function makeFoamTexture(){
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 64;
+  const g = c.getContext('2d');
+  for(let i=0;i<2600;i++){
+    const v = Math.pow(Math.random(), 1.6);
+    const y = v*64, x = Math.random()*1024;
+    const a = (1 - v)*0.75*Math.random() + (v < 0.18 ? 0.25 : 0);
+    g.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
+    g.beginPath(); g.arc(x, y, 1 + Math.random()*3.5*(1 - v*0.5), 0, Math.PI*2); g.fill();
+  }
+  return new THREE.CanvasTexture(c);
+}
+function updateSea(t){
+  const P = sea.geometry.attributes.position.array, C = sea.geometry.attributes.color.array;
+  for(let i=0;i<seaN;i++){
+    const hn = waveH(seaXZ[2*i], seaXZ[2*i+1], t);
+    P[3*i+1] = hn*seaDamp[i];
+    let f = (hn - 0.8)/0.5; f = f<0?0:f>1?1:f; f = f*f*(3-2*f)*0.85*seaDamp[i];
+    const j = 3*i;
+    C[j]   = seaBase[j]   + (0.96 - seaBase[j])*f;
+    C[j+1] = seaBase[j+1] + (0.98 - seaBase[j+1])*f;
+    C[j+2] = seaBase[j+2] + (1.00 - seaBase[j+2])*f;
+  }
+  sea.geometry.attributes.position.needsUpdate = true;
+  sea.geometry.attributes.color.needsUpdate = true;
+  foamRings.forEach((m,i) => {
+    const k = Math.sin(t*0.8 + i*1.9);
+    m.scale.setScalar(1 + 0.012*k);
+    m.material.opacity = m.userData.base*(0.7 + 0.3*k);
+    m.material.map.offset.x = (i ? -1 : 1)*t*0.004;
+  });
+}
+
+/* ================= 島嶼 ================= */
+function islandY(r){
+  for(let i=1;i<ISLAND_PROFILE.length;i++){
+    const [r1,y1] = ISLAND_PROFILE[i], [r0,y0] = ISLAND_PROFILE[i-1];
+    if(r <= r1) return y0 + (y1-y0)*(r-r0)/(r1-r0);
+  }
+  return -8;
+}
+function createIsland(){
+  const pts = ISLAND_PROFILE.slice(1).reverse().map(p => new THREE.Vector2(p[0], p[1]));
+  for(let r=37; r>0; r-=3) pts.push(new THREE.Vector2(r, 0));
+  pts.push(new THREE.Vector2(0.01, 0));
+  const geo = new THREE.LatheGeometry(pts, 128);
+  const pos = geo.attributes.position, cols = [];
+  const gDark = new THREE.Color(0x67ab4a), gLight = new THREE.Color(0x96cd67), dirt = new THREE.Color(0x9a7550),
+        sand = new THREE.Color(0xead7a8), wet = new THREE.Color(0xcbb488), c = new THREE.Color();
+  for(let i=0;i<pos.count;i++){
+    const x = pos.getX(i), z = pos.getZ(i), r = Math.hypot(x,z);
+    if(r > 48) c.copy(wet);
+    else if(r > 42.3) c.copy(sand);
+    else if(r > 40.3) c.copy(dirt);
+    else {
+      const n = (Math.sin(x*0.19+1.7) + Math.sin(z*0.23-0.4) + Math.sin((x-z)*0.09+2.1))/3;
+      c.copy(gDark).lerp(gLight, n*0.5+0.5);
+    }
+    cols.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  geo.computeVertexNormals();
+  const ground = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({vertexColors:true, side:THREE.DoubleSide}));
+  ground.receiveShadow = true;
+  islandGroup.add(ground);
+
+  // 中央廣場
+  const plaza = flat(new THREE.CircleGeometry(10, 64), 0xe6dcc6, 0.03);
+  const inlay = flat(new THREE.RingGeometry(6.6, 7.2, 64), 0xcdbf9f, 0.04);
+  islandGroup.add(plaza, inlay);
+}
+function flat(geo, color, y){
+  geo.rotateX(-Math.PI/2);
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({color, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-4}));
+  m.position.y = y; m.receiveShadow = true;
+  return m;
+}
+function std(color, opts={}){ return new THREE.MeshLambertMaterial(Object.assign({color}, opts)); }
+function addMesh(parent, geo, mat, x, y, z, shadow=true){
+  const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z);
+  m.castShadow = shadow; m.receiveShadow = true; parent.add(m); return m;
+}
+
+function createCenterBuilding(){
+  const g = new THREE.Group();
+  addMesh(g, new THREE.CylinderGeometry(7, 7.4, 0.6, 40), std(0xcfc3a8), 0, 0.3, 0);
+  addMesh(g, new THREE.CylinderGeometry(5, 5, 4.6, 40), std(0xfaf4e8), 0, 2.9, 0);
+  addMesh(g, new THREE.CylinderGeometry(5.06, 5.06, 0.55, 40), std(0xE3793A), 0, 4.3, 0);
+  for(let i=0;i<8;i++){
+    const a = i/8*Math.PI*2 + Math.PI/8;
+    const w = addMesh(g, new THREE.BoxGeometry(1.1, 1.3, 0.2), std(0x9fcbd6), Math.cos(a)*4.98, 2.5, Math.sin(a)*4.98, false);
+    w.lookAt(0, 2.5, 0);
+  }
+  addMesh(g, new THREE.BoxGeometry(1.8, 2.6, 0.3), std(0x0F5C6B), 0, 1.9, 4.95);
+  addMesh(g, new THREE.ConeGeometry(7.2, 4, 40), std(0x0F5C6B), 0, 6.6, 0);
+  addMesh(g, new THREE.SphereGeometry(0.4, 12, 8), std(0xE3793A), 0, 8.8, 0);
+  addMesh(g, new THREE.CylinderGeometry(0.06, 0.06, 3, 6), std(0x555555), 0, 10.2, 0);
+  const flag = addMesh(g, new THREE.PlaneGeometry(1.6, 0.9), std(0xE3793A, {side:THREE.DoubleSide}), 0.8, 11.2, 0);
+  flag.name = 'flag';
+  islandGroup.add(g);
+  infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 12.6, 0)});
+}
+
+/* 天空雲朵（保留原設計，未調整） */
+function createClouds() {
+  const cloudGeo = new THREE.SphereGeometry(3, 16, 16);
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+  for (let i = 0; i < 8; i++) {
+    const cloud = new THREE.Group();
+    const p1 = new THREE.Mesh(cloudGeo, cloudMat);
+    const p2 = new THREE.Mesh(cloudGeo, cloudMat);
+    p2.position.set(3, -1, 0);
+    p2.scale.set(0.8, 0.8, 0.8);
+    const p3 = new THREE.Mesh(cloudGeo, cloudMat);
+    p3.position.set(-3, -1, 0);
+    p3.scale.set(0.7, 0.7, 0.7);
+    cloud.add(p1, p2, p3);
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 45 + Math.random() * 20;
+    cloud.position.set(Math.cos(angle) * radius, 15 + Math.random() * 15, Math.sin(angle) * radius);
+    scene.add(cloud);
+  }
+}
+
+/* ================= 廠商房屋 ================= */
+const WALLS = [0xfdf6e3,0xf4e1c6,0xe6efe2,0xf7d9c4,0xe1ebf2,0xf3e4ec,0xfaf0d2];
+const ROOFS = [0xb8503c,0x2e6a8e,0x3e7c47,0xc98a2b,0x6d4c8a,0x17877b,0x8a5a3b,0x3d5a99,0x9b3d4f];
+
+function layout(n){
+  const rings = n <= 12 ? [22] : n <= 30 ? [16, 27] : [14, 22, 30.5];
+  const tot = rings.reduce((a,b)=>a+b, 0);
+  const counts = rings.map(r => Math.max(1, Math.round(n*r/tot)));
+  counts[counts.length-1] += n - counts.reduce((a,b)=>a+b, 0);
+  const pts = [];
+  let minGap = Infinity;
+  rings.forEach((R,i) => {
+    const c = counts[i];
+    if(c > 1) minGap = Math.min(minGap, 2*Math.PI*R/c);
+    for(let k=0;k<c;k++){ const a = 0.15 + i*0.35 + k/c*Math.PI*2; pts.push({x:Math.cos(a)*R, z:Math.sin(a)*R}); }
+  });
+  return {pts, rings, scale: clamp(minGap/7.2, 0.5, 1)};
+}
+
+function setupVendors(list){
+  const rng = mulberry32(99);
+  vendors = list.map((v,i) => ({...v, booth: v.booth || String(i+1).padStart(2,'0')}));
+  [...new Set(vendors.map(v => v.category))].forEach((c,i) => {
+    industryColor[c] = i < INDUSTRY_COLORS.length ? INDUSTRY_COLORS[i] : `hsl(${(i*47)%360}, 45%, 42%)`;
+  });
+  const {pts, rings, scale} = layout(vendors.length);
+  pathRings = rings;
+  rings.forEach(R => islandGroup.add(flat(new THREE.RingGeometry(R-1.2, R+1.2, 128), 0xdcc89e, 0.02)));
+  vendors.forEach((v,i) => {
+    v.color = industryColor[v.category];
+    v.s = scale; v.phase = rng()*3; v.matched = false; v.hopAt = null;
+    createHouse(v, pts[i], scale, rng);
+  });
+}
+
+function createHouse(v, p, s, rng){
+  const g = new THREE.Group();
+  g.position.set(p.x, 0, p.z);
+  g.lookAt(0, 0, 0);
+  g.scale.setScalar(s);
+  const wall = WALLS[Math.floor(rng()*WALLS.length)], roof = ROOFS[Math.floor(rng()*ROOFS.length)];
+  const ind = new THREE.Color(v.color);
+  const parts = [
+    addMesh(g, new THREE.BoxGeometry(4.3, 0.3, 4.3), std(0xcfc3a8), 0, 0.15, 0),
+    addMesh(g, new THREE.BoxGeometry(4, 3.6, 4), std(wall), 0, 2.1, 0),
+    addMesh(g, new THREE.BoxGeometry(0.5, 1.1, 0.5), std(0x9c6b4e), 1.0, 5.2, -0.7),
+    addMesh(g, new THREE.BoxGeometry(1.1, 2.0, 0.12), std(0x6b4a33), 0, 1.3, 2.02),
+    addMesh(g, new THREE.BoxGeometry(0.8, 0.8, 0.1), std(0xbfe0ee), -1.35, 2.3, 2.02, false),
+    addMesh(g, new THREE.BoxGeometry(0.8, 0.8, 0.1), std(0xbfe0ee), 1.35, 2.3, 2.02, false),
+    addMesh(g, new THREE.BoxGeometry(0.1, 0.8, 0.8), std(0xbfe0ee), 2.02, 2.3, 0, false),
+    addMesh(g, new THREE.BoxGeometry(0.1, 0.8, 0.8), std(0xbfe0ee), -2.02, 2.3, 0, false)
+  ];
+  const roofM = addMesh(g, new THREE.ConeGeometry(3.3, 2.4, 4), std(roof), 0, 5.1, 0);
+  roofM.rotation.y = Math.PI/4;
+  const awning = addMesh(g, new THREE.BoxGeometry(1.9, 0.12, 0.8), std(ind), 0, 2.55, 2.32);
+  awning.rotation.x = 0.28;
+  parts.push(roofM, awning);
+  parts.forEach(m => { m.userData.vendor = v; houseMeshes.push(m); });
+  islandGroup.add(g);
+  v.group = g;
+  v.labelY = 7.0;
+  houseSpots.push({x:p.x, z:p.z, r:3.4*s});
+  v.hand = createWavingHand(v, s);
+}
+
+/* 招手的 3D 手掌 */
+function createWavingHand(v, s){
+  const outer = new THREE.Group(), wave = new THREE.Group(), hand = new THREE.Group();
+  const mat = std(0xFFDCA8);
+  const parts = [addMesh(hand, new THREE.BoxGeometry(1.6,1.6,0.4), mat, 0, 1, 0)];
+  [-0.6,-0.2,0.2,0.6].forEach((x,i) => parts.push(addMesh(hand, new THREE.BoxGeometry(0.3,1,0.3), mat, x, 2.1 + (i===1||i===2 ? 0.2 : 0), 0)));
+  const thumb = addMesh(hand, new THREE.BoxGeometry(0.8,0.3,0.3), mat, 1.1, 0.6, 0);
+  thumb.rotation.z = Math.PI/6;
+  parts.push(thumb);
+  parts.forEach(m => { m.userData.vendor = v; houseMeshes.push(m); });
+  wave.add(hand); outer.add(wave);
+  outer.scale.setScalar(1.25*s);
+  outer.visible = false;
+  islandGroup.add(outer);
+  return {outer, wave};
+}
+
+function updateHouses(t){
+  vendors.forEach(v => {
+    let y = 0, sy = 1;
+    if(v.matched){
+      const b = Math.abs(Math.sin((t + v.phase)*3.2));
+      y = b*1.5;
+      sy = 1 - 0.12*(1 - smooth(0, 0.3, b));
+    }
+    if(v.hopAt !== null){
+      const k = (t - v.hopAt)/0.4;
+      if(k < 1) y += Math.sin(k*Math.PI)*1.0; else v.hopAt = null;
+    }
+    v.group.position.y = y;
+    v.group.scale.set(v.s, v.s*sy, v.s);
+    const h = v.hand;
+    h.outer.visible = v.matched;
+    if(v.matched){
+      h.outer.position.set(v.group.position.x, y + 9.4*v.s, v.group.position.z);
+      h.outer.lookAt(camera.position.x, h.outer.position.y, camera.position.z);
+      h.wave.rotation.z = Math.sin(t*7 + v.phase)*0.45;
+    }
+  });
+}
+
+/* ================= 植被：草地、花園、果園、樹林 ================= */
+class Batch{
+  constructor(geo, shadow=true){ this.geo = geo; this.shadow = shadow; this.items = []; }
+  add(x,y,z, sx,sy,sz, rx,ry,rz, color, order='XYZ'){ this.items.push([x,y,z,sx,sy,sz,rx,ry,rz,color,order]); }
+  build(parent){
+    if(!this.items.length) return;
+    const mesh = new THREE.InstancedMesh(this.geo, new THREE.MeshLambertMaterial({color:0xffffff}), this.items.length);
+    const d = new THREE.Object3D(), c = new THREE.Color();
+    this.items.forEach((it,i) => {
+      d.position.set(it[0],it[1],it[2]); d.scale.set(it[3],it[4],it[5]); d.rotation.set(it[6],it[7],it[8],it[10]);
+      d.updateMatrix(); mesh.setMatrixAt(i, d.matrix); mesh.setColorAt(i, c.setHex(it[9]));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if(mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.castShadow = this.shadow; mesh.receiveShadow = true; mesh.frustumCulled = false;
+    parent.add(mesh);
+  }
+}
+
+function buildVegetation(){
+  const rng = mulberry32(2026);
+  const R = (a,b) => a + rng()*(b-a);
+  const pick = arr => arr[Math.floor(rng()*arr.length)];
+  const TAU = Math.PI*2;
+  const ang = (x,z) => (Math.atan2(z,x) + TAU) % TAU;
+  const B = {
+    trunk: new Batch(new THREE.CylinderGeometry(0.16,0.24,1,6).translate(0,0.5,0)),
+    crown: new Batch(new THREE.IcosahedronGeometry(1,0)),
+    round: new Batch(new THREE.IcosahedronGeometry(1,1)),
+    cone:  new Batch(new THREE.ConeGeometry(1,1,7).translate(0,0.5,0)),
+    fruit: new Batch(new THREE.SphereGeometry(1,6,5)),
+    tuft:  new Batch(new THREE.ConeGeometry(1,1,3).translate(0,0.5,0), false),
+    bloom: new Batch(new THREE.IcosahedronGeometry(1,0), false),
+    box:   new Batch(new THREE.BoxGeometry(1,1,1).translate(0,0.5,0)),
+    frond: new Batch(new THREE.BoxGeometry(1,0.05,0.34).translate(0.5,0,0)),
+    rock:  new Batch(new THREE.DodecahedronGeometry(1,0))
+  };
+  const placed = [];
+  const PLAZA = 10.8, RIM = 38.6;
+  function free(x, z, rad, strict=true){
+    const r = Math.hypot(x,z);
+    if(r > RIM - rad || r < PLAZA + rad) return false;
+    for(const P of pathRings) if(Math.abs(r - P) < 1.3 + rad) return false;
+    for(const o of houseSpots) if((x-o.x)**2 + (z-o.z)**2 < (o.r + rad)**2) return false;
+    if(strict) for(const o of placed) if((x-o.x)**2 + (z-o.z)**2 < (o.r + rad)**2) return false;
+    return true;
+  }
+  const inSector = (a, s, e) => a >= s && a <= e;
+  const ORCHARD = [0.2, 1.9], GARDEN = [2.35, 3.85], FOREST = [4.35, 5.95];
+  const outside = a => !inSector(a,...ORCHARD) && !inSector(a,...GARDEN) && !inSector(a,...FOREST);
+
+  const roundTree = (x,z,s,col) => {
+    B.trunk.add(x,0,z, s,1.9*s,s, 0,0,0, 0x7a5032);
+    B.crown.add(x,2.6*s,z, 1.5*s,1.35*s,1.5*s, R(0,3),R(0,3),0, col);
+    B.crown.add(x+R(-.5,.5)*s, 3.5*s, z+R(-.5,.5)*s, s,.9*s,s, R(0,3),R(0,3),0, 0x6db654);
+  };
+  const pine = (x,z,s) => {
+    B.trunk.add(x,0,z, .9*s,1.2*s,.9*s, 0,0,0, 0x6e4a2e);
+    const ry = R(0,TAU);
+    B.cone.add(x,0.9*s,z, 1.55*s,2.1*s,1.55*s, 0,ry,0, 0x2f6b3a);
+    B.cone.add(x,2.1*s,z, 1.2*s,1.8*s,1.2*s, 0,ry,0, 0x357740);
+    B.cone.add(x,3.1*s,z, .8*s,1.5*s,.8*s, 0,ry,0, 0x3e8546);
+  };
+  const fruitTree = (x,z,s,fc) => {
+    B.trunk.add(x,0,z, 1.1*s,1.4*s,1.1*s, 0,0,0, 0x7a5032);
+    const cy = 2.2*s, cr = 1.35*s;
+    B.round.add(x,cy,z, cr,cr*.9,cr, 0,R(0,6),0, 0x4a9640);
+    for(let k=0;k<8;k++){
+      const th = R(0,TAU), ph = R(-0.35,1.0);
+      B.fruit.add(x+Math.cos(th)*Math.cos(ph)*cr*.97, cy+Math.sin(ph)*cr*.86, z+Math.sin(th)*Math.cos(ph)*cr*.97, .2*s,.24*s,.2*s, 0,0,0, fc);
+    }
+  };
+  const pineapple = (x,z) => {
+    const ry0 = R(0,TAU);
+    for(let k=0;k<6;k++) B.tuft.add(x,0,z, .1,.75,.1, R(.45,.8), ry0+k/6*TAU, 0, 0x4e8158, 'YXZ');
+    B.bloom.add(x,.42,z, .2,.28,.2, 0,R(0,3),0, 0xdba339);
+    B.tuft.add(x,.62,z, .08,.25,.08, 0,0,0, 0x5a8f4f);
+  };
+  const bush = (x,z,s,col) => B.crown.add(x,.45*s,z, .8*s,.65*s,.8*s, R(0,3),R(0,3),0, col);
+
+  // 果園（芒果、蓮霧成排種植）＋ 鳳梨田
+  for(let gx=-40; gx<=40; gx+=3.3) for(let gz=-40; gz<=40; gz+=3.3){
+    const x = gx + R(-.25,.25), z = gz + R(-.25,.25), a = ang(x,z);
+    if(!inSector(a, ORCHARD[0], 1.15) || !free(x,z,1.5)) continue;
+    const row = Math.round(gz/3.3) & 1;
+    fruitTree(x, z, R(.85,1.05), row ? 0xf0a830 : 0xd63a4a);
+    placed.push({x,z,r:1.5});
+  }
+  for(let gx=-40; gx<=40; gx+=1.5) for(let gz=-40; gz<=40; gz+=1.7){
+    const a = ang(gx,gz);
+    if(!inSector(a, 1.18, ORCHARD[1]) || !free(gx,gz,0.6)) continue;
+    pineapple(gx + R(-.1,.1), gz);
+    placed.push({x:gx,z:gz,r:0.6});
+  }
+
+  // 花園（花圃 + 修剪灌木）
+  const FLOWERS = [0xe85d75,0xf2c14e,0xd64545,0xffffff,0x9b6ad6,0xf08a3c,0xf7a8c4];
+  let beds = 0;
+  for(let i=0;i<700 && beds<11;i++){
+    const a = R(...GARDEN), r = R(11.5, 38), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!free(x,z,2.0)) continue;
+    const ry = -a - Math.PI/2, col = FLOWERS[beds % FLOWERS.length];
+    B.box.add(x,0,z, 3.2,.32,1.6, 0,ry,0, 0x8b5e3c);
+    B.box.add(x,0,z, 2.95,.36,1.35, 0,ry,0, 0x5c4230);
+    for(let p=0;p<6;p++) for(let q=0;q<3;q++){
+      const lx = -1.2 + p*.48, lz = -.42 + q*.42;
+      const wx = x + lx*Math.cos(ry) + lz*Math.sin(ry), wz = z - lx*Math.sin(ry) + lz*Math.cos(ry);
+      B.tuft.add(wx,.36,wz, .1,.25,.1, 0,R(0,3),0, 0x4f9a3f);
+      B.bloom.add(wx,.62,wz, .17,.15,.17, R(0,3),R(0,3),0, col);
+    }
+    placed.push({x,z,r:2.0}); beds++;
+  }
+  for(let i=0,n=0;i<400 && n<10;i++){
+    const a = R(...GARDEN), r = R(11.5, 38), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!free(x,z,.9)) continue;
+    bush(x,z,R(1,1.4),0x6cbf55); placed.push({x,z,r:.9}); n++;
+  }
+  for(let i=0;i<260;i++){
+    const a = R(...GARDEN), r = R(11, 38.4), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!free(x,z,.2,false)) continue;
+    B.bloom.add(x,.3,z, .13,.12,.13, 0,0,0, pick(FLOWERS));
+  }
+
+  // 樹林（針葉林與闊葉樹混合）
+  for(let i=0,n=0;i<1200 && n<52;i++){
+    const a = R(...FOREST), r = R(11, 38.4), x = Math.cos(a)*r, z = Math.sin(a)*r, s = R(.85,1.3);
+    if(!free(x,z,1.5*s)) continue;
+    if(rng() < .6) pine(x,z,s); else roundTree(x,z,s, pick([0x3f8f3f,0x347d39,0x4a9a44]));
+    placed.push({x,z,r:1.5*s}); n++;
+  }
+  for(let i=0,n=0;i<500 && n<14;i++){
+    const a = R(...FOREST), r = R(11, 38.4), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!free(x,z,.8)) continue;
+    bush(x,z,R(.8,1.2),0x3f8a3a); placed.push({x,z,r:.8}); n++;
+  }
+
+  // 草地上零星的樹與灌木
+  for(let i=0,n=0;i<600 && n<14;i++){
+    const a = R(0,TAU), r = R(11, 38.4), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!outside(a) || !free(x,z,1.6)) continue;
+    roundTree(x,z,R(.9,1.15), pick([0x4f9e45,0x5aa84a])); placed.push({x,z,r:1.6}); n++;
+  }
+  for(let i=0,n=0;i<600 && n<22;i++){
+    const r = R(11, 38.4), a = R(0,TAU), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!free(x,z,.8)) continue;
+    bush(x,z,R(.7,1.1), pick([0x5aa646,0x4c963f])); placed.push({x,z,r:.8}); n++;
+  }
+
+  // 草叢與野花
+  const GRASS = [0x6fb24e,0x86c35c,0x5a9e44,0x9bcf6b];
+  for(let i=0;i<2600;i++){
+    const r = Math.sqrt(rng())*38.4, a = R(0,TAU), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(!free(x,z,.15,false)) continue;
+    B.tuft.add(x,0,z, R(.14,.22),R(.4,.9),R(.14,.22), R(-.15,.15),R(0,TAU),R(-.15,.15), pick(GRASS));
+  }
+  for(let i=0;i<420;i++){
+    const r = Math.sqrt(rng())*38.4, a = R(0,TAU), x = Math.cos(a)*r, z = Math.sin(a)*r;
+    if(inSector(a,...FOREST) || !free(x,z,.15,false)) continue;
+    B.bloom.add(x,.32,z, .11,.1,.11, 0,0,0, pick([0xffffff,0xf7e15e,0xf7a8c4,0xffffff]));
+  }
+
+  // 沙灘椰子樹與礁石
+  for(let i=0;i<12;i++){
+    const a = i/12*TAU + R(-.18,.18), r = R(41.8, 43.6);
+    let x = Math.cos(a)*r, z = Math.sin(a)*r, y = islandY(r);
+    const lx = Math.cos(a), lz = Math.sin(a), lean = R(.12,.24);
+    for(let k=0;k<7;k++){
+      const f = k/7, tilt = lean*(1+f);
+      B.trunk.add(x,y,z, 1.25-f*.35,.95,1.25-f*.35, lz*tilt,0,-lx*tilt, 0x9c7a55);
+      x += lx*lean*(1+2*f)*0.9; z += lz*lean*(1+2*f)*0.9; y += .88;
+    }
+    for(let k=0;k<9;k++) B.frond.add(x,y,z, R(2.4,3.1),1,1, 0, k/9*TAU + R(-.15,.15), -R(.25,.6), pick([0x3f8a3a,0x56a046]));
+    for(let k=0;k<3;k++) B.fruit.add(x+Math.cos(k*2.1)*.3, y-.28, z+Math.sin(k*2.1)*.3, .22,.22,.22, 0,0,0, 0x6b4a2b);
+  }
+  for(let i=0;i<16;i++){
+    const a = R(0,TAU), r = R(43, 47.5), s = R(.5,1.3);
+    B.rock.add(Math.cos(a)*r, islandY(r) + .1, Math.sin(a)*r, s,s*.7,s, R(0,3),R(0,3),0, pick([0x9a958c,0x85817a,0xa8a398]));
+  }
+
+  Object.values(B).forEach(b => b.build(islandGroup));
+}
+
+/* ================= 船隻 ================= */
+function hullGeo(scale=1){
+  const sh = new THREE.Shape();
+  sh.moveTo(-0.9,-2.4); sh.lineTo(0.9,-2.4);
+  sh.quadraticCurveTo(1.15,0.6,0,2.9); sh.quadraticCurveTo(-1.15,0.6,-0.9,-2.4);
+  const g = new THREE.ExtrudeGeometry(sh, {depth:0.9, bevelEnabled:false});
+  g.rotateX(Math.PI/2); g.translate(0,0.6,0); g.scale(scale,scale,scale);
+  return g;
+}
+function createSailboat(hullC, sailC){
+  const g = new THREE.Group();
+  const hull = new THREE.Mesh(hullGeo(), [std(0xf7f3ea), std(hullC)]); hull.castShadow = true; g.add(hull);
+  addMesh(g, new THREE.CylinderGeometry(0.07,0.09,5.4,6), std(0x6b5a4a), 0, 3.3, 0.5);
+  const main = new THREE.Shape(); main.moveTo(0,0); main.lineTo(0,4.4); main.quadraticCurveTo(1.3,1.8,2.3,0); main.lineTo(0,0);
+  const mg = new THREE.ShapeGeometry(main); mg.rotateY(Math.PI/2);
+  addMesh(g, mg, std(sailC, {side:THREE.DoubleSide}), 0, 1.0, 0.5);
+  const jib = new THREE.Shape(); jib.moveTo(0,0); jib.lineTo(0,3.8); jib.lineTo(-1.9,0); jib.lineTo(0,0);
+  const jg = new THREE.ShapeGeometry(jib); jg.rotateY(Math.PI/2);
+  addMesh(g, jg, std(0xffffff, {side:THREE.DoubleSide}), 0, 0.9, 0.5);
+  addMesh(g, new THREE.PlaneGeometry(0.7,0.4), std(0xE3793A, {side:THREE.DoubleSide}), 0, 6.0, 0.15).rotation.y = Math.PI/2;
+  return g;
+}
+function createFishingBoat(hullC){
+  const g = new THREE.Group();
+  const hull = new THREE.Mesh(hullGeo(1.25), [std(0xf2ede2), std(hullC)]); hull.castShadow = true; g.add(hull);
+  addMesh(g, new THREE.BoxGeometry(1.5,1.3,1.7), std(0xffffff), 0, 1.4, -0.9);
+  addMesh(g, new THREE.BoxGeometry(1.55,0.35,0.1), std(0x2b3d44), 0, 1.65, -0.02);
+  addMesh(g, new THREE.BoxGeometry(1.8,0.18,2.0), std(0x2e6a8e), 0, 2.15, -0.9);
+  addMesh(g, new THREE.CylinderGeometry(0.06,0.07,3,6), std(0x555555), 0, 3.5, -0.9);
+  [-1,1].forEach(sd => {
+    const pole = addMesh(g, new THREE.CylinderGeometry(0.04,0.05,4.4,5), std(0x6b5a4a), sd*1.2, 2.4, 0.6);
+    pole.rotation.z = -sd*0.75;
+  });
+  for(let i=0;i<5;i++) addMesh(g, new THREE.SphereGeometry(0.16,8,6), std(0xfff3c4, {emissive:0x665500}), 0, 2.5, 1.6 - i*0.05 - i*0.2, false).position.y = 2.6 - i*0.05;
+  return g;
+}
+function makeWakeTexture(){
+  const c = document.createElement('canvas'); c.width = 128; c.height = 256;
+  const g = c.getContext('2d');
+  for(let i=0;i<1600;i++){
+    const v = Math.random(), side = Math.random() < .5 ? -1 : 1, edge = Math.random() < .65;
+    const spread = 6 + v*52;
+    const x = 64 + (edge ? side*spread*(0.85 + Math.random()*0.3) : (Math.random()*2-1)*(4 + v*14));
+    const a = (1-v)*(edge ? .6 : .8)*Math.random();
+    g.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
+    g.beginPath(); g.arc(x, v*256, 1 + Math.random()*2.5*(1+v), 0, Math.PI*2); g.fill();
+  }
+  return new THREE.CanvasTexture(c);
+}
+function createBoats(){
+  const wakeTex = makeWakeTexture();
+  const defs = [
+    {make:() => createSailboat(0x2e6a8e, 0xffffff), R:60, w:0.05, a0:0.9},
+    {make:() => createFishingBoat(0xb8412f), R:74, w:-0.035, a0:2.6},
+    {make:() => createSailboat(0xC2523C, 0xfff3d6), R:90, w:0.03, a0:4.3},
+    {make:() => createFishingBoat(0x17877b), R:106, w:-0.022, a0:5.6}
+  ];
+  defs.forEach(d => {
+    const g = d.make(); scene.add(g);
+    const wg = new THREE.PlaneGeometry(9, 16); wg.rotateX(Math.PI/2);
+    const wake = new THREE.Mesh(wg, new THREE.MeshBasicMaterial({map:wakeTex, transparent:true, opacity:.85, depthWrite:false, side:THREE.DoubleSide}));
+    scene.add(wake);
+    boats.push({...d, g, wake});
+  });
+}
+function updateBoats(t){
+  boats.forEach(b => {
+    const th = b.a0 + b.w*t, x = Math.cos(th)*b.R, z = Math.sin(th)*b.R;
+    const sg = Math.sign(b.w), fx = -Math.sin(th)*sg, fz = Math.cos(th)*sg;
+    const d = dampAt(b.R);
+    const h  = waveH(x,z,t)*d;
+    const hF = waveH(x+fx*2, z+fz*2, t)*d, hB = waveH(x-fx*2, z-fz*2, t)*d;
+    const hL = waveH(x+fz*1.2, z-fx*1.2, t)*d, hR = waveH(x-fz*1.2, z+fx*1.2, t)*d;
+    const yaw = Math.atan2(fx, fz);
+    b.g.position.set(x, SEA_Y + h + 0.05, z);
+    b.g.rotation.set(Math.atan2(hB - hF, 4), yaw, Math.atan2(hL - hR, 2.4)*0.6 + Math.sin(t*1.3 + b.a0)*0.03, 'YXZ');
+    b.wake.position.set(x - fx*10.4, SEA_Y + h + 0.3, z - fz*10.4);
+    b.wake.rotation.y = yaw;
+  });
+}
+
+/* ================= 海豚 ================= */
+function createDolphin(){
+  const g = new THREE.Group();
+  const prof = [[0.05,0],[0.12,0.25],[0.2,0.6],[0.34,1.1],[0.5,1.7],[0.62,2.4],[0.68,3.0],[0.64,3.6],[0.55,4.05],[0.44,4.35],[0.28,4.55],[0.19,4.7],[0.15,5.0],[0.11,5.25],[0.05,5.42],[0.0,5.45]];
+  const geo = new THREE.LatheGeometry(prof.map(p => new THREE.Vector2(p[0], p[1])), 22);
+  geo.rotateX(Math.PI/2);
+  geo.translate(0,0,-2.7);
+  const pos = geo.attributes.position, cols = [];
+  const top = new THREE.Color(0x4f6c84), flank = new THREE.Color(0x8aa1b3), belly = new THREE.Color(0xeaf0f3), c = new THREE.Color();
+  for(let i=0;i<pos.count;i++){
+    let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const zn = z + 2.7;
+    if(y < 0) y *= 0.82;
+    x *= 0.9;
+    y += 0.12*Math.sin(Math.PI*zn/5.45);
+    if(y > 0) y += 0.1*Math.exp(-Math.pow((zn-4.2)/0.35, 2));
+    if(zn > 4.2) y -= (zn-4.2)*0.16;
+    pos.setXYZ(i, x, y, z);
+    const yr = pos.getY(i) - 0.12*Math.sin(Math.PI*zn/5.45);
+    if(yr > 0) c.copy(flank).lerp(top, smooth(0, 0.4, yr)); else c.copy(flank).lerp(belly, smooth(0, 0.35, -yr));
+    cols.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  geo.computeVertexNormals();
+  const skin = new THREE.MeshPhongMaterial({vertexColors:true, shininess:70, specular:0x333333});
+  const body = new THREE.Mesh(geo, skin); body.castShadow = true; g.add(body);
+
+  const finMat = new THREE.MeshPhongMaterial({color:0x4f6c84, shininess:60, specular:0x333333});
+  const ds = new THREE.Shape();
+  ds.moveTo(0.55,0); ds.quadraticCurveTo(0.2,0.7,-0.7,1.0); ds.quadraticCurveTo(-0.45,0.45,-0.55,0); ds.lineTo(0.55,0);
+  const dg = new THREE.ExtrudeGeometry(ds, {depth:0.09, bevelEnabled:true, bevelThickness:0.02, bevelSize:0.02, bevelSegments:1});
+  dg.translate(0,0,-0.045); dg.rotateY(-Math.PI/2);
+  addMesh(g, dg, finMat, 0, 0.72, -0.1);
+
+  [-1,1].forEach(sd => {
+    const p = addMesh(g, new THREE.SphereGeometry(1,10,6), finMat, sd*0.5, -0.28, 0.9);
+    p.scale.set(0.55, 0.06, 0.24);
+    p.rotation.set(0, sd*0.6, sd*-0.55);
+  });
+
+  const fs = new THREE.Shape();
+  fs.moveTo(0,0.1); fs.quadraticCurveTo(0.6,0.0,1.1,-0.55); fs.quadraticCurveTo(0.6,-0.45,0,-0.25);
+  fs.quadraticCurveTo(-0.6,-0.45,-1.1,-0.55); fs.quadraticCurveTo(-0.6,0.0,0,0.1);
+  const fg = new THREE.ExtrudeGeometry(fs, {depth:0.07, bevelEnabled:false});
+  fg.rotateX(Math.PI/2); fg.translate(0,0.035,0);
+  const fluke = new THREE.Group(); fluke.position.set(0, 0.05, -2.6);
+  addMesh(fluke, fg, finMat, 0, 0, 0);
+  g.add(fluke);
+
+  const eyeMat = new THREE.MeshBasicMaterial({color:0x111111});
+  [-1,1].forEach(sd => addMesh(g, new THREE.SphereGeometry(0.075,8,6), eyeMat, sd*0.37, 0.1, 1.55, false));
+  g.scale.setScalar(1.15);
+  scene.add(g);
+  return {g, fluke};
+}
+function createDolphins(){
+  const defs = [{R:64,w:0.11,a0:0.6,P:6.5,off:0},{R:80,w:-0.09,a0:3.0,P:7.5,off:2.1},{R:57,w:0.13,a0:4.6,P:5.8,off:4.0}];
+  const mates = [{lat:0,delay:0},{lat:2.3,delay:0.35},{lat:-2.1,delay:0.7}];
+  defs.forEach((p,pi) => {
+    p.members = mates.slice(0, pi === 1 ? 2 : 3).map((m,mi) => ({...m, ...createDolphin(), ph:mi*1.7 + pi, above:false}));
+    pods.push(p);
+  });
+}
+function updateDolphins(t){
+  const J = 1.5, H = 5.2;
+  pods.forEach(p => p.members.forEach(d => {
+    const tt = t - d.delay, th = p.a0 + p.w*tt, R = p.R + d.lat;
+    const x = Math.cos(th)*R, z = Math.sin(th)*R, sg = Math.sign(p.w);
+    const yaw = Math.atan2(-Math.sin(th)*sg, Math.cos(th)*sg);
+    const vh = Math.abs(p.w)*R;
+    const tau = (((tt + p.off) % p.P) + p.P) % p.P;
+    const surf = SEA_Y + waveH(x,z,t)*dampAt(R);
+    let y, pitch, air = false;
+    if(tau < J){
+      const s = tau/J;
+      y = surf - 1.2 + Math.sin(Math.PI*s)*H;
+      pitch = Math.atan2(H*Math.PI/J*Math.cos(Math.PI*s), vh);
+      air = true;
+    }else{
+      y = surf - 0.55 + 0.25*Math.sin(tau*2.4);
+      pitch = Math.atan2(0.6*Math.cos(tau*2.4), vh);
+    }
+    const above = air && y > surf - 0.1;
+    if(above !== d.above && air) spawnSplash(x, surf, z);
+    d.above = above;
+    d.g.position.set(x, y, z);
+    d.g.rotation.set(-pitch, yaw, Math.sin(t*1.3 + d.ph)*0.08, 'YXZ');
+    d.fluke.rotation.x = Math.sin(t*(air ? 4 : 9) + d.ph)*(air ? 0.15 : 0.35);
+  }));
+}
+const SPLASH_RING = new THREE.RingGeometry(0.5, 0.95, 28).rotateX(-Math.PI/2);
+const SPLASH_DROP = new THREE.IcosahedronGeometry(0.16, 0);
+function spawnSplash(x, y, z){
+  const ringMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.85, depthWrite:false, side:THREE.DoubleSide});
+  const ring = new THREE.Mesh(SPLASH_RING, ringMat); ring.position.set(x, y + 0.15, z); scene.add(ring);
+  const dropMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.95});
+  const drops = [];
+  for(let i=0;i<14;i++){
+    const m = new THREE.Mesh(SPLASH_DROP, dropMat); m.position.set(x, y + 0.2, z); scene.add(m);
+    const a = Math.random()*Math.PI*2, sp = 1.5 + Math.random()*2.5;
+    drops.push({m, v:new THREE.Vector3(Math.cos(a)*sp, 5 + Math.random()*4, Math.sin(a)*sp)});
+  }
+  splashes.push({ring, ringMat, dropMat, drops, age:0});
+}
+function updateSplashes(dt){
+  for(let i=splashes.length-1;i>=0;i--){
+    const s = splashes[i]; s.age += dt;
+    const k = s.age/1.3;
+    s.ring.scale.setScalar(1 + k*5); s.ringMat.opacity = .85*(1-k);
+    s.drops.forEach(d => { d.v.y -= 18*dt; d.m.position.addScaledVector(d.v, dt); });
+    s.dropMat.opacity = Math.max(0, 1 - k);
+    if(k >= 1){
+      scene.remove(s.ring); s.drops.forEach(d => scene.remove(d.m));
+      s.ringMat.dispose(); s.dropMat.dispose(); splashes.splice(i,1);
+    }
+  }
+}
+
+/* ================= 標籤（可點擊） ================= */
+const tmpV = new THREE.Vector3();
+function isLight(hex){ const c = new THREE.Color(hex); return (0.299*c.r + 0.587*c.g + 0.114*c.b) > 0.68; }
+function buildLabels(){
+  const wrap = $('labels');
+  vendors.forEach(v => {
+    const el = document.createElement('button');
+    el.className = 'tag' + (isLight(v.color) ? ' dark' : '');
+    el.style.setProperty('--c', v.color);
+    const no = document.createElement('span'); no.className = 'no'; no.textContent = v.booth;
+    el.append(no, document.createTextNode(v.name));
+    el.addEventListener('click', e => { e.stopPropagation(); selectVendor(v); });
+    wrap.appendChild(el);
+    v.label = el;
+  });
+  infoLabels.forEach(info => {
+    const el = document.createElement('div'); el.className = 'tag tag-info'; el.textContent = info.text;
+    wrap.appendChild(el); info.el = el;
+  });
+}
+function placeLabel(el, world){
+  const dist = world.distanceTo(camera.position);
+  tmpV.copy(world).project(camera);
+  if(tmpV.z > 1){ el.style.display = 'none'; return; }
+  el.style.display = '';
+  const x = (tmpV.x*0.5 + 0.5)*innerWidth, y = (-tmpV.y*0.5 + 0.5)*innerHeight;
+  const s = clamp(70/dist, 0.7, 1.15);
+  el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-100%) scale(${s.toFixed(3)})`;
+  el.style.zIndex = String(2000 - Math.round(dist*4));
+  el.style.opacity = dist > camera.position.distanceTo(controls.target) + 10 ? '0.78' : '1';
+}
+function updateLabels(){
+  const w = new THREE.Vector3();
+  vendors.forEach(v => {
+    if(!v.label) return;
+    w.set(0, v.labelY, 0); v.group.localToWorld(w);
+    placeLabel(v.label, w);
+  });
+  infoLabels.forEach(info => info.el && placeLabel(info.el, info.pos));
+}
+
+/* ================= 互動 ================= */
+function hitVendor(e){
+  mouse.x = (e.clientX/innerWidth)*2 - 1;
+  mouse.y = -(e.clientY/innerHeight)*2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(houseMeshes, false);
+  return hits.length ? hits[0].object.userData.vendor : null;
+}
+let hovered = null;
+function onHover(e){
+  if(isDragging || e.pointerType === 'touch') return;
+  const v = hitVendor(e);
+  if(v !== hovered){
+    if(hovered && hovered.label) hovered.label.classList.remove('hover');
+    hovered = v;
+    if(v && v.label) v.label.classList.add('hover');
+    renderer.domElement.style.cursor = v ? 'pointer' : '';
+  }
+}
+function onPointerClick(e){
+  if(isDragging) return;
+  const v = hitVendor(e);
+  if(v) selectVendor(v); else closeVendorCard();
+}
+function selectVendor(v){
+  currentVendor = v;
+  v.hopAt = clock.elapsedTime;
+  vendors.forEach(o => o.label && o.label.classList.toggle('active', o === v));
+  showVendorCard(v);
+}
+function showVendorCard(v){
+  $('card-bar').style.background = v.color;
+  $('card-booth').textContent = v.booth;
+  $('card-name').textContent = v.name;
+  $('card-dot').style.background = v.color;
+  $('card-cat').textContent = v.category;
+  $('card-desc').textContent = v.desc;
+  $('card-desc').hidden = !v.desc;
+  const ol = $('card-jobs'); ol.innerHTML = '';
+  if(v.jobs.length){
+    v.jobs.forEach(j => {
+      const li = document.createElement('li');
+      li.innerHTML = `<div class="job-title">${j.name}</div><dl class="job-meta"><dt>薪資</dt><dd>${j.salary}</dd><dt>學歷</dt><dd>${j.edu}</dd><dt>科系</dt><dd>${j.major}</dd></dl>`;
+      ol.appendChild(li);
+    });
+  }else{
+    const li = document.createElement('li');
+    li.innerHTML = `<div class="job-title">職缺資訊請洽攤位</div>`;
+    ol.appendChild(li);
+  }
+  const link = $('card-link');
+  link.hidden = !v.link; if(v.link) link.href = v.link;
+  $('card-note').hidden = !!v.link;
+  $('card-stamp').hidden = !v.matched;
+  const card = $('vendor-card');
+  card.scrollTop = 0;
+  card.hidden = false;
+  requestAnimationFrame(() => card.classList.add('show'));
+}
+function closeVendorCard(){
+  const card = $('vendor-card');
+  card.classList.remove('show');
+  vendors.forEach(o => o.label && o.label.classList.remove('active'));
+  currentVendor = null;
+  setTimeout(() => { if(!card.classList.contains('show')) card.hidden = true; }, 250);
+}
+
+/* 產業圖例（點擊可篩選標籤） */
+function buildLegend(){
+  const ul = $('legend-list'); ul.innerHTML = '';
+  Object.keys(industryColor).forEach(cat => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    const sw = document.createElement('i'); sw.className = 'sw'; sw.style.background = industryColor[cat];
+    const name = document.createElement('span'); name.textContent = cat;
+    const cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = vendors.filter(v => v.category === cat).length;
+    b.append(sw, name, cnt);
+    b.addEventListener('click', () => {
+      activeFilter = activeFilter === cat ? null : cat;
+      ul.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b && !!activeFilter));
+      vendors.forEach(v => v.label.classList.toggle('dim', !!activeFilter && v.category !== activeFilter));
+    });
+    li.appendChild(b); ul.appendChild(li);
+  });
+  const lg = $('legend');
+  lg.hidden = false;
+  if(innerWidth < 720) lg.open = false;
+}
+
+/* 履歷表單 */
+function chip(label, onClick){
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.textContent = label; b.setAttribute('aria-pressed','false');
+  b.addEventListener('click', () => { b.parentNode.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b))); onClick(); });
+  return b;
+}
+function buildResumeForm(){
+  const eduWrap = $('r-edu'), majorWrap = $('r-major'), sel = $('r-ind');
+  EDU_LEVELS.forEach(e => { const b = chip(e.label, () => form.edu = e.lv); b.dataset.v = e.lv; eduWrap.appendChild(b); });
+  MAJOR_GROUPS.forEach(m => { const b = chip(m.label, () => form.major = m.id); b.dataset.v = m.id; majorWrap.appendChild(b); });
+  Object.keys(industryColor).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  try{
+    const saved = JSON.parse(localStorage.getItem('pt-job-isle-resume') || 'null');
+    if(saved){
+      if(saved.age) $('r-age').value = saved.age;
+      if(saved.edu){ form.edu = saved.edu; const b = eduWrap.querySelector(`[data-v="${saved.edu}"]`); b && b.setAttribute('aria-pressed','true'); }
+      if(saved.major){ form.major = saved.major; const b = majorWrap.querySelector(`[data-v="${saved.major}"]`); b && b.setAttribute('aria-pressed','true'); }
+      if(saved.ind && industryColor[saved.ind]) sel.value = saved.ind;
+    }
+  }catch(e){}
+  $('resume-modal').addEventListener('click', e => { if(e.target.id === 'resume-modal') closeResume(); });
+}
+function openResume(){
+  const m = $('resume-modal');
+  m.hidden = false;
+  requestAnimationFrame(() => m.classList.add('show'));
+}
+function closeResume(){
+  const m = $('resume-modal');
+  if(m.hidden) return;
+  m.classList.remove('show');
+  setTimeout(() => { if(!m.classList.contains('show')) m.hidden = true; }, 250);
+}
+function eduLevel(text){
+  if(!text || /不限|不拘/.test(text)) return 0;
+  if(/博士/.test(text)) return 5;
+  if(/碩/.test(text)) return 4;
+  if(/大學|學士/.test(text)) return 3;
+  if(/大專|專科|二專|五專/.test(text)) return 2;
+  if(/高中|高職/.test(text)) return 1;
+  return 0;
+}
+function majorMatch(v, gid){
+  if(!v.majors.length || v.majors.some(m => /不限|不拘/.test(m))) return true;
+  const g = MAJOR_GROUPS.find(x => x.id === gid);
+  if(!g || !g.kw.length) return false;
+  return v.majors.some(m => g.kw.some(k => m.includes(k)));
+}
+function submitResume(){
+  const ageStr = $('r-age').value.trim(), age = parseInt(ageStr, 10);
+  if(ageStr && (isNaN(age) || age < 15 || age > 80)) return showToast('年齡請填 15 到 80 之間的數字');
+  if(!form.edu) return showToast('請選擇最高學歷');
+  if(!form.major) return showToast('請選擇科系背景');
+  const ind = $('r-ind').value;
+  try{ localStorage.setItem('pt-job-isle-resume', JSON.stringify({age:ageStr, edu:form.edu, major:form.major, ind})); }catch(e){}
+  const list = [];
+  vendors.forEach(v => {
+    v.matched = majorMatch(v, form.major) && eduLevel(v.edu) <= form.edu && (!ind || v.category === ind);
+    v.label.classList.toggle('match', v.matched);
+    if(v.matched) list.push(v);
+  });
+  closeResume();
+  renderResults(list);
+  if(currentVendor) $('card-stamp').hidden = !currentVendor.matched;
+  showToast(list.length
+    ? `找到 ${list.length} 個適合你的攤位，島上正在跳動招手的就是！`
+    : '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。');
+}
+function renderResults(list){
+  const box = $('results'), wrap = $('results-list');
+  wrap.innerHTML = '';
+  if(!list.length){ box.hidden = true; return; }
+  $('results-count').textContent = list.length + ' 家';
+  list.sort((a,b) => a.booth.localeCompare(b.booth, 'zh-Hant', {numeric:true})).forEach(v => {
+    const b = document.createElement('button'); b.className = 'r-chip';
+    const sw = document.createElement('i'); sw.className = 'sw'; sw.style.background = v.color;
+    const no = document.createElement('span'); no.className = 'no'; no.textContent = v.booth;
+    const nm = document.createElement('span'); nm.textContent = v.name;
+    b.append(sw, no, nm);
+    b.addEventListener('click', () => { selectVendor(v); focusVendor(v); });
+    wrap.appendChild(b);
+  });
+  box.hidden = false;
+}
+function clearMatch(){
+  vendors.forEach(v => { v.matched = false; v.label.classList.remove('match'); });
+  $('results').hidden = true;
+  if(currentVendor) $('card-stamp').hidden = true;
+}
+
+/* 鏡頭移動 */
+function startTween(toC, toT){
+  tween = {t0:clock.elapsedTime, dur:1.1, fromC:camera.position.clone(), toC, fromT:controls.target.clone(), toT};
+  controls.enabled = false;
+}
+function focusVendor(v){
+  const p = new THREE.Vector3(v.group.position.x, 3, v.group.position.z);
+  const out = new THREE.Vector3(p.x, 0, p.z).normalize();
+  startTween(p.clone().addScaledVector(out, -24).add(new THREE.Vector3(0, 17, 0)), p);
+}
+function resetView(){ startTween(DEFAULT_CAM.clone(), DEFAULT_TARGET.clone()); }
+function updateTween(t){
+  if(!tween) return;
+  const k = clamp((t - tween.t0)/tween.dur, 0, 1);
+  const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;
+  camera.position.lerpVectors(tween.fromC, tween.toC, e);
+  controls.target.lerpVectors(tween.fromT, tween.toT, e);
+  if(k >= 1){ tween = null; controls.enabled = true; }
+}
+
+function showToast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+function onWindowResize(){
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+}
+
+/* ================= 動畫循環 ================= */
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  updateSea(t);
+  updateBoats(t);
+  updateDolphins(t);
+  updateSplashes(dt);
+  rays.forEach(m => m.uniforms.uTime.value = t);
+  updateHouses(t);
+  updateTween(t);
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+}
+</script>
+</body>
+</html>
