@@ -297,6 +297,7 @@ let vendors = [], industryColor = {}, houseMeshes = [], houseSpots = [], pathRin
 let infoLabels = [];
 let sea, seaN, seaXZ, seaDamp, seaBase;
 let foamRings = [], rays = [], boats = [], pods = [], splashes = [];
+let clouds = []; // 雲朵陣列
 let isDragging = false, pointerDownPos = {x:0,y:0};
 let currentVendor = null, activeFilter = null, tween = null;
 let idleTimeout = null, isIdleMode = false; // 閒置運鏡狀態追蹤
@@ -720,8 +721,8 @@ function createCenterBuilding(){
 
 function createClouds() {
   const cloudGeo = new THREE.SphereGeometry(3, 16, 16);
-  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
-  for (let i = 0; i < 8; i++) {
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+  for (let i = 0; i < 9; i++) {
     const cloud = new THREE.Group();
     const p1 = new THREE.Mesh(cloudGeo, cloudMat);
     const p2 = new THREE.Mesh(cloudGeo, cloudMat);
@@ -731,11 +732,28 @@ function createClouds() {
     p3.position.set(-3, -1, 0);
     p3.scale.set(0.7, 0.7, 0.7);
     cloud.add(p1, p2, p3);
+    
     const angle = Math.random() * Math.PI * 2;
-    const radius = 45 + Math.random() * 20;
-    cloud.position.set(Math.cos(angle) * radius, 15 + Math.random() * 15, Math.sin(angle) * radius);
+    const radius = 40 + Math.random() * 25;
+    const y = 16 + Math.random() * 12;
+    cloud.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    cloud.lookAt(0, y, 0); // 讓雲朵面向中心
     scene.add(cloud);
+    
+    // 記錄雲朵的初始參數，用於動畫
+    clouds.push({ g: cloud, a: angle, r: radius, y: y, speed: 0.015 + Math.random() * 0.02 });
   }
+}
+
+function updateSkyEcosystem(t) {
+  // 讓雲朵緩慢飄移與上下浮動
+  clouds.forEach(c => {
+    c.a -= c.speed * 0.01; 
+    c.g.position.x = Math.cos(c.a) * c.r;
+    c.g.position.z = Math.sin(c.a) * c.r;
+    c.g.position.y = c.y + Math.sin(t * 0.6 + c.a) * 1.5;
+    c.g.lookAt(0, c.g.position.y, 0);
+  });
 }
 
 /* ================= 廠商房屋 ================= */
@@ -1550,6 +1568,7 @@ function animate(){
   updateBoats(t);
   updateDolphins(t);
   updateSplashes(dt);
+  updateSkyEcosystem(t); // 更新天空生態 (雲朵與飛鳥)
   rays.forEach(m => m.uniforms.uTime.value = t);
   updateHouses(t);
   updateTween(t);
