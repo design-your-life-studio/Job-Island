@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>2026屏東地區就業博覽會-求職島</title>
 
-<!-- 加入這兩行 meta 標籤來清除社群分享時的預設抓取文字 -->
+<!-- 清除社群分享時的預設抓取文字 -->
 <meta name="description" content=" ">
 <meta property="og:description" content=" ">
 
@@ -88,14 +88,17 @@ button{font:inherit;color:inherit}
 .sec-title::after{content:'';flex:1;height:1px;background:var(--line)}
 .jobs{list-style:none;margin:0;padding:0;counter-reset:j}
 .jobs li{counter-increment:j;display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px dashed var(--line)}
-.job-title{display:flex;gap:10px;font-size:15px;font-weight:700;color:var(--ink);line-height:1.4}
+.job-title{display:flex;gap:10px;font-size:15px;font-weight:700;color:var(--ink);line-height:1.4;align-items:center}
 .job-title::before{content:counter(j,decimal-leading-zero);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
 .job-meta{display:grid;grid-template-columns:40px 1fr;gap:4px 10px;font-size:13px;color:var(--ink-2);padding-left:26px;margin:0}
 .job-meta dt{color:var(--muted)}
 .job-meta dd{margin:0;line-height:1.5;white-space:pre-wrap}
 .card .btn-primary{width:100%;margin-top:20px}
 .card-note{margin:18px 0 0;padding:10px 12px;background:var(--paper-2);font-size:12.5px;color:var(--ink-2);border-radius:2px;line-height:1.6;text-align:center}
-.stamp{position:absolute;top:22px;right:58px;width:64px;height:64px;border:2px solid var(--sun);border-radius:50%;color:var(--sun);display:grid;place-items:center;text-align:center;font-family:'Noto Serif TC',serif;font-weight:900;font-size:13px;line-height:1.15;transform:rotate(-14deg);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--sun);opacity:.92}
+
+/* 職缺個別印章 */
+.job-stamp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:2px solid var(--sun);border-radius:50%;color:var(--sun);font-size:10.5px;font-weight:900;line-height:1.15;font-family:'Noto Serif TC',serif;transform:rotate(-18deg);margin-left:auto;flex:none;text-align:center;letter-spacing:0.05em}
+.job-stamp::after{content:'';position:absolute;inset:2px;border:1px solid var(--sun);border-radius:50%}
 
 /* 履歷視窗 */
 .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(18,32,36,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s;z-index:30}
@@ -175,7 +178,6 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <div class="booth">攤位 <b id="card-booth">01</b></div>
-    <div class="stamp" id="card-stamp" hidden>條件<br>相符</div>
     <h2 id="card-name"></h2>
     <div class="card-cat"><i id="card-dot"></i><span id="card-cat"></span></div>
     <p class="desc" id="card-desc"></p>
@@ -186,7 +188,7 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
   </aside>
 
   <div class="results paper" id="results" hidden>
-    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button onclick="clearMatch()">清除配對</button></div>
+    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button onclick="clearMatch()">清除配驚</button></div>
     <div class="results-list" id="results-list"></div>
   </div>
 
@@ -264,21 +266,12 @@ const COLS = {
   link:     ['投遞連結','職缺連結','連結','網址','官網']
 };
 
-// 產業別標籤顏色（依 Excel 中產業出現順序套用，相同產業同一色）
+// 產業別標籤顏色
 const INDUSTRY_COLORS = ['#C2523C','#2E6A8E','#3E7C47','#C9952B','#7A4E8F','#17877B','#D9734E','#4B5D6A','#A35C7A','#8A6A3B','#3D5A99','#6E8B2F'];
 
-// 讀不到 Excel 時使用的範例資料
 const DEMO_VENDORS = [
-  {booth:'01',name:'南州精密機械',category:'製造業',desc:'深耕屏東三十年的精密零組件製造廠，供應汽車與半導體設備關鍵零件。',jobs:[{name:'機械工程師',salary:'月薪 35,000~45,000元',edu:'專科'},{name:'品管技術員',salary:'月薪 30,000元',edu:'高中職'}],majors:['機械','電機','工業工程'],edu:'高中職',link:''},
-  {booth:'02',name:'墾丁海灣度假飯店',category:'觀光餐旅',desc:'位於恆春半島的海景度假飯店，提供完整的餐旅職涯培訓與住宿福利。',jobs:[{name:'櫃檯接待',salary:'月薪 32,000元起',edu:'專科'},{name:'餐飲服務',salary:'月薪 30,000元起',edu:'高中職'}],majors:['餐旅','觀光','外語'],edu:'高中職',link:''},
-  {booth:'03',name:'大武山農產生技',category:'食品生技',desc:'結合在地農產與生技研發，開發機能性食品與保健產品。',jobs:[{name:'研發助理',salary:'月薪 36,000元',edu:'大學'},{name:'通路業務',salary:'依業績抽成',edu:'大學'}],majors:['食品','生技','農業','行銷'],edu:'大學',link:''},
-  {booth:'04',name:'南國數位科技',category:'資訊科技',desc:'為南台灣企業打造數位轉型解決方案的軟體公司。',jobs:[{name:'前端工程師',salary:'月薪 40,000~60,000元',edu:'大學'},{name:'系統工程師',salary:'月薪 45,000元起',edu:'大學'}],majors:['資訊','資管','電機'],edu:'大學',link:''},
-  {booth:'05',name:'屏安醫療照護',category:'醫療照護',desc:'經營區域醫院與長照據點，重視在地照護人才培育。',jobs:[{name:'護理師',salary:'月薪 42,000元起',edu:'專科'},{name:'照顧服務員',salary:'月薪 35,000元',edu:'不限'}],majors:['護理','社工','長照'],edu:'專科',link:''},
-  {booth:'06',name:'恆春風光物流',category:'物流運輸',desc:'屏東在地冷鏈與宅配物流服務，路線涵蓋全台。',jobs:[{name:'物流專員',salary:'月薪 32,000元',edu:'高中職'},{name:'配送司機',salary:'月薪 40,000元起',edu:'高中職'}],majors:['不限'],edu:'高中職',link:''},
-  {booth:'07',name:'六堆文創設計',category:'文創設計',desc:'以客家文化為養分的設計工作室，承接品牌、包裝與展覽設計。',jobs:[{name:'平面設計師',salary:'月薪 35,000元',edu:'大學'},{name:'社群小編',salary:'月薪 30,000元',edu:'專科'}],majors:['設計','視覺','傳播','行銷'],edu:'大學',link:''},
-  {booth:'08',name:'東港海洋食品',category:'食品生技',desc:'東港漁港出發的水產加工品牌，產品外銷日本與東南亞。',jobs:[{name:'生產技術員',salary:'月薪 30,000元',edu:'高中職'},{name:'業務專員',salary:'月薪 35,000元起',edu:'專科'}],majors:['食品','水產','化工','不限'],edu:'高中職',link:''},
-  {booth:'09',name:'屏東綠電能源',category:'綠能科技',desc:'太陽光電案場開發與維運，推動屏東成為綠能大縣。',jobs:[{name:'案場工程師',salary:'月薪 40,000元',edu:'專科'},{name:'維運技術員',salary:'月薪 36,000元',edu:'專科'}],majors:['電機','機械','環境'],edu:'專科',link:''},
-  {booth:'10',name:'南台灣連鎖零售',category:'零售服務',desc:'南部在地連鎖量販與超市，完整的儲備幹部培訓制度。',jobs:[{name:'門市儲備幹部',salary:'月薪 35,000元',edu:'大學'},{name:'門市人員',salary:'時薪 183元起',edu:'高中職'}],majors:['不限'],edu:'高中職',link:''}
+  {booth:'01',name:'南州精密機械',category:'製造業',desc:'深耕屏東三十年的精密零組件製造廠，供應汽車與半導體設備關鍵零件。',jobs:[{name:'機械工程師',salary:'月薪 35,000~45,000元',edu:'專科',major:'機械、電機'},{name:'品管技術員',salary:'月薪 30,000元',edu:'高中職',major:'工業工程'}],majors:['機械','電機','工業工程'],edu:'高中職',link:''},
+  {booth:'02',name:'墾丁海灣度假飯店',category:'觀光餐旅',desc:'位於恆春半島的海景度假飯店，提供完整的餐旅職涯培訓與住宿福利。',jobs:[{name:'櫃檯接待',salary:'月薪 32,000元起',edu:'專科',major:'餐旅、外語'},{name:'餐飲服務',salary:'月薪 30,000元起',edu:'高中職',major:'不限'}],majors:['餐旅','觀光','外語'],edu:'高中職',link:''}
 ];
 
 // 履歷：學歷與科系選項
@@ -306,6 +299,7 @@ let sea, seaN, seaXZ, seaDamp, seaBase;
 let foamRings = [], rays = [], boats = [], pods = [], splashes = [];
 let isDragging = false, pointerDownPos = {x:0,y:0};
 let currentVendor = null, activeFilter = null, tween = null;
+let idleTimeout = null, isIdleMode = false; // 閒置運鏡狀態追蹤
 const form = {edu:null, major:null};
 const DEFAULT_CAM = new THREE.Vector3(0, 46, 80), DEFAULT_TARGET = new THREE.Vector3(0, 2, 0);
 
@@ -323,6 +317,29 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (demo) showToast('讀不到「廠商資料.xlsx」，目前顯示範例資料');
 });
 
+/* ================= 閒置運鏡 (Idle Camera) 邏輯 ================= */
+function stopIdle() {
+  isIdleMode = false;
+  controls.autoRotate = false;
+  clearTimeout(idleTimeout);
+}
+
+function resetIdleTimer() {
+  stopIdle(); // 先停止現有的閒置狀態與計時
+  
+  // 重新設定 5 秒計時器
+  idleTimeout = setTimeout(() => {
+    // 防呆2：如果有任何 UI 視窗開啟，或是正在進行特寫運鏡，則不觸發閒置動畫
+    const hasModal = !$('vendor-card').hidden || !$('resume-modal').hidden || !$('info-modal').hidden || tween !== null;
+    if (hasModal) return;
+    
+    // 進入閒置環繞模式
+    isIdleMode = true;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5; // 緩慢平穩的順時針旋轉速度
+  }, 5000);
+}
+
 /* ================= 資料讀取 ================= */
 async function loadVendors(){
   try{
@@ -335,7 +352,7 @@ async function loadVendors(){
     return {list, demo:false};
   }catch(err){
     console.warn('廠商資料讀取失敗，改用範例資料：', err);
-    return {list: DEMO_VENDORS.map(v => ({...v, jobs:[...v.jobs], majors:[...v.majors]})), demo:true};
+    return {list: DEMO_VENDORS.map(v => ({...v, jobs:v.jobs.map(j => ({...j})), majors:[...v.majors]})), demo:true};
   }
 }
 
@@ -378,7 +395,8 @@ function parseRows(rows){
         majors: [],
         jobs: [],
         edu: get('edu'),
-        link: cleanLink(get('link'))
+        link: cleanLink(get('link')),
+        matched: false
       };
       map.set(name, v);
       list.push(v);
@@ -405,7 +423,8 @@ function parseRows(rows){
           name: j,
           salary: (rowSalaries[idx] || rowSalaries[0] || get('salary') || '依公司規定').trim(),
           edu: (rowEdus[idx] || rowEdus[0] || get('edu') || '不限').trim(),
-          major: (rowMajorsForJob[idx] || rowMajorsForJob[0] || get('majors') || '不限').trim()
+          major: (rowMajorsForJob[idx] || rowMajorsForJob[0] || get('majors') || '不限').trim(),
+          matched: false
         });
       }
     });
@@ -440,7 +459,6 @@ function initScene(){
   controls.minDistance = 18;
   controls.maxDistance = 140;
 
-  // 光線：暖色太陽 + 天空半球光
   scene.add(new THREE.AmbientLight(0xffffff, 0.22));
   scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x7aa36a, 0.5));
   const sun = new THREE.DirectionalLight(0xfff0d6, 0.95);
@@ -468,6 +486,13 @@ function initScene(){
   mouse = new THREE.Vector2();
 
   addEventListener('resize', onWindowResize);
+  
+  // 綁定操作事件：只要使用者互動，就重置閒置計時器 (防呆1)
+  ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, resetIdleTimer, { passive: true });
+  });
+  resetIdleTimer(); // 初始啟動計時器
+  
   renderer.domElement.addEventListener('pointerdown', e => {
     isDragging = false; pointerDownPos.x = e.clientX; pointerDownPos.y = e.clientY;
   });
@@ -476,7 +501,7 @@ function initScene(){
     onHover(e);
   });
   renderer.domElement.addEventListener('pointerup', onPointerClick);
-  addEventListener('keydown', e => { if(e.key === 'Escape'){ closeResume(); closeVendorCard(); } });
+  addEventListener('keydown', e => { if(e.key === 'Escape'){ closeResume(); closeVendorCard(); closeInfo(); } });
 }
 
 /* 天空（漸層 + 太陽光暈） */
@@ -562,7 +587,6 @@ function createSea(){
   sea.receiveShadow = true;
   scene.add(sea);
 
-  // 岸邊白色浪花
   const foamTex = makeFoamTexture();
   [[46.6, 50.6, 0.75], [48.2, 53.5, 0.45]].forEach(([inner, outer, op], i) => {
     const tex = foamTex.clone(); tex.needsUpdate = true;
@@ -655,7 +679,6 @@ function createIsland(){
   ground.receiveShadow = true;
   islandGroup.add(ground);
 
-  // 中央廣場
   const plaza = flat(new THREE.CircleGeometry(10, 64), 0xe6dcc6, 0.03);
   const inlay = flat(new THREE.RingGeometry(6.6, 7.2, 64), 0xcdbf9f, 0.04);
   islandGroup.add(plaza, inlay);
@@ -695,7 +718,6 @@ function createCenterBuilding(){
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 12.6, 0), action: openInfo});
 }
 
-/* 天空雲朵（保留原設計，未調整） */
 function createClouds() {
   const cloudGeo = new THREE.SphereGeometry(3, 16, 16);
   const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
@@ -790,7 +812,6 @@ function createHouse(v, p, s, rng){
   v.hand = createWavingHand(v, s);
 }
 
-/* 招手的 3D 手掌 */
 function createWavingHand(v, s){
   const outer = new THREE.Group(), wave = new THREE.Group(), hand = new THREE.Group();
   const mat = std(0xFFDCA8);
@@ -911,7 +932,6 @@ function buildVegetation(){
   };
   const bush = (x,z,s,col) => B.crown.add(x,.45*s,z, .8*s,.65*s,.8*s, R(0,3),R(0,3),0, col);
 
-  // 果園（芒果、蓮霧成排種植）＋ 鳳梨田
   for(let gx=-40; gx<=40; gx+=3.3) for(let gz=-40; gz<=40; gz+=3.3){
     const x = gx + R(-.25,.25), z = gz + R(-.25,.25), a = ang(x,z);
     if(!inSector(a, ORCHARD[0], 1.15) || !free(x,z,1.5)) continue;
@@ -926,7 +946,6 @@ function buildVegetation(){
     placed.push({x:gx,z:gz,r:0.6});
   }
 
-  // 花園（花圃 + 修剪灌木）
   const FLOWERS = [0xe85d75,0xf2c14e,0xd64545,0xffffff,0x9b6ad6,0xf08a3c,0xf7a8c4];
   let beds = 0;
   for(let i=0;i<700 && beds<11;i++){
@@ -954,7 +973,6 @@ function buildVegetation(){
     B.bloom.add(x,.3,z, .13,.12,.13, 0,0,0, pick(FLOWERS));
   }
 
-  // 樹林（針葉林與闊葉樹混合）
   for(let i=0,n=0;i<1200 && n<52;i++){
     const a = R(...FOREST), r = R(11, 38.4), x = Math.cos(a)*r, z = Math.sin(a)*r, s = R(.85,1.3);
     if(!free(x,z,1.5*s)) continue;
@@ -967,7 +985,6 @@ function buildVegetation(){
     bush(x,z,R(.8,1.2),0x3f8a3a); placed.push({x,z,r:.8}); n++;
   }
 
-  // 草地上零星的樹與灌木
   for(let i=0,n=0;i<600 && n<14;i++){
     const a = R(0,TAU), r = R(11, 38.4), x = Math.cos(a)*r, z = Math.sin(a)*r;
     if(!outside(a) || !free(x,z,1.6)) continue;
@@ -979,7 +996,6 @@ function buildVegetation(){
     bush(x,z,R(.7,1.1), pick([0x5aa646,0x4c963f])); placed.push({x,z,r:.8}); n++;
   }
 
-  // 草叢與野花
   const GRASS = [0x6fb24e,0x86c35c,0x5a9e44,0x9bcf6b];
   for(let i=0;i<2600;i++){
     const r = Math.sqrt(rng())*38.4, a = R(0,TAU), x = Math.cos(a)*r, z = Math.sin(a)*r;
@@ -992,7 +1008,6 @@ function buildVegetation(){
     B.bloom.add(x,.32,z, .11,.1,.11, 0,0,0, pick([0xffffff,0xf7e15e,0xf7a8c4,0xffffff]));
   }
 
-  // 沙灘椰子樹與礁石
   for(let i=0;i<12;i++){
     const a = i/12*TAU + R(-.18,.18), r = R(41.8, 43.6);
     let x = Math.cos(a)*r, z = Math.sin(a)*r, y = islandY(r);
@@ -1309,6 +1324,7 @@ function selectVendor(v){
   showVendorCard(v);
 }
 function showVendorCard(v){
+  stopIdle(); // 展開視窗強制中斷閒置動畫
   $('card-bar').style.background = v.color;
   $('card-booth').textContent = v.booth;
   $('card-name').textContent = v.name;
@@ -1320,7 +1336,9 @@ function showVendorCard(v){
   if(v.jobs.length){
     v.jobs.forEach(j => {
       const li = document.createElement('li');
-      li.innerHTML = `<div class="job-title">${j.name}</div><dl class="job-meta"><dt>薪資</dt><dd>${j.salary}</dd><dt>學歷</dt><dd>${j.edu}</dd><dt>科系</dt><dd>${j.major}</dd></dl>`;
+      // 將相符小印章蓋在職缺標題旁邊
+      const stampHtml = j.matched ? `<span class="job-stamp">條件<br>相符</span>` : '';
+      li.innerHTML = `<div class="job-title">${j.name}${stampHtml}</div><dl class="job-meta"><dt>薪資</dt><dd>${j.salary}</dd><dt>學歷</dt><dd>${j.edu}</dd><dt>科系</dt><dd>${j.major}</dd></dl>`;
       ol.appendChild(li);
     });
   }else{
@@ -1331,7 +1349,6 @@ function showVendorCard(v){
   const link = $('card-link');
   link.hidden = !v.link; if(v.link) link.href = v.link;
   $('card-note').hidden = !!v.link;
-  $('card-stamp').hidden = !v.matched;
   const card = $('vendor-card');
   card.scrollTop = 0;
   card.hidden = false;
@@ -1343,6 +1360,7 @@ function closeVendorCard(){
   vendors.forEach(o => o.label && o.label.classList.remove('active'));
   currentVendor = null;
   setTimeout(() => { if(!card.classList.contains('show')) card.hidden = true; }, 250);
+  resetIdleTimer(); // 關閉後重置計時器
 }
 
 /* 產業圖例（點擊可篩選標籤） */
@@ -1391,6 +1409,7 @@ function buildResumeForm(){
   $('info-modal').addEventListener('click', e => { if(e.target.id === 'info-modal') closeInfo(); });
 }
 function openResume(){
+  stopIdle(); // 展開視窗強制中斷閒置動畫
   const m = $('resume-modal');
   m.hidden = false;
   requestAnimationFrame(() => m.classList.add('show'));
@@ -1400,8 +1419,10 @@ function closeResume(){
   if(m.hidden) return;
   m.classList.remove('show');
   setTimeout(() => { if(!m.classList.contains('show')) m.hidden = true; }, 250);
+  resetIdleTimer(); // 關閉後重置計時器
 }
 function openInfo(){
+  stopIdle(); // 展開視窗強制中斷閒置動畫
   const m = $('info-modal');
   m.hidden = false;
   requestAnimationFrame(() => m.classList.add('show'));
@@ -1411,6 +1432,7 @@ function closeInfo(){
   if(m.hidden) return;
   m.classList.remove('show');
   setTimeout(() => { if(!m.classList.contains('show')) m.hidden = true; }, 250);
+  resetIdleTimer(); // 關閉後重置計時器
 }
 function eduLevel(text){
   if(!text || /不限|不拘/.test(text)) return 0;
@@ -1421,9 +1443,11 @@ function eduLevel(text){
   if(/高中|高職/.test(text)) return 1;
   return 0;
 }
-function majorMatch(v, selectedMajor){
-  if(!v.majors.length || v.majors.some(m => /不限|不拘/.test(m))) return true;
-  return v.majors.includes(selectedMajor);
+function majorMatch(majorStr, selectedMajor){
+  if(!majorStr || /不限|不拘/.test(majorStr)) return true;
+  const arr = splitTags(majorStr);
+  if(!arr.length || arr.some(m => /不限|不拘/.test(m))) return true;
+  return arr.includes(selectedMajor);
 }
 function submitResume(){
   const ageStr = $('r-age').value.trim(), age = parseInt(ageStr, 10);
@@ -1432,15 +1456,29 @@ function submitResume(){
   if(!form.major) return showToast('請選擇科系背景');
   const ind = $('r-ind').value;
   try{ localStorage.setItem('pt-job-isle-resume', JSON.stringify({age:ageStr, edu:form.edu, major:form.major, ind})); }catch(e){}
+  
   const list = [];
   vendors.forEach(v => {
-    v.matched = majorMatch(v, form.major) && eduLevel(v.edu) <= form.edu && (!ind || v.category === ind);
+    let hasMatchedJob = false;
+    
+    // 檢查這家公司的每一個職缺是否符合條件
+    v.jobs.forEach(j => {
+      j.matched = majorMatch(j.major, form.major) && eduLevel(j.edu) <= form.edu;
+      if (j.matched) hasMatchedJob = true;
+    });
+
+    // 只要有一個以上的職缺符合，且產業也符合，這間廠商就會揮手被配對
+    v.matched = hasMatchedJob && (!ind || v.category === ind);
     v.label.classList.toggle('match', v.matched);
     if(v.matched) list.push(v);
   });
+  
   closeResume();
   renderResults(list);
-  if(currentVendor) $('card-stamp').hidden = !currentVendor.matched;
+  
+  // 如果目前已經有點開某家廠商的卡片，重新渲染以更新印章顯示狀態
+  if(currentVendor) showVendorCard(currentVendor); 
+  
   showToast(list.length
     ? `找到 ${list.length} 個適合你的攤位，島上正在跳動招手的就是！`
     : '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。');
@@ -1462,9 +1500,13 @@ function renderResults(list){
   box.hidden = false;
 }
 function clearMatch(){
-  vendors.forEach(v => { v.matched = false; v.label.classList.remove('match'); });
+  vendors.forEach(v => { 
+    v.matched = false; 
+    v.jobs.forEach(j => j.matched = false);
+    v.label.classList.remove('match'); 
+  });
   $('results').hidden = true;
-  if(currentVendor) $('card-stamp').hidden = true;
+  if(currentVendor) showVendorCard(currentVendor);
 }
 
 /* 鏡頭移動 */
@@ -1511,7 +1553,9 @@ function animate(){
   rays.forEach(m => m.uniforms.uTime.value = t);
   updateHouses(t);
   updateTween(t);
-  controls.update();
+  
+  controls.update(); // 處理拖移與 autoRotate
+  
   renderer.render(scene, camera);
   updateLabels();
 }
