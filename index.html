@@ -334,6 +334,10 @@ let clouds = []; // 雲朵陣列
 let isDragging = false, pointerDownPos = {x:0,y:0};
 let currentVendor = null, activeFilter = null, tween = null;
 let idleTimeout = null, isIdleMode = false; // 閒置運鏡狀態追蹤
+let rocketGroup = null; // 火箭本體
+const smokes = []; // 煙霧陣列
+const smokeGeo = new THREE.IcosahedronGeometry(0.6, 0); 
+const smokeMat = new THREE.MeshLambertMaterial({color: 0xffffff, transparent: true, opacity: 0.8});
 const form = {edu:null, major:null};
 const DEFAULT_CAM = new THREE.Vector3(0, 46, 80), DEFAULT_TARGET = new THREE.Vector3(0, 2, 0);
 
@@ -812,9 +816,62 @@ function createCenterBuilding(){
     if (child.isMesh) centerMeshes.push(child);
   });
   
+  rocketGroup = g; // 將火箭模型存入全域變數，供動畫與煙霧特效使用
   islandGroup.add(g);
   // 標籤高度微調至火箭頭部上方
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 17.5, 0), action: openInfo});
+}
+
+function updateRocketAndSmoke(t, dt) {
+  if (!rocketGroup) return;
+  
+  // 火箭自轉
+  rocketGroup.rotation.y += 0.4 * dt;
+
+  // 生成低多邊形煙霧 (控制隨機生成頻率)
+  if (Math.random() < 0.2) { 
+    const smoke = new THREE.Mesh(smokeGeo, smokeMat.clone());
+    smoke.position.set(
+      rocketGroup.position.x + (Math.random() - 0.5) * 1.8,
+      rocketGroup.position.y + 0.3 + Math.random() * 0.5,
+      rocketGroup.position.z + (Math.random() - 0.5) * 1.8
+    );
+    smoke.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+    scene.add(smoke);
+    
+    smokes.push({
+      mesh: smoke, 
+      age: 0, 
+      life: 1.5 + Math.random() * 1.5,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: -0.1 - Math.random() * 0.4, // 稍微向下/向外飄散
+      vz: (Math.random() - 0.5) * 1.5,
+      rot: (Math.random() - 0.5) * 2
+    });
+  }
+
+  // 更新與回收現有的煙霧
+  for (let i = smokes.length - 1; i >= 0; i--) {
+    const s = smokes[i];
+    s.age += dt;
+    const p = s.age / s.life;
+
+    if (p >= 1) {
+      scene.remove(s.mesh);
+      s.mesh.material.dispose();
+      smokes.splice(i, 1);
+      continue;
+    }
+
+    s.mesh.position.x += s.vx * dt;
+    s.mesh.position.y += s.vy * dt;
+    s.mesh.position.z += s.vz * dt;
+    s.mesh.rotation.x += s.rot * dt;
+    s.mesh.rotation.y += s.rot * dt;
+
+    s.mesh.scale.setScalar(1 + p * 2.5); // 逐漸膨脹
+    s.mesh.material.opacity = 0.8 * (1 - p); // 逐漸淡出
+  }
 }
 
 function createClouds() {
@@ -1627,7 +1684,36 @@ function clearMatch(){
 
 /* 鏡頭移動 */
 function startTween(toC, toT){
-  tween = {t0:clock.elapsedTime, dur:1.1, fromC:camera.position.clone(), toC, fromT:controls.target.clone(), toT};
+  const fromC = camera.position.clone();
+  const fromT = controls.target.clone();
+  
+  const c1 = { r: Math.hypot(fromC.x, fromC.z), th: Math.atan2(fromC.z, fromC.x), y: fromC.y };
+  const c2 = { r: Math.hypot(toC.x, toC.z), th: Math.atan2(toC.z, toC.x), y: toC.y };
+  
+  const t1 = { r: Math.hypot(fromT.x, fromT.z), th: Math.atan2(fromT.z, fromT.x), y: fromT.y };
+  const t2 = { r: Math.hypot(toT.x, toT.z), th: Math.atan2(toT.z, toT.x), y: toT.y };
+
+  // 取最短圓弧角度，確保鏡頭走最近的弧線
+  let dCTh = c2.th - c1.th;
+  while(dCTh > Math.PI) dCTh -= Math.PI*2;
+  while(dCTh < -Math.PI) dCTh += Math.PI*2;
+  c2.th = c1.th + dCTh;
+
+  let dTTh = t2.th - t1.th;
+  while(dTTh > Math.PI) dTTh -= Math.PI*2;
+  while(dTTh < -Math.PI) dTTh += Math.PI*2;
+  t2.th = t1.th + dTTh;
+  
+  // 避免目標在正中心 (r=0) 時，角度插值導致螺旋運動
+  if(t1.r < 0.1) t1.th = t2.th;
+  if(t2.r < 0.1) t2.th = t1.th;
+  if(c1.r < 0.1) c1.th = c2.th;
+  if(c2.r < 0.1) c2.th = c1.th;
+
+  // 如果移動幅度很大（例如從東邊飛到西邊），動態加長動畫時間，讓運鏡更平滑舒服
+  const dur = Math.max(1.1, Math.abs(dCTh) * 0.75);
+
+  tween = {t0:clock.elapsedTime, dur, c1, c2, t1, t2};
   controls.enabled = false;
 }
 function focusVendor(v){
@@ -1640,8 +1726,20 @@ function updateTween(t){
   if(!tween) return;
   const k = clamp((t - tween.t0)/tween.dur, 0, 1);
   const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;
-  camera.position.lerpVectors(tween.fromC, tween.toC, e);
-  controls.target.lerpVectors(tween.fromT, tween.toT, e);
+  
+  const {c1, c2, t1, t2} = tween;
+  
+  // 使用極座標 (極徑、極角、高度) 進行平滑插值，產生環繞的弧線軌跡
+  const cr = c1.r + (c2.r - c1.r)*e;
+  const cth = c1.th + (c2.th - c1.th)*e;
+  const cy = c1.y + (c2.y - c1.y)*e;
+  camera.position.set(Math.cos(cth)*cr, cy, Math.sin(cth)*cr);
+  
+  const tr = t1.r + (t2.r - t1.r)*e;
+  const tth = t1.th + (t2.th - t1.th)*e;
+  const ty = t1.y + (t2.y - t1.y)*e;
+  controls.target.set(Math.cos(tth)*tr, ty, Math.sin(tth)*tr);
+  
   if(k >= 1){ tween = null; controls.enabled = true; }
 }
 
@@ -1667,6 +1765,7 @@ function animate(){
   updateDolphins(t);
   updateSplashes(dt);
   updateSkyEcosystem(t); // 更新天空生態 (雲朵與飛鳥)
+  updateRocketAndSmoke(t, dt); // 更新火箭自轉與底部煙霧
   rays.forEach(m => m.uniforms.uTime.value = t);
   updateHouses(t);
   updateTween(t);
