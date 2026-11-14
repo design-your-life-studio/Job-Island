@@ -2891,7 +2891,6 @@ const SND=(function(){
   const _cm=window.closeMap;window.closeMap=function(){const was=mapIsOpen();const r=_cm.apply(this,arguments);if(was)SND.sfx.mapClose();return r;};
   wrap('followVillager',()=>SND.sfx.lock());
   const _sf=window.stopFollow;window.stopFollow=function(){const was=!!follow;const r=_sf.apply(this,arguments);if(was)SND.sfx.unlock();return r;};
-  const _sp=window.spawnSplash;if(_sp)window.spawnSplash=function(x,y,z){const r=_sp.apply(this,arguments);try{const d=camera.position.distanceTo(new THREE.Vector3(x,y,z));SND.sfx.splash(Math.max(0,Math.min(1,(110-d)/80)));}catch(e){}return r;};
   document.addEventListener('click',e=>{if(!SND.st.started)return;const t=e.target.closest&&e.target.closest('button,.chip,summary,.btn-primary');if(t&&!t.closest('#snd-panel')&&t.id!=='snd-btn')SND.sfx.tick();},true);
   window.__sndTick=()=>SND.update(camera,vendors);
 })();
