@@ -207,8 +207,24 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
   .info-layout { flex-direction: column; gap: 18px; }
   .map-card { min-height: 200px; }
 }
+/* 桌機：服務台視窗放大 */
+@media(min-width:721px){
+#info-modal .modal-panel{width:min(1080px,92vw);max-height:calc(100vh - 48px);padding:28px 44px 28px}
+#info-modal .modal-head h2{font-size:32px}
+#info-modal .eyebrow{font-size:13px}
+.info-layout{gap:44px;margin-top:14px}
+.info-layout-left{flex:1}
+.info-layout-left .modal-sub{font-size:17px;line-height:1.9}
+.info-layout-left .btn-primary{height:60px!important;font-size:17px!important}
+.info-layout-right{flex:none;width:min(46%,calc((100vh - 235px)*0.6))}
+.map-card{height:auto;min-height:0}
+.map-card img{display:block;width:100%;height:auto}
+}
 #follow-tip{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:8px 16px;border-radius:999px;background:rgba(20,30,50,.78);color:#fff;font-size:13px;font-weight:600;letter-spacing:.06em;pointer-events:none;white-space:nowrap;backdrop-filter:blur(6px)}
 #follow-tip[hidden]{display:none}
+/* 桌機：跟隨提示與左上標題卡片頂端對齊 */
+@media(min-width:721px){#follow-tip{top:20px}}
+
 
 /* ===== 場地圖檢視器 ===== */
 #mapv{position:fixed;inset:0;z-index:500;display:none;-webkit-user-select:none;user-select:none}
@@ -2099,7 +2115,7 @@ class Villager{
   constructor(gender,styleKey,pal){
     this.gender=gender;this.style=styleKey;this.pal=pal||randomPal();this.derived=[];
     const P=this.pal,m=this.mats={top:M(P.top),pants:M(P.pants),inner:M(P.inner),skin:M(P.skin),hair:M(P.hair),shoe:M(0x1c1c20),
-      black:new T.MeshBasicMaterial({color:0x141414}),cheek:new T.MeshBasicMaterial({color:0xf09aa8})};
+      black:new T.MeshBasicMaterial({color:0x141414}),cheek:new T.MeshLambertMaterial({color:0xff9aac})};
     const male=gender==='male',st=styleKey;
     const dkm=(key,mul)=>{const mt=new T.MeshLambertMaterial({color:0xffffff});this.derived.push({mt,key,mul});mt.color.setHex(P[key]).multiplyScalar(mul);return mt};
     const root=this.root=new T.Group(), hip=this.hip=new T.Group(), upper=this.upper=new T.Group();
@@ -2950,6 +2966,23 @@ function cycleState(h){
   return asState('night');
 }
 
+/* 太陽與月亮的位置：5 點從東邊海平面升起、19 點在西邊落下；夜晚換成月亮
+   換手的時刻（5 點、19 點）光暈淡到 0，所以不會看到光點從天上滑下來 */
+const SUN_REST = new T.Vector3(-0.72, 0.6, -0.36).normalize();
+const AZ_DAY = Math.atan2(SUN_REST.z, SUN_REST.x), AZ_DAWN = AZ_DAY + Math.PI;
+const MOON = new T.Vector3(0.5, 0.7, 0.35).normalize();
+function sunMoon(h){
+  h = ((h % 24) + 24) % 24;
+  const fade = Math.min(1, Math.min(Math.abs(h - 5), Math.abs(h - 19)) / 0.6);
+  const ff = fade*fade*(3-2*fade);
+  if(h < 5 || h > 19) return { dir: MOON, glow: ff, light: 0.35 + 0.65*ff };
+  const el = Math.sin(Math.PI * (h - 5) / 14) * Math.asin(SUN_REST.y) * 1.05 - 0.04;
+  const k = Math.min(1, Math.max(0, (h - 5) / 4.5)), az = AZ_DAWN + (AZ_DAY - AZ_DAWN) * k*k*(3-2*k);
+  const dir = new T.Vector3(Math.cos(az)*Math.cos(el), Math.sin(el), Math.sin(az)*Math.cos(el)).normalize();
+  return { dir, glow: ff * Math.min(1, 0.25 + Math.max(0, el + 0.04) * 6), light: 0.35 + 0.65*ff };
+}
+const REP_H = { dawn:6, day:12, dusk:18, night:0 };
+let effH = 8, fromH = 8;
 let L = {}, skyU = null, ready = false, raysBase = [];
 const winMats = [], porch = [], stars = {}, fire = {};
 let mode = 'cycle', cur = null, from = null, blend = 1, hour = 8;   /* 預設：循環模式，從早上 8 點開始 */
@@ -3088,14 +3121,15 @@ function apply(s, t){
   const dim = 1 - 0.32*rain.dim, grey = new T.Color(0x9aa3ad);
   L.amb.color.copy(s.amb[0]); L.amb.intensity = s.amb[1]*dim;
   L.hemi.color.copy(s.hemi[0]); L.hemi.groundColor.copy(s.hemi[1]); L.hemi.intensity = s.hemi[2]*dim;
-  L.sun.color.copy(s.sun[0]); L.sun.intensity = s.sun[1]*(1 - 0.6*rain.dim);
-  L.sun.position.copy(s.sunDir).multiplyScalar(110);
+  const sm = sunMoon(effH);
+  L.sun.color.copy(s.sun[0]); L.sun.intensity = s.sun[1]*(1 - 0.6*rain.dim)*sm.light;
+  L.sun.position.copy(sm.dir).multiplyScalar(110);
   skyU.top.value.copy(s.top).lerp(grey, rain.dim*0.45);
   skyU.horizon.value.copy(s.hor).lerp(grey, rain.dim*0.45);
-  skyU.sunColor.value.copy(s.glow).multiplyScalar(1 - rain.dim*0.8);
-  skyU.sunDir.value.copy(s.sunDir);
+  skyU.sunColor.value.copy(s.glow).multiplyScalar((1 - rain.dim*0.8) * sm.glow);
+  skyU.sunDir.value.copy(sm.dir);
   scene.fog.color.copy(skyU.horizon.value); scene.background.copy(skyU.horizon.value);
-  const rk = s.rays * (1 - rain.dim);
+  const rk = s.rays * (1 - rain.dim) * smooth(0.9, 0.99, sm.dir.dot(SUN_REST));   /* 光束只在太陽接近白天位置時出現 */
   rays.forEach((m,i) => { if(m.uniforms.uBase) m.uniforms.uStrength.value *= rk; else m.uniforms.uStrength.value = raysBase[i]*rk; });
   winMats.forEach(m => m.emissiveIntensity = s.win*1.15);
   porch.forEach(m => m.opacity = s.win*0.95);
@@ -3111,6 +3145,9 @@ function tick(){
   if(vendors[0] && vendors[0].group !== houseKey) scanHouses();
   hour = (hour + dt * 24 / DAY_SEC) % 24;
   const goal = mode === 'cycle' ? cycleState(hour) : asState(mode);
+  const goalH = mode === 'cycle' ? hour : REP_H[mode];
+  if(blend < 1){ const e = blend*blend*(3-2*blend), fwd = ((goalH - fromH) % 24 + 24) % 24; effH = (fromH + fwd*e) % 24; }   /* 時間只往前走，太陽一定從東邊升起 */
+  else effH = goalH;
   if(blend < 1){ blend = Math.min(1, blend + dt/2.5); const e = blend*blend*(3-2*blend); cur = lerpKey(toPlain(from), toPlain(goal), e); }
   else cur = goal;
   rainClock += dt;
@@ -3126,7 +3163,7 @@ function toPlain(s){
 function setMode(m){
   if(m === mode) return;
   const prev = mode;
-  from = cur; blend = 0; mode = m;
+  from = cur; blend = 0; mode = m; fromH = effH;
   /* 從固定時段切回循環：從那個時段接續往下走 */
   if(m === 'cycle' && prev !== 'cycle') hour = { dawn:6, day:12, dusk:18, night:22 }[prev];
   setBtns();
@@ -3151,6 +3188,125 @@ const wait = setInterval(() => {
 }, 100);
 })();
 
+</script>
+<script>
+/* ================= 下雨時島民撐傘 ================= */
+(function(){
+const T = THREE;
+/* 五種傘色：主色 + 淺色，傘面八片交錯 */
+const UMB = [
+  {name:'珊瑚紅', a:0xe8604c, b:0xf6ab98},
+  {name:'陽光黃', a:0xf0ae32, b:0xf9dc8e},
+  {name:'薄荷綠', a:0x3fae94, b:0x9fdcc9},
+  {name:'海洋藍', a:0x3a86d1, b:0xa0c9ef},
+  {name:'薰衣草紫', a:0x9176cf, b:0xcfc0f1}
+];
+const SHAFT = new T.MeshLambertMaterial({color:0x5b5550});
+const HANDLE = new T.MeshLambertMaterial({color:0x6b4a33});
+
+function makeUmbrella(ci){
+  const c = UMB[ci], g = new T.Group(), R = 1.95, H = 0.78, SEG = 8;
+  /* 傘面：八片三角，交錯主色與淺色；傘緣每片之間微微內凹，做出布面張開的弧度 */
+  const pos = [], col = [], ca = new T.Color(c.a), cb = new T.Color(c.b);
+  const rim = i => { const a = i/SEG*Math.PI*2; return [Math.cos(a)*R, 0, Math.sin(a)*R]; };
+  const mid = i => { const a = (i+0.5)/SEG*Math.PI*2, r = R*0.9; return [Math.cos(a)*r, 0.1, Math.sin(a)*r]; };
+  for(let i=0;i<SEG;i++){
+    const p0 = rim(i), p1 = rim(i+1), m = mid(i), top = [0, H, 0], cc = i%2 ? cb : ca;
+    [[top,p0,m],[top,m,p1]].forEach(tri => tri.forEach(p => { pos.push(...p); col.push(cc.r, cc.g, cc.b); }));
+  }
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(pos,3));
+  geo.setAttribute('color', new T.Float32BufferAttribute(col,3));
+  geo.computeVertexNormals();
+  const canopy = new T.Mesh(geo, new T.MeshLambertMaterial({vertexColors:true, side:T.DoubleSide, flatShading:true}));
+  canopy.castShadow = true;
+  const can = new T.Group(); can.add(canopy);
+  /* 傘骨末端的小圓珠 */
+  const tipGeo = new T.SphereGeometry(0.045, 8, 6);
+  for(let i=0;i<SEG;i++){ const p = rim(i), s = new T.Mesh(tipGeo, SHAFT); s.position.set(p[0], -0.02, p[2]); can.add(s); }
+  /* 頂端尖頭 */
+  const top = new T.Mesh(new T.CylinderGeometry(0.03, 0.05, 0.22, 8), SHAFT); top.position.y = H + 0.1; can.add(top);
+  g.add(can); g.userData.canopy = can;
+  /* 傘柄與 J 型握把 */
+  const shaft = new T.Mesh(new T.CylinderGeometry(0.035, 0.035, 1, 8), SHAFT); g.add(shaft); g.userData.shaft = shaft;
+  const hook = new T.Mesh(new T.TorusGeometry(0.13, 0.05, 8, 14, Math.PI), HANDLE);
+  hook.rotation.z = Math.PI; hook.position.set(0.13, -0.28, 0); g.add(hook);
+  const grip = new T.Mesh(new T.CylinderGeometry(0.055, 0.055, 0.3, 10), HANDLE); grip.position.y = -0.13; g.add(grip);
+  g.userData.ci = ci;
+  return g;
+}
+
+/* 傘的長度：握把在手上，傘面中心落在頭頂上方、稍微往前 */
+const CANOPY_AT = new T.Vector3(-0.08, 3.45, 0.12);   /* upper 座標：頭頂上方 */
+const ARM = {rx:-0.75, rz:0.25, el:-1.35};             /* 右手：手肘往外，手握在胸前偏右 */
+const _hand = new T.Vector3(), _m = new T.Matrix4();
+
+function attach(v, ci){
+  const u = makeUmbrella(ci);
+  v.upper.add(u); v.umb = u; v.umbK = 0; v.umbWant = 1;
+  return u;
+}
+/* 每幀在島民 update 之後呼叫：右手換成撐傘姿勢，傘放到手上，開傘/收傘有過渡 */
+function hold(v, dt){
+  const u = v.umb; if(!u) return;
+  v.umbK += (v.umbWant - v.umbK) * Math.min(1, dt*4);
+  const k = v.umbK, e = k*k*(3-2*k);
+  const r = v.arms[1];
+  r.sh.rotation.x += (ARM.rx - r.sh.rotation.x) * e;
+  r.sh.rotation.z += (ARM.rz - r.sh.rotation.z) * e;
+  r.el.rotation.x += (ARM.el - r.el.rotation.x) * e;
+  /* 找出手掌在 upper 座標的位置 */
+  v.upper.updateMatrixWorld(true);
+  _hand.set(0, -0.42, 0); r.el.localToWorld(_hand); v.upper.worldToLocal(_hand);
+  const dir = CANOPY_AT.clone().sub(_hand), L = dir.length();
+  u.position.copy(_hand);
+  u.quaternion.setFromUnitVectors(new T.Vector3(0,1,0), dir.normalize());
+  u.userData.shaft.scale.y = L; u.userData.shaft.position.y = L/2;
+  const can = u.userData.canopy;
+  can.position.y = L - 0.15;
+  /* 收合時傘面縮成細長，打開時展開 */
+  can.scale.set(0.12 + 0.88*e, 1 + 0.9*(1-e), 0.12 + 0.88*e);
+  u.visible = k > 0.02;
+  u.scale.setScalar(0.6 + 0.4*Math.min(1, k*1.6));
+}
+
+/* 雨雲底下（含外圍一點緩衝）的島民，不論在做什麼都撐傘；離開雨區或雨停就收傘 */
+function underRain(v, R){
+  if(!R || !R.on || !R.cloud || R.dim < 0.15) return false;
+  const c = R.cloud, p = v.root.position;
+  const dx = p.x - c.position.x, dz = p.z - c.position.z;
+  const fx = new T.Vector3(1,0,0).applyQuaternion(c.quaternion), fz = new T.Vector3(0,0,1).applyQuaternion(c.quaternion);
+  const ox = dx*fx.x + dz*fx.z, oz = dx*fz.x + dz*fz.z;
+  const m = v.umbWant ? 2.5 : 0;   /* 已撐開的人多一點緩衝，避免在雨區邊緣一直開開關關 */
+  return (ox*ox)/((14+m)*(14+m)) + (oz*oz)/((9.5+m)*(9.5+m)) < 1;
+}
+let last = performance.now();
+function tick(){
+  const now = performance.now(), dt = Math.min(0.1, (now-last)/1000); last = now;
+  const R = window.DN && DN._rain, C = window.__crowd;
+  C.forEach(v => {
+    const want = (v.root.visible && v.state !== 'gone' && underRain(v, R)) ? 1 : 0;
+    if(want && !v.umb) attach(v, Math.floor(Math.random()*UMB.length));
+    if(!v.umb) return;
+    v.umbWant = want;
+    hold(v, dt);
+    if(!want && v.umbK < 0.02){ v.umb.visible = false; }
+  });
+}
+const wait = setInterval(() => {
+  if(typeof renderer === 'undefined' || !renderer || !window.__crowd || !window.__crowd.length || !window.DN) return;
+  clearInterval(wait);
+  const r0 = renderer.render.bind(renderer);
+  renderer.render = (s, c) => { tick(); r0(s, c); };
+}, 120);
+})();
+
+</script>
+<script>
+/* 讓跟隨提示的高度永遠等於標題卡片（字型載入、視窗縮放後重新量） */
+(function(){const b=document.querySelector('.brand');if(!b)return;
+const sync=()=>document.documentElement.style.setProperty('--brand-h',b.offsetHeight+'px');
+sync();addEventListener('resize',sync);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sync);setTimeout(sync,1500);})();
 </script>
 </body>
 </html>
