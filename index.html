@@ -233,6 +233,16 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
 #mapv.s1 .mv-box{inset:0;background:transparent}
 #mapv.s1 .mv-head{position:absolute;left:0;right:0;top:0;z-index:3}
 
+#dn-btn svg{width:22px;height:22px}
+#dn-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:80;width:310px;padding:14px;border-radius:4px;background:var(--paper);box-shadow:0 10px 30px rgba(20,40,45,.22);font-size:13px;color:var(--ink)}
+#dn-panel[hidden]{display:none}
+#dn-panel h4{display:flex;align-items:center;justify-content:space-between;margin:-4px -6px 10px 0;font-size:13px;letter-spacing:.14em}
+#dn-panel .dn-opts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+#dn-panel .dn-opts button{font:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0 7px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:3px;cursor:pointer;font-size:12px;transition:background .2s,color .2s,border-color .2s}
+#dn-panel .dn-opts button svg{width:22px;height:22px}
+#dn-panel .dn-opts button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#dn-panel .dn-note{margin:10px 0 0;font-size:11px;color:var(--muted);letter-spacing:.04em}
+@media(max-width:720px){#dn-panel{bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(310px,calc(100vw - 24px))}}
 #snd-btn svg{width:22px;height:22px}
 #snd-btn.off .wave{display:none}
 #snd-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:80;width:250px;max-height:calc(100vh - 120px);overflow:auto;padding:14px;border-radius:4px;background:var(--paper);box-shadow:0 10px 30px rgba(20,40,45,.22);font-size:13px;color:var(--ink)}
@@ -340,6 +350,7 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/><circle cx="12" cy="12" r="2"/></svg>
     </button>
     <button id="snd-btn" class="btn-round" title="音樂與音效" aria-label="音樂與音效"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><g class="wave"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g></svg></button>
+    <button id="dn-btn" class="btn-round" title="時段" aria-label="時段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>
   </nav>
 
   <div class="modal" id="resume-modal" hidden>
@@ -1938,6 +1949,18 @@ function startTween(toC, toT){
 function focusVendor(v){
   const hp = new THREE.Vector3(v.group.position.x, 3, v.group.position.z);
   const out = new THREE.Vector3(hp.x, 0, hp.z).normalize();
+  /* 已經貼近某間房子時（廠商之間切換）：保持目前的視角與距離，整個鏡頭直接平移過去，不拉遠、不甩視角 */
+  const off = camera.position.clone().sub(controls.target);
+  if(off.length() < 45 && camera.position.y < 40 && camera.position.y > 8){
+    let tgt;
+    if(IS_PORTRAIT) tgt = new THREE.Vector3(hp.x, controls.target.y, hp.z);
+    else {
+      const h = new THREE.Vector3(-off.x, 0, -off.z).normalize();
+      tgt = hp.clone().addScaledVector(new THREE.Vector3(-h.z, 0, h.x), 5).add(new THREE.Vector3(0, -0.5, 0));
+    }
+    startTweenLinear(tgt.clone().add(off), tgt);
+    return;
+  }
   if(IS_PORTRAIT){
     // 手機：鏡頭從房子的斜前方拉近（避免穿進中央火箭），房子停在底部卡片上方
     const R = Math.hypot(hp.x, hp.z), d = clamp(R - 8, 7, 20);
@@ -2726,6 +2749,10 @@ function closeMap(){const r=document.getElementById('mapv');r.classList.remove('
 function mapIsOpen(){return document.getElementById('mapv').classList.contains('open');}
 </script>
 
+<div id="dn-panel" hidden>
+  <h4><span>時段</span><button class="icon-btn snd-x" id="dn-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h4>
+  <div class="dn-opts"><button data-m="dawn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M7 19a5 5 0 0 1 10 0"/><path d="M12 3v6M9.5 5.5 12 3l2.5 2.5"/><path d="M4.2 13.6l1.4 1M19.8 13.6l-1.4 1"/></svg><span>清晨</span></button><button data-m="day" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span>白天</span></button><button data-m="dusk" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M7 19a5 5 0 0 1 10 0"/><path d="M12 3v6M9.5 6.5 12 9l2.5-2.5"/><path d="M4.2 13.6l1.4 1M19.8 13.6l-1.4 1"/></svg><span>傍晚</span></button><button data-m="night" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg><span>夜晚</span></button><button data-m="cycle" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14.3 4.9"/><path d="M4 12a8 8 0 0 1 14.3-4.9"/><path d="M18.6 3.5v3.8h-3.8"/><path d="M5.4 20.5v-3.8h3.8"/></svg><span>循環</span></button></div>
+</div>
 <div id="snd-panel" hidden>
   <h4><span>音樂與音效</span><button class="icon-btn snd-x" id="snd-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h4>
   <div class="row"><span>總音量</span><input id="snd-vol" type="range" min="0" max="100" value="80"></div>
@@ -2894,6 +2921,236 @@ const SND=(function(){
   document.addEventListener('click',e=>{if(!SND.st.started)return;const t=e.target.closest&&e.target.closest('button,.chip,summary,.btn-primary');if(t&&!t.closest('#snd-panel')&&t.id!=='snd-btn')SND.sfx.tick();},true);
   window.__sndTick=()=>SND.update(camera,vendors);
 })();
+</script>
+<script>
+/* ================= 日夜時段 + 隨機陣雨 ================= */
+(function(){
+const T = THREE;
+const C = h => new T.Color(h);
+/* 四個時段的光線與天空設定：白天 → 傍晚 → 夜晚 → 清晨 */
+const KEYS = {
+  day:   { amb:[0xffffff,.22], hemi:[0xcfe8ff,0x7aa36a,.5], sun:[0xfff0d6,.95], sunDir:[-0.72,0.6,-0.36],
+           top:0x4f9fd6, hor:0xd9ebf0, glow:0xfff0cc, rays:1, win:0, fire:0, star:0 },
+  dusk:  { amb:[0xffd2a8,.24], hemi:[0xffb48a,0x6d7a52,.48], sun:[0xff9448,.9], sunDir:[-0.85,0.22,-0.45],
+           top:0x5a6fae, hor:0xffb27c, glow:0xffa860, rays:.55, win:.55, fire:.15, star:.08 },
+  night: { amb:[0x7f93cc,.30], hemi:[0x4a5f99,0x22302f,.42], sun:[0xa9c0ff,.38], sunDir:[0.5,0.7,0.35],
+           top:0x0c1838, hor:0x2b3d6e, glow:0xcfe0ff, rays:0, win:1, fire:1, star:1 },
+  dawn:  { amb:[0xffd9e0,.23], hemi:[0xf5b8c8,0x6f8a62,.47], sun:[0xffb08a,.85], sunDir:[0.8,0.25,0.4],
+           top:0x6f8fc8, hor:0xffc6b0, glow:0xffc39a, rays:.6, win:.35, fire:.1, star:.05 }
+};
+const ORDER = ['day','dusk','night','dawn'];
+/* 循環模式：一天 24 小時 = 12 分鐘（每 2 小時 = 1 分鐘）
+   清晨 5–7 點、白天 7–17 點、傍晚 17–19 點、夜晚 19–5 點，交界處用 1 小時（30 秒）漸變 */
+const DAY_SEC = 720;
+const HOURS = [[4.5,'night'],[5.5,'dawn'],[6.5,'dawn'],[7.5,'day'],[16.5,'day'],[17.5,'dusk'],[18.5,'dusk'],[19.5,'night'],[28.5,'night']];
+function cycleState(h){
+  h = ((h - 4.5) % 24 + 24) % 24 + 4.5;
+  for(let i=0;i<HOURS.length-1;i++){ const [h0,a] = HOURS[i], [h1,b] = HOURS[i+1];
+    if(h >= h0 && h <= h1){ const k = (h-h0)/(h1-h0); return lerpKey(KEYS[a], KEYS[b], k*k*(3-2*k)); } }
+  return asState('night');
+}
+
+let L = {}, skyU = null, ready = false, raysBase = [];
+const winMats = [], porch = [], stars = {}, fire = {};
+let mode = 'cycle', cur = null, from = null, blend = 1, hour = 8;   /* 預設：循環模式，從早上 8 點開始 */
+
+function lerpKey(a, b, k){
+  const o = {}, c1 = new T.Color(), c2 = new T.Color();
+  const col = (x,y) => c1.set(x).clone().lerp(c2.set(y), k);
+  const num = (x,y) => x + (y-x)*k;
+  o.amb = [col(a.amb[0],b.amb[0]), num(a.amb[1],b.amb[1])];
+  o.hemi = [col(a.hemi[0],b.hemi[0]), col(a.hemi[1],b.hemi[1]), num(a.hemi[2],b.hemi[2])];
+  o.sun = [col(a.sun[0],b.sun[0]), num(a.sun[1],b.sun[1])];
+  o.sunDir = new T.Vector3(...a.sunDir).normalize().lerp(new T.Vector3(...b.sunDir).normalize(), k).normalize();
+  ['top','hor','glow'].forEach(n => o[n] = col(a[n], b[n]));
+  ['rays','win','fire','star'].forEach(n => o[n] = num(a[n], b[n]));
+  return o;
+}
+const asState = key => lerpKey(KEYS[key], KEYS[key], 0);
+
+function setup(){
+  scene.traverse(o => {
+    if(o.isAmbientLight) L.amb = o;
+    else if(o.isHemisphereLight) L.hemi = o;
+    else if(o.isDirectionalLight) L.sun = o;
+    else if(o.isMesh && o.material && o.material.uniforms && o.material.uniforms.horizon) skyU = o.material.uniforms;
+  });
+  skyU.sunDir.value = skyU.sunDir.value.clone(); skyU.top.value = skyU.top.value.clone(); skyU.horizon.value = skyU.horizon.value.clone();
+  raysBase = rays.map(m => m.uniforms.uStrength.value);
+
+  scanHouses();
+  /* 星星 */
+  { const n = 700, pos = new Float32Array(n*3), rng = mulberry32(11);
+    for(let i=0;i<n;i++){ const th = rng()*Math.PI*2, y = 0.08 + rng()*0.92, r = Math.sqrt(1-y*y);
+      pos.set([Math.cos(th)*r*900, y*900, Math.sin(th)*r*900], i*3); }
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos,3));
+    stars.mat = new T.PointsMaterial({color:0xffffff, size:2.2, sizeAttenuation:false, transparent:true, opacity:0, depthWrite:false, fog:false});
+    stars.obj = new T.Points(g, stars.mat); stars.obj.renderOrder = -0.5; scene.add(stars.obj); }
+
+  /* 螢火蟲：在樹叢與房子間慢慢飄、一閃一閃 */
+  { const n = 220, pos = new Float32Array(n*3), ph = new Float32Array(n), rng = mulberry32(5);
+    for(let i=0;i<n;i++){ const a = rng()*Math.PI*2, r = 9 + Math.sqrt(rng())*40;
+      pos.set([Math.cos(a)*r, 0.6 + rng()*2.6, Math.sin(a)*r], i*3); ph[i] = rng()*100; }
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos,3)); g.setAttribute('ph', new T.BufferAttribute(ph,1));
+    fire.mat = new T.ShaderMaterial({transparent:true, depthWrite:false, blending:T.AdditiveBlending, fog:false,
+      uniforms:{ uT:{value:0}, uA:{value:0}, uPx:{value:renderer.getPixelRatio()} },
+      vertexShader:`attribute float ph; uniform float uT; uniform float uPx; varying float vB;
+        void main(){ vec3 p = position;
+          p.x += sin(uT*0.35 + ph)*1.6; p.z += cos(uT*0.3 + ph*1.3)*1.6; p.y += sin(uT*0.8 + ph*2.0)*0.5;
+          vec4 mv = modelViewMatrix*vec4(p,1.0);
+          vB = pow(max(0.0, sin(uT*1.6 + ph*3.0)), 3.0);
+          gl_PointSize = (2.0 + 5.0*vB) * uPx * (60.0 / -mv.z);
+          gl_Position = projectionMatrix*mv; }`,
+      fragmentShader:`uniform float uA; varying float vB;
+        void main(){ float d = length(gl_PointCoord-0.5); float a = smoothstep(0.5, 0.0, d);
+          gl_FragColor = vec4(vec3(0.85,1.0,0.45), a*(0.25+0.75*vB)*uA); }`});
+    fire.obj = new T.Points(g, fire.mat); fire.obj.frustumCulled = false; scene.add(fire.obj); }
+
+  cur = cycleState(hour);
+  ready = true;
+}
+function scanHouses(){
+  winMats.length = 0; porch.length = 0; houseKey = vendors[0] && vendors[0].group;
+  /* 房子窗戶：夜晚亮起暖黃燈，門口加一盞小燈的光暈 */
+  vendors.forEach(v => {
+    if(!v.group) return;
+    v.group.traverse(m => {
+      if(m.isMesh && m.material && m.material.color && m.material.color.getHex() === 0xbfe0ee){
+        m.material = m.material.clone(); m.material.emissive = new T.Color(0xffb347); m.material.emissiveIntensity = 0;
+        winMats.push(m.material);
+      }
+    });
+    if(!glowTex) glowTex = makeGlow();
+    const sp = new T.Sprite(new T.SpriteMaterial({map:glowTex, color:0xffc56a, transparent:true, opacity:0, depthWrite:false, blending:T.AdditiveBlending}));
+    sp.position.set(0, 2.9, 2.45); sp.scale.set(5, 5, 1);
+    v.group.add(sp); porch.push(sp.material);
+  });
+
+}
+let houseKey = null, glowTex = null;
+function makeGlow(){
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  const g = x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.35,'rgba(255,255,255,.35)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0,0,64,64); return new T.CanvasTexture(c);
+}
+
+/* ---------------- 陣雨 ---------------- */
+const rain = { on:false, t:0, dur:22, cloud:null, drops:null, dim:0 };
+function buildRain(){
+  const g = new T.Group(), m = new T.MeshLambertMaterial({color:0x8a94a3, transparent:true, opacity:0.95});
+  const geo = new T.SphereGeometry(4, 14, 12), rng = mulberry32(3);
+  for(let i=0;i<9;i++){ const s = new T.Mesh(geo, m); s.position.set((rng()-0.5)*16, (rng()-0.3)*2.4, (rng()-0.5)*9); s.scale.setScalar(0.8 + rng()*0.7); s.scale.y *= 0.7; g.add(s); }
+  g.userData.mat = m; scene.add(g); rain.cloud = g;
+  const n = 900, pos = new Float32Array(n*6), seed = new Float32Array(n*3);
+  for(let i=0;i<n;i++){ const a = rng()*Math.PI*2, r = Math.sqrt(rng())*10; seed.set([Math.cos(a)*r*1.3, Math.sin(a)*r*0.8, rng()], i*3); }
+  const dg = new T.BufferGeometry(); dg.setAttribute('position', new T.BufferAttribute(pos,3));
+  rain.drops = new T.LineSegments(dg, new T.LineBasicMaterial({color:0xcfe2f2, transparent:true, opacity:0, depthWrite:false}));
+  rain.drops.frustumCulled = false; rain.seed = seed; scene.add(rain.drops);
+}
+function startRain(){
+  if(!rain.cloud) buildRain();
+  /* 雲從鏡頭左側飄進來，橫越島嶼中央，往右側飄走 */
+  const f = new T.Vector3(controls.target.x - camera.position.x, 0, controls.target.z - camera.position.z).normalize();
+  const right = new T.Vector3(-f.z, 0, f.x);
+  const mid = controls.target.clone().setY(0);
+  rain.p0 = mid.clone().addScaledVector(right, -55).addScaledVector(f, 4);
+  rain.p1 = mid.clone().addScaledVector(right, 55).addScaledVector(f, 4);
+  rain.on = true; rain.t = 0; rain.cloud.visible = true; rain.drops.visible = true;
+  /* 彩虹掛在鏡頭正前方的遠處，等雨停後浮現 */
+}
+function updateRain(dt, t){
+  if(rain.on){
+    rain.t += dt;
+    const k = rain.t / rain.dur, e = k*k*(3-2*k);
+    const c = rain.p0.clone().lerp(rain.p1, e); c.y = 30;
+    rain.cloud.position.copy(c); rain.cloud.lookAt(c.x + (rain.p1.x-rain.p0.x), 30, c.z + (rain.p1.z-rain.p0.z));
+    const fadeIn = Math.min(1, rain.t/3), fadeOut = Math.min(1, (rain.dur - rain.t)/3);
+    const a = Math.max(0, Math.min(fadeIn, fadeOut));
+    rain.cloud.userData.mat.opacity = 0.95*a;
+    rain.drops.material.opacity = 0.55*a;
+    rain.dim = a;
+    const pos = rain.drops.geometry.attributes.position.array, s = rain.seed, yaw = rain.cloud.rotation.y;
+    const fx = new T.Vector3(1,0,0).applyQuaternion(rain.cloud.quaternion), fz = new T.Vector3(0,0,1).applyQuaternion(rain.cloud.quaternion);
+    for(let i=0;i<s.length/3;i++){
+      const ox = s[i*3], oz = s[i*3+1], ph = s[i*3+2];
+      const y = 27 - ((t*22 + ph*28) % 28);
+      const x = c.x + fx.x*ox + fz.x*oz, z = c.z + fx.z*ox + fz.z*oz;
+      pos.set([x, y, z, x - 0.15, y - 1.3, z], i*6);
+    }
+    rain.drops.geometry.attributes.position.needsUpdate = true;
+    if(rain.t >= rain.dur){ rain.on = false; rain.cloud.visible = false; rain.drops.visible = false; rain.dim = 0; }
+  }
+
+}
+
+/* ---------------- 每幀套用 ---------------- */
+function apply(s, t){
+  const dim = 1 - 0.32*rain.dim, grey = new T.Color(0x9aa3ad);
+  L.amb.color.copy(s.amb[0]); L.amb.intensity = s.amb[1]*dim;
+  L.hemi.color.copy(s.hemi[0]); L.hemi.groundColor.copy(s.hemi[1]); L.hemi.intensity = s.hemi[2]*dim;
+  L.sun.color.copy(s.sun[0]); L.sun.intensity = s.sun[1]*(1 - 0.6*rain.dim);
+  L.sun.position.copy(s.sunDir).multiplyScalar(110);
+  skyU.top.value.copy(s.top).lerp(grey, rain.dim*0.45);
+  skyU.horizon.value.copy(s.hor).lerp(grey, rain.dim*0.45);
+  skyU.sunColor.value.copy(s.glow).multiplyScalar(1 - rain.dim*0.8);
+  skyU.sunDir.value.copy(s.sunDir);
+  scene.fog.color.copy(skyU.horizon.value); scene.background.copy(skyU.horizon.value);
+  const rk = s.rays * (1 - rain.dim);
+  rays.forEach((m,i) => { if(m.uniforms.uBase) m.uniforms.uStrength.value *= rk; else m.uniforms.uStrength.value = raysBase[i]*rk; });
+  winMats.forEach(m => m.emissiveIntensity = s.win*1.15);
+  porch.forEach(m => m.opacity = s.win*0.95);
+  stars.mat.opacity = s.star * (1 - rain.dim) * (0.85 + 0.15*Math.sin(t*2.3));
+  fire.mat.uniforms.uA.value = s.fire; fire.mat.uniforms.uT.value = t; fire.obj.visible = s.fire > 0.01;
+}
+
+let last = performance.now(), rainClock = 0;
+const RAIN_EVERY = 300, RAIN_CHANCE = 0.5;   /* 每 5 分鐘擲一次骰子，50% 會下一場雨 */
+function tick(){
+  const now = performance.now(), dt = Math.min(0.1, (now-last)/1000); last = now;
+  const t = clock.elapsedTime;
+  if(vendors[0] && vendors[0].group !== houseKey) scanHouses();
+  hour = (hour + dt * 24 / DAY_SEC) % 24;
+  const goal = mode === 'cycle' ? cycleState(hour) : asState(mode);
+  if(blend < 1){ blend = Math.min(1, blend + dt/2.5); const e = blend*blend*(3-2*blend); cur = lerpKey(toPlain(from), toPlain(goal), e); }
+  else cur = goal;
+  rainClock += dt;
+  if(rainClock >= RAIN_EVERY){ rainClock = 0; if(!rain.on && Math.random() < RAIN_CHANCE) startRain(); }
+  updateRain(dt, t);
+  apply(cur, t);
+}
+function toPlain(s){
+  const h = c => c.getHex();
+  return { amb:[h(s.amb[0]),s.amb[1]], hemi:[h(s.hemi[0]),h(s.hemi[1]),s.hemi[2]], sun:[h(s.sun[0]),s.sun[1]], sunDir:[s.sunDir.x,s.sunDir.y,s.sunDir.z],
+    top:h(s.top), hor:h(s.hor), glow:h(s.glow), rays:s.rays, win:s.win, fire:s.fire, star:s.star };
+}
+function setMode(m){
+  if(m === mode) return;
+  const prev = mode;
+  from = cur; blend = 0; mode = m;
+  /* 從固定時段切回循環：從那個時段接續往下走 */
+  if(m === 'cycle' && prev !== 'cycle') hour = { dawn:6, day:12, dusk:18, night:22 }[prev];
+  setBtns();
+}
+window.DN = { setMode, rain: startRain, get mode(){ return mode; }, get hour(){ return hour; }, set hour(v){ hour = v; }, _rain: rain };
+
+/* ---------------- 時段按鈕與面板 ---------------- */
+const btn = document.getElementById('dn-btn'), pn = document.getElementById('dn-panel');
+function setBtns(){ pn.querySelectorAll('[data-m]').forEach(b => { const on = b.dataset.m === mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); }
+btn.onclick = () => { const sp = document.getElementById('snd-panel'); if(sp) sp.hidden = true; pn.hidden = !pn.hidden; };
+document.getElementById('dn-x').onclick = () => { pn.hidden = true; };
+pn.querySelectorAll('[data-m]').forEach(b => b.onclick = () => setMode(b.dataset.m));
+const sb = document.getElementById('snd-btn'); if(sb) sb.addEventListener('click', () => { pn.hidden = true; });
+setBtns();
+
+/* 等場景建好後，掛進每幀 render 之前 */
+const wait = setInterval(() => {
+  if(typeof renderer === 'undefined' || !renderer || !vendors.length || !vendors[0].group || !rays.length) return;
+  clearInterval(wait); setup();
+  const r0 = renderer.render.bind(renderer);
+  renderer.render = (s, c) => { if(ready) tick(); r0(s, c); };
+}, 100);
+})();
+
 </script>
 </body>
 </html>
