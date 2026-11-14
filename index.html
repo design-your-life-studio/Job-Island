@@ -3334,9 +3334,14 @@ function scanHouses(){
 }
 let houseKey = null, glowTex = null;
 function makeGlow(){
-  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
-  const g = x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.35,'rgba(255,255,255,.35)'); g.addColorStop(1,'rgba(255,255,255,0)');
-  x.fillStyle = g; x.fillRect(0,0,64,64); return new T.CanvasTexture(c);
+  /* 門燈光暈：直接用像素資料產生（不經過 canvas），避免 iPhone 上出現彩色雜點 */
+  const N = 64, d = new Uint8Array(N*N*4);
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+    const r = Math.min(1, Math.hypot(x + 0.5 - N/2, y + 0.5 - N/2)/(N/2)), a = r < 0.35 ? 1 - r/0.35*0.65 : 0.35*Math.pow(1 - (r - 0.35)/0.65, 2), i = (y*N + x)*4;
+    d[i] = d[i+1] = d[i+2] = 255; d[i+3] = Math.round(255*a);
+  }
+  const t = new T.DataTexture(d, N, N, T.RGBAFormat); t.magFilter = T.LinearFilter; t.minFilter = T.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true;
+  return t;
 }
 
 /* ---------------- 陣雨 ---------------- */
