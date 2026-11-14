@@ -1659,8 +1659,8 @@ function placeLabel(el, world){
   if(tmpV.z > 1){ el.style.display = 'none'; return; }
   el.style.display = '';
   if(el.classList.contains('tag-info') === false){
-    // 鏡頭拉遠時，標籤只顯示攤位號碼，避免 50 家標籤互相擠成一團（手機看每個標籤的距離；電腦看整體縮放，拉得比預設視角更遠時全部一起切換）
-    const compact = (innerWidth <= 720 ? dist > 78 : camera.position.distanceTo(controls.target) > 100) && !/\b(active|hover|match)\b/.test(el.className);
+    // 鏡頭拉遠時，標籤只顯示攤位號碼，避免 50 家標籤互相擠成一團（看整體縮放：拉遠時全部一起換成編號，手機 65、電腦 100）
+    const compact = camera.position.distanceTo(controls.target) > (innerWidth <= 720 ? 65 : 100) && !/\b(active|hover|match)\b/.test(el.className);
     if(compact !== el._cp){ el._cp = compact; el.classList.toggle('compact', compact); }
   }
   const x = (tmpV.x*0.5 + 0.5)*innerWidth, y = (-tmpV.y*0.5 + 0.5)*innerHeight;
