@@ -1765,7 +1765,7 @@ function onHover(e){
 
   if(v) {
     cursor = 'pointer';
-  } else if (centerHit0 || (window.stationMeshes && raycaster.intersectObjects(window.stationMeshes, false).length)) {
+  } else if (centerHit0 || (window.stationMeshes && raycaster.intersectObjects(window.stationMeshes, false).length) || (window.trainCars && raycaster.intersectObjects(window.trainCars(), true).length)) {
     cursor = 'pointer';
   }
   
@@ -1782,6 +1782,11 @@ function onPointerClick(e){
   /* 火箭擋在房子前面時，點到的是火箭，不是後面的房子 */
   if(centerHit0 && vendorHits.length && centerHit0.distance < vendorHits[0].distance) vendorHits = [];
   const vp = window.pickVillager ? window.pickVillager() : null;
+  /* 點火車 → 鏡頭跟隨列車（以最靠近鏡頭的物件為準） */
+  const trHit = window.trainCars ? raycaster.intersectObjects(window.trainCars(), true)[0] : null;
+  if(trHit && (!vendorHits.length || trHit.distance < vendorHits[0].distance) && (!centerHit0 || trHit.distance < centerHit0.distance) && (!vp || trHit.distance < vp.dist)){
+    closeVendorCard(); window.followTrain(); return;
+  }
   /* 點車站 → 打開「換列車樣式」面板（以最靠近鏡頭的物件為準） */
   const stHit = (window.stationMeshes && !document.body.classList.contains('clean')) ? raycaster.intersectObjects(window.stationMeshes, false)[0] : null;
   if(stHit && (!vendorHits.length || stHit.distance < vendorHits[0].distance) && (!centerHit0 || stHit.distance < centerHit0.distance) && (!vp || stHit.distance < vp.dist)){
@@ -2903,6 +2908,7 @@ function followVillager(v){
   stopIdle();
   tween = null; controls.enabled = true;
   follow = {v, t0:clock.elapsedTime, last:null};
+  $('follow-tip').textContent = v.isTrain ? '跟隨列車中，點擊空白處取消' : '跟隨島民中，點擊空白處取消';
   $('follow-tip').hidden = false;
   mkRing();
 }
@@ -2933,7 +2939,7 @@ function updateFollow(dt, t){
   const r = follow.v.root;
   if((!r.visible && !(follow.v.railPlan && follow.v.railPlan.phase === 'ride')) || !r.parent){ stopFollow(); return; }   /* 搭火車時鏡頭跟著列車 */   // 走進房子或被替換 → 解除
   if(ringG){
-    ringG.visible = r.visible;
+    ringG.visible = r.visible && !follow.v.isTrain;   /* 跟隨列車時不顯示腳下光圈 */
     ringG.position.set(r.position.x, r.position.y, r.position.z);   /* 跟著腳底高度（沙灘下坡也貼地） */
     { const x = r.position.x, z = r.position.z, rr = Math.hypot(x, z), sl = rr > 0.5 ? islandY(rr + 0.5) - islandY(rr - 0.5) : 0;   /* 依坡度傾斜，整圈都貼著地面 */
       ringG.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(-sl*x/(rr||1), 1, -sl*z/(rr||1)).normalize()); }
@@ -3900,7 +3906,6 @@ function setTrain(i){
   design = i; train = DESIGNS[i].build();
   if(train.length === 2) train.push(train[1].clone(true));   /* 全部改成三節：車頭＋兩節車廂 */
   train.forEach(c => { c.traverse(o => { if(o.isMesh) o.castShadow = true; }); scene.add(c); });
-  try{ localStorage.setItem('jobisle-train', String(i)); }catch(e){}
   placeTrain(); syncTrainPanel();
 }
 function placeTrain(){
@@ -3936,6 +3941,7 @@ function tick(){
     if(traveled >= goal - 1e-4){ traveled = goal; theta = ST_A + OFF + goal; state = 'stop'; stT = 0; railArrival(goal >= TAU - 1e-4 ? 0 : 1); }
   }
   placeTrain(); trainSmoke(dt); curDw = dw; updateRail(dt);
+  if(train){ trainProxy.position.copy(train[1].position); }
   const TS = window.TRAIN_STATE; TS.theta = theta; TS.moving = state === 'run' || (state === 'stop' && stT > dw - 3);
 }
 
@@ -4085,12 +4091,16 @@ function initSeats(){
   [-2.8, 2.8].forEach(x => { const w = G.localToWorld(new T.Vector3(x, 0, 3.86)); seats.push({x:w.x, z:w.z, yaw:Math.atan2(Math.cos(ST_A), Math.sin(ST_A)), by:null}); });
 }
 window.RAIL = { get stopAt(){ return stopAt; }, seats };
+/* 跟隨列車：鏡頭鎖定在中間那節車廂 */
+const trainProxy = new T.Object3D(); trainProxy.isTrain = true;
+window.trainCars = () => train || [];
+window.followTrain = () => { if(!trainProxy.parent) scene.add(trainProxy); if(train) trainProxy.position.copy(train[1].position); followVillager({root:trainProxy, isTrain:true}); };
 
 const wait = setInterval(() => {
   if(typeof renderer === 'undefined' || !renderer || !scene || !window.__crowd || !vendors.length) return;
   clearInterval(wait);
   buildTrack(); buildStation(); buildTrainPanel();
-  let saved = 0; try{ saved = +(localStorage.getItem('jobisle-train') || 0); }catch(e){}
+  let saved = 0;   /* 每次打開都是蒸汽小火車（不沿用上次的選擇） */
   setTrain(saved >= 0 && saved < DESIGNS.length ? saved : 0);
   const r0 = renderer.render.bind(renderer);
   renderer.render = (s, c) => { tick(); r0(s, c); };
