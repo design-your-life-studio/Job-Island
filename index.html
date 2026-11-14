@@ -282,9 +282,10 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
 .brand{top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;padding:6px 11px}
 .brand-kicker{font-size:8px;letter-spacing:.18em}
 .brand h1{font-size:14px;margin-top:1px}
-.legend{left:8px;top:calc(56px + env(safe-area-inset-top));width:116px}
+.legend{left:8px;top:calc(56px + env(safe-area-inset-top));width:max-content;min-width:116px;max-width:62vw}
 .legend summary{padding:6px 10px;font-size:11px;letter-spacing:.12em}
-.legend li button{padding:7px 6px;font-size:12.5px}
+.legend li button{padding:7px 6px;font-size:12.5px;white-space:nowrap}
+.legend .cnt{padding-left:12px}
 #follow-tip{left:auto;right:8px;transform:none;top:calc(56px + env(safe-area-inset-top));padding:5px 11px;font-size:11.5px;letter-spacing:.03em}
 .dock{bottom:calc(10px + env(safe-area-inset-bottom));gap:8px}
 .dock .btn-primary{height:42px;font-size:14px;max-width:250px;padding:0 14px}
@@ -2312,6 +2313,23 @@ class Villager{
       const sp=this.speed*this.walkAmt*dt*VS;
       const px=this.root.position.x,pz=this.root.position.z,sy=Math.sin(this.yaw),cy=Math.cos(this.yaw);
       const inside=WORLD.blocked(px,pz);
+      /* 穿透模式：判定受困後的 3 秒內忽略障礙物，直直走向附近一塊開闊的空地 */
+      if(this.ghost>0){
+        this.ghost-=dt;
+        const g=this.ghostTo,gx=g.x-px,gz=g.z-pz,gd=Math.hypot(gx,gz);
+        this.heading=Math.atan2(gx,gz);this.yaw+=angDiff(this.yaw,this.heading)*Math.min(1,dt*8);
+        const st2=Math.min(gd,sp*1.6);
+        this.root.position.x+=Math.sin(this.yaw)*st2;this.root.position.z+=Math.cos(this.yaw)*st2;
+        if(gd<0.3||this.ghost<=0){this.ghost=0;this.stuck=0;this.wT=0;this.wR=0;this.wX=this.root.position.x;this.wZ=this.root.position.z;this.wander=rand(2,4);}
+      }else{
+      /* 長時間受困偵測：5 秒內活動範圍一直沒超出半徑 2.5，就算左右來回換方向，也判定為受困 */
+      if(this.wX===undefined){this.wX=px;this.wZ=pz;this.wT=0;this.wR=0;}
+      this.wT+=dt;this.wR=Math.max(this.wR,Math.hypot(px-this.wX,pz-this.wZ));
+      if(this.wR>2.5){this.wX=px;this.wZ=pz;this.wT=0;this.wR=0;}
+      else if(this.wT>=5){
+        this.wX=px;this.wZ=pz;this.wT=0;this.wR=0;
+        const f=this.openSpot(px,pz);if(f){this.ghost=Math.max(3,Math.hypot(f.x-px,f.z-pz)/(this.speed*VS*1.6)+0.5);this.ghostTo=f;this.goal=null;}
+      }
       /* 卡住偵測：每 1 秒檢查位移，幾乎沒動就強制脫困（換方向直走一小段，多次失敗就挪到最近的空地） */
       this.stkT=(this.stkT||0)+dt;
       if(this.stkT>=1){
@@ -2321,7 +2339,7 @@ class Villager{
           this.stuck=(this.stuck||0)+1;
           const best=this.freeDir(px,pz);
           if(best!==null){this.heading=best;this.yaw=best;this.escape=1.8;this.goal=null;}
-          if(this.stuck>=3){const f=this.freeSpot(px,pz);if(f){this.root.position.x=f.x;this.root.position.z=f.z;}this.stuck=0;}
+          if(this.stuck>=3){const f=this.openSpot(px,pz);if(f){this.ghost=Math.max(3,Math.hypot(f.x-px,f.z-pz)/(this.speed*VS*1.6)+0.5);this.ghostTo=f;this.goal=null;}this.stuck=0;}
         }else this.stuck=0;
       }
       if(this.escape>0){this.escape-=dt;this.wander=Math.max(this.wander,0.5);}
@@ -2334,6 +2352,7 @@ class Villager{
         this.yaw+=angDiff(this.yaw,this.heading)*Math.min(1,dt*6);
       }else{
         this.root.position.x+=sy*sp;this.root.position.z+=cy*sp;
+      }
       }
     }
     this.root.rotation.y=this.yaw;
@@ -2421,6 +2440,14 @@ class Villager{
       if(clear>=1.8&&(clear>bs+0.01)){bs=clear;best=h;if(clear>=2.7)break;}
     }
     return best;
+  }
+  /* 找附近一塊「四周也空」的開闊空地（穿透脫困的目的地） */
+  openSpot(px,pz){
+    const ok=(x,z)=>{if(WORLD.blocked(x,z)||Math.hypot(x,z)>=(this.bound||60))return false;
+      for(let k=0;k<8;k++){const a=k/8*Math.PI*2;if(WORLD.blocked(x+Math.sin(a)*1.4,z+Math.cos(a)*1.4))return false;}return true;};
+    for(let r=2;r<=34;r+=1.5){const o=Math.random()*Math.PI*2,n=Math.min(40,8+Math.round(r*2));for(let k=0;k<n;k++){
+      const a=o+k/n*Math.PI*2,x=px+Math.sin(a)*r,z=pz+Math.cos(a)*r;if(ok(x,z))return {x,z};}}
+    return this.freeSpot(px,pz);
   }
   /* 往外一圈圈找最近的空地 */
   freeSpot(px,pz){
@@ -3307,6 +3334,61 @@ const wait = setInterval(() => {
 (function(){const b=document.querySelector('.brand');if(!b)return;
 const sync=()=>document.documentElement.style.setProperty('--brand-h',b.offsetHeight+'px');
 sync();addEventListener('resize',sync);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sync);setTimeout(sync,1500);})();
+</script>
+<script>
+/* ================= 手機雙指手勢：縮放與平移分開判斷 =================
+   OrbitControls 原本的雙指是「縮放＋平移」同時作用，手指稍微張開就會連動縮放。
+   改成：雙指剛開始移動時先判斷意圖（兩指距離變化大＝縮放；兩指一起移動＝平移），
+   判斷後鎖定成單一動作，直到手指離開為止。平移改成沿著地面移動，鏡頭高度與角度不變。 */
+(function(){
+const wait = setInterval(() => {
+  if(typeof controls === 'undefined' || !controls || !renderer) return;
+  clearInterval(wait);
+  controls.touches.TWO = -1;               /* 讓 OrbitControls 不處理雙指，交給下面自己處理 */
+  const el = renderer.domElement;
+  let g = null;
+  const info = t => { const a = t[0], b = t[1];
+    return { d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 }; };
+  /* 掛在 document 上：手指落在廠商標籤上時也能雙指操作 */
+  const onIsland = t => t === el || (t.closest && t.closest('#labels'));
+  document.addEventListener('touchstart', e => {
+    if(e.touches.length === 2 && onIsland(e.touches[0].target) && onIsland(e.touches[1].target)){ const i = info(e.touches); g = { mode:null, d0:i.d, x0:i.x, y0:i.y, d:i.d, x:i.x, y:i.y }; e.preventDefault(); }
+    else if(e.touches.length > 2) g = null;
+  }, {passive:false});
+  document.addEventListener('touchmove', e => {
+    if(!g || e.touches.length !== 2) return;
+    e.preventDefault();
+    if(!controls.enabled) return;
+    const i = info(e.touches);
+    if(!g.mode){
+      const dd = Math.abs(i.d - g.d0), dc = Math.hypot(i.x - g.x0, i.y - g.y0);
+      if(Math.max(dd, dc) < 10) return;    /* 還在判斷意圖，先不動 */
+      g.mode = dd > dc ? 'zoom' : 'pan';
+      g.d = i.d; g.x = i.x; g.y = i.y;
+      return;
+    }
+    const off = camera.position.clone().sub(controls.target), len = off.length();
+    if(g.mode === 'zoom'){
+      const nl = Math.min(controls.maxDistance, Math.max(controls.minDistance, len * g.d / i.d));
+      camera.position.copy(controls.target).add(off.multiplyScalar(nl / len));
+    }else{
+      const dx = i.x - g.x, dy = i.y - g.y;
+      const fwd = new THREE.Vector3(-off.x, 0, -off.z).normalize(), right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+      const pitch = Math.max(0.5, Math.abs(off.y) / len);
+      const k = 2 * len * Math.tan(camera.fov * Math.PI / 360) / el.clientHeight;
+      const move = right.multiplyScalar(-dx * k).add(fwd.multiplyScalar(dy * k / pitch));
+      /* 不讓視線中心離開島嶼太遠 */
+      const nt = controls.target.clone().add(move), r = Math.hypot(nt.x, nt.z), R = 70;
+      if(r > R){ move.x -= nt.x * (1 - R/r); move.z -= nt.z * (1 - R/r); }
+      controls.target.add(move); camera.position.add(move);
+    }
+    g.d = i.d; g.x = i.x; g.y = i.y;
+  }, {passive:false});
+  document.addEventListener('touchend', e => { if(e.touches.length < 2) g = null; });
+  document.addEventListener('touchcancel', () => { g = null; });
+}, 100);
+})();
+
 </script>
 </body>
 </html>
