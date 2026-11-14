@@ -196,6 +196,29 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
 }
 #follow-tip{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:8px 16px;border-radius:999px;background:rgba(20,30,50,.78);color:#fff;font-size:13px;font-weight:600;letter-spacing:.06em;pointer-events:none;white-space:nowrap;backdrop-filter:blur(6px)}
 #follow-tip[hidden]{display:none}
+
+/* ===== 場地圖檢視器 ===== */
+#mapv{position:fixed;inset:0;z-index:500;display:none;-webkit-user-select:none;user-select:none}
+#mapv.open{display:block}
+#mapv .mv-back{position:absolute;inset:0;background:rgba(10,16,24,.5);opacity:0;transition:opacity .25s}
+#mapv.open .mv-back{opacity:1}
+#mapv .mv-box{position:absolute;display:flex;flex-direction:column;overflow:hidden;background:#161d27;color:#fff;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .25s}
+#mapv .mv-head{display:flex;align-items:center;gap:10px;padding:12px 14px;font-weight:700;letter-spacing:.08em;flex:none}
+#mapv .mv-head b{flex:1;font-size:15px}
+#mapv .mv-x{width:36px;height:36px;border-radius:50%;border:0;background:var(--paper-2);border:1px solid var(--line);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+#mapv .mv-x svg{width:18px;height:18px}
+#mapv .mv-vp{position:relative;flex:1;overflow:hidden;touch-action:none;cursor:grab;min-height:0}
+#mapv .mv-vp.drag{cursor:grabbing}
+#mapv .mv-vp img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none;will-change:transform;-webkit-user-drag:none}
+#mapv .mv-tools{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;padding:6px;border-radius:999px;background:var(--paper-2);border:1px solid var(--line);box-shadow:0 4px 14px rgba(20,40,45,.15);z-index:3}
+#mapv .mv-tools button{width:38px;height:38px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);font:700 20px/1 system-ui;cursor:pointer}
+#mapv .mv-tools button:active{background:var(--line)}
+#mapv .mv-tools input{width:110px;accent-color:var(--ink)}
+#mapv .mv-hint{position:absolute;left:50%;top:64px;transform:translateX(-50%);z-index:3;padding:6px 14px;border-radius:999px;background:var(--ink);color:var(--paper);font:600 12px/1 system-ui;pointer-events:none;transition:opacity .6s;white-space:nowrap}
+/* 樣式 1 全螢幕燈箱 */
+#mapv.s1 .mv-back{background:var(--paper)}
+#mapv.s1 .mv-box{inset:0;background:transparent}
+#mapv.s1 .mv-head{position:absolute;left:0;right:0;top:0;z-index:3}
 </style>
 </head>
 <body>
@@ -264,7 +287,13 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
     </div>
   </div>
 
-  <div class="modal" id="info-modal" hidden>
+  <script>
+const MAP_SRC='images/map.jpg';
+const MAP_FALLBACK='data:image/svg+xml;utf8,'+encodeURIComponent((()=>{let b='';const cols=['#f2d9a6','#bfe0c8','#bcd4ee','#f3c4c0'];
+  for(let r=0;r<4;r++)for(let c=0;c<10;c++){const n=r*10+c+1,x=130+c*140,y=170+r*130+(r>1?80:0);b+=`<rect x="${x}" y="${y}" width="112" height="86" rx="6" fill="${cols[(c+r)%4]}" stroke="#7a8a86" stroke-width="2"/><text x="${x+56}" y="${y+50}" font-size="26" text-anchor="middle" fill="#33403d" font-family="sans-serif">A${String(n).padStart(2,'0')}</text>`;}
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000"><rect width="1600" height="1000" fill="#f6efe0"/><rect x="60" y="90" width="1480" height="840" rx="14" fill="#fffaf0" stroke="#586663" stroke-width="5"/><rect x="660" y="850" width="280" height="80" fill="#e7b04a"/><text x="800" y="900" font-size="30" text-anchor="middle" fill="#fff" font-family="sans-serif">入口</text>${b}<text x="800" y="565" font-size="24" text-anchor="middle" fill="#7a8a86" font-family="sans-serif">主通道</text></svg>`;})());
+</script>
+<div class="modal" id="info-modal" hidden>
     <div class="modal-panel paper" role="dialog" aria-modal="true" aria-labelledby="info-title">
       <div class="modal-head">
         <div><div class="eyebrow">大會服務台</div><h2 id="info-title">活動資訊</h2></div>
@@ -282,9 +311,9 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
         </a>
       </div>
       <div class="info-layout-right">
-        <a href="images/map.jpg" target="_blank" rel="noopener" class="map-card" title="查看大會平面圖">
+        <a href="javascript:void(0)" onclick="openMap();return false" class="map-card" title="查看大會平面圖">
           <!-- 若尚未放置圖片，將自動顯示淺色的佔位圖 -->
-          <img src="images/map.jpg" alt="大會平面圖" onerror="this.src='https://placehold.co/600x450/EEE6D6/868C86?text=Map+Placeholder'">
+          <img src="images/map.jpg" alt="大會平面圖" onerror="this.onerror=null;this.src=MAP_FALLBACK">
           <div class="map-overlay">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
             點擊放大查看
@@ -568,7 +597,7 @@ function initScene(){
     onHover(e);
   });
   renderer.domElement.addEventListener('pointerup', onPointerClick);
-  addEventListener('keydown', e => { if(e.key === 'Escape'){ stopFollow(); closeResume(); closeVendorCard(); closeInfo(); } });
+  addEventListener('keydown', e => { if(e.key === 'Escape'){ if(window.mapIsOpen && mapIsOpen()){ closeMap(); return; } stopFollow(); closeResume(); closeVendorCard(); closeInfo(); } });
   // F 鍵進入全螢幕；ESC 退出（瀏覽器全螢幕模式下 ESC 由瀏覽器處理）
   addEventListener('keydown', e => {
     if(e.ctrlKey || e.metaKey || e.altKey) return;
@@ -2531,6 +2560,53 @@ function animate(){
 document.addEventListener('selectstart',e=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName||(e.target.parentElement||{}).tagName||''))e.preventDefault();});
 document.addEventListener('dragstart',e=>e.preventDefault());
 </script>
-<div id="follow-tip" hidden>🎯 跟隨島民中・點擊空白處或按 ESC 取消</div>
+<div id="follow-tip" hidden>跟隨島民中，點擊空白處取消</div>
+
+<div id="mapv" class="s1" aria-hidden="true">
+  <div class="mv-back"></div>
+  <div class="mv-box" role="dialog" aria-modal="true" aria-label="大會平面圖">
+    <div class="mv-head"><b></b><button class="mv-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="mv-vp"><img alt="大會平面圖" draggable="false"></div>
+    <div class="mv-hint">滾輪／雙指縮放・拖曳移動・雙擊放大</div>
+        <div class="mv-tools"><button data-z="out" aria-label="縮小">−</button><input type="range" min="0" max="100" value="0" aria-label="縮放"><button data-z="in" aria-label="放大">+</button></div>
+  </div>
+</div>
+<script>
+function MapViewer(root){
+  const vp=root.querySelector('.mv-vp'),img=vp.querySelector('img'),
+    rng=root.querySelector('input[type=range]'),hint=root.querySelector('.mv-hint');
+  let s=1,tx=0,ty=0,fit=1,max=8,iw=1,ih=1;const P=new Map();let pinch=null,drag=null;
+  const W=()=>vp.clientWidth,H=()=>vp.clientHeight;
+  function clamp(){const w=iw*s,h=ih*s;tx=w<=W()?(W()-w)/2:Math.min(0,Math.max(W()-w,tx));ty=h<=H()?(H()-h)/2:Math.min(0,Math.max(H()-h,ty));}
+  function apply(){clamp();img.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;    rng.value=Math.round(Math.log(s/fit)/Math.log(max/fit)*100);
+  }
+  function zoomAt(cx,cy,ns){ns=Math.min(max,Math.max(fit,ns));const k=ns/s;tx=cx-(cx-tx)*k;ty=cy-(cy-ty)*k;s=ns;apply();}
+  function reset(){iw=img.naturalWidth||1600;ih=img.naturalHeight||1000;img.style.width=iw+'px';img.style.height=ih+'px';
+    fit=Math.min(W()/iw,H()/ih);max=Math.max(fit*8,1.5);s=fit;tx=ty=0;apply();}
+  vp.addEventListener('wheel',e=>{e.preventDefault();const r=vp.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,s*Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0016)));hint.style.opacity=0;},{passive:false});
+  vp.addEventListener('pointerdown',e=>{vp.setPointerCapture(e.pointerId);P.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(P.size===1){drag={x:e.clientX,y:e.clientY,tx,ty};vp.classList.add('drag');}
+    if(P.size===2){const [a,b]=[...P.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),s};drag=null;}hint.style.opacity=0;});
+  vp.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(P.size===2&&pinch){const [a,b]=[...P.values()],r=vp.getBoundingClientRect();zoomAt((a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top,pinch.s*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d);}
+    else if(drag){tx=drag.tx+e.clientX-drag.x;ty=drag.ty+e.clientY-drag.y;apply();}});
+  const up=e=>{P.delete(e.pointerId);pinch=null;vp.classList.remove('drag');drag=null;if(P.size===1){const [p]=[...P.values()];drag={x:p.x,y:p.y,tx,ty};}};
+  vp.addEventListener('pointerup',up);vp.addEventListener('pointercancel',up);
+  vp.addEventListener('dblclick',e=>{const r=vp.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,s>fit*1.5?fit:fit*3);});
+  root.querySelector('.mv-tools').addEventListener('click',e=>{const z=e.target.dataset&&e.target.dataset.z;if(!z)return;
+    zoomAt(W()/2,H()/2,s*(z==='in'?1.5:1/1.5));});
+  rng.addEventListener('input',()=>zoomAt(W()/2,H()/2,fit*Math.pow(max/fit,rng.value/100)));
+  img.addEventListener('load',reset);addEventListener('resize',()=>{if(root.classList.contains('open')){const r=s/fit;reset();if(r>1.01)zoomAt(W()/2,H()/2,fit*r);}});
+  return {reset,img,hint};
+}
+let _mv=null;
+function openMap(){const r=document.getElementById('mapv');if(!_mv){_mv=MapViewer(r);r.querySelector('.mv-x').onclick=closeMap;r.querySelector('.mv-back').onclick=closeMap;
+    _mv.img.onerror=()=>{_mv.img.onerror=null;_mv.img.src=MAP_FALLBACK;};}
+  r.classList.add('open');r.setAttribute('aria-hidden','false');
+  _mv.hint.style.opacity=1;setTimeout(()=>{if(_mv)_mv.hint.style.opacity=0;},3500);
+  if(!_mv.img.src||_mv.img.getAttribute('src')===null)_mv.img.src=MAP_SRC;else requestAnimationFrame(_mv.reset);}
+function closeMap(){const r=document.getElementById('mapv');r.classList.remove('open');r.setAttribute('aria-hidden','true');}
+function mapIsOpen(){return document.getElementById('mapv').classList.contains('open');}
+</script>
 </body>
 </html>
