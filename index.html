@@ -53,7 +53,7 @@ button{font:inherit;color:inherit}
 .brand .isle{color:var(--sea)}
 
 /* 產業圖例 */
-.legend{position:absolute;left:20px;bottom:20px;width:200px}
+.legend{position:absolute;left:20px;bottom:20px;width:200px;border-left:4px solid var(--sea)}   /* 左側深色裝飾線，比照標題卡 */
 .legend summary{list-style:none;cursor:pointer;padding:11px 14px;font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;user-select:none}
 .legend summary::-webkit-details-marker{display:none}
 .legend summary::after{content:'＋';font-weight:400;color:var(--muted)}
@@ -151,7 +151,7 @@ button{font:inherit;color:inherit}
 @keyframes tagPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.95)}60%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
 .tag-info{--c:var(--paper);background:var(--paper);color:var(--ink);pointer-events:none;font-family:'Noto Serif TC',serif;letter-spacing:.12em}
 button.tag-info{pointer-events:auto; cursor:pointer;}
-button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outline-offset:1px;}
+button.tag-info:hover,button.tag-info.hover{filter:brightness(1.05);outline:2px solid var(--sun);outline-offset:1px;}
 
 /* 提示與載入 */
 .toast{position:fixed;top:24px;left:50%;transform:translate(-50%,-10px);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:3px;font-size:14px;max-width:calc(100vw - 32px);width:max-content;opacity:0;pointer-events:none!important;transition:opacity .3s,transform .3s;z-index:40;text-align:center;line-height:1.6}
@@ -259,6 +259,17 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
 #dn-panel .dn-opts button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 #dn-panel .dn-note{margin:10px 0 0;font-size:11px;color:var(--muted);letter-spacing:.04em}
 @media(max-width:720px){#dn-panel{bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(310px,calc(100vw - 24px))}}
+/* 純景模式：只留下島嶼、海洋、天空，所有介面與標籤淡出 */
+#clean-btn svg{width:22px;height:22px}
+#ui,#labels,#follow-tip,#snd-panel,#dn-panel,#toast{transition:opacity .45s ease,visibility 0s linear 0s}
+body.clean #ui,body.clean #labels,body.clean #follow-tip,body.clean #snd-panel,body.clean #dn-panel,body.clean #toast{opacity:0!important;visibility:hidden!important;transition:opacity .45s ease,visibility 0s linear .45s}
+/* 隱藏後完全無法互動：滑鼠游標不會變手指、點不到、也無法用 Tab 選到 */
+body.clean #ui *,body.clean #labels *,body.clean #snd-panel *,body.clean #dn-panel *{pointer-events:none!important;visibility:hidden!important}
+#clean-exit{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:90;width:44px;height:44px;border-radius:50%;border:none;display:grid;place-items:center;
+  background:rgba(250,246,236,.55);color:#2b3a3a;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .45s ease,background .2s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#clean-exit svg{width:20px;height:20px}
+body.clean #clean-exit{opacity:.45;pointer-events:auto}
+body.clean #clean-exit:hover{opacity:1;background:rgba(250,246,236,.92)}
 #snd-btn svg{width:22px;height:22px}
 #snd-btn.off .wave{display:none}
 #snd-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:80;width:250px;max-height:calc(100vh - 120px);overflow:auto;padding:14px;border-radius:4px;background:var(--paper);box-shadow:0 10px 30px rgba(20,40,45,.22);font-size:13px;color:var(--ink)}
@@ -325,6 +336,7 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
 <body>
 
 <div id="canvas-container"></div>
+<button id="clean-exit" title="顯示介面" aria-label="顯示介面" onclick="setClean(false)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 5.2A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg></button>
 <div id="labels"></div>
 
 <div id="ui">
@@ -363,11 +375,12 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
       啟動職缺配對
     </button>
-    <button class="btn-round" onclick="resetView()" title="回到全景" aria-label="回到全景">
+    <button class="btn-round" onclick="resetView()" title="重置視角" aria-label="重置視角">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/><circle cx="12" cy="12" r="2"/></svg>
     </button>
     <button id="snd-btn" class="btn-round" title="音樂與音效" aria-label="音樂與音效"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><g class="wave"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g></svg></button>
-    <button id="dn-btn" class="btn-round" title="時段" aria-label="時段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>
+    <button id="dn-btn" class="btn-round" title="晝夜變化" aria-label="晝夜變化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>
+    <button id="clean-btn" class="btn-round" title="隱藏介面" aria-label="隱藏介面" onclick="setClean(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
   </nav>
 
   <div class="modal" id="resume-modal" hidden>
@@ -506,7 +519,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const { list, demo } = await loadVendors();
   setupVendors(list);
   buildVegetation();
-  createVillagers(12);
+  createVillagers(24);   /* 島民人數 */
   buildLabels();
   buildLegend();
   buildResumeForm();
@@ -696,10 +709,13 @@ function initScene(){
     isDragging = false; pointerDownPos.x = e.clientX; pointerDownPos.y = e.clientY;
   });
   renderer.domElement.addEventListener('pointermove', e => {
-    if(Math.abs(e.clientX-pointerDownPos.x) > 3 || Math.abs(e.clientY-pointerDownPos.y) > 3) isDragging = true;
+    /* 只有按著滑鼠移動才算拖曳；單純移動滑鼠要能觸發懸浮 */
+    if(e.buttons && (Math.abs(e.clientX-pointerDownPos.x) > 3 || Math.abs(e.clientY-pointerDownPos.y) > 3)) isDragging = true;
+    if(!e.buttons) isDragging = false;
     onHover(e);
   });
   renderer.domElement.addEventListener('pointerup', onPointerClick);
+  renderer.domElement.addEventListener('pointerleave', () => { HOVER_FX.rayV = null; HOVER_FX.rayRocket = false; HOVER_FX.rayStation = false; refreshHover(); });
   addEventListener('keydown', e => { if(e.key === 'Escape'){ if(window.mapIsOpen && mapIsOpen()){ closeMap(); return; } stopFollow(); closeResume(); closeVendorCard(); closeInfo(); } });
   // F 鍵進入全螢幕；ESC 退出（瀏覽器全螢幕模式下 ESC 由瀏覽器處理）
   addEventListener('keydown', e => {
@@ -996,6 +1012,7 @@ function createCenterBuilding(){
   islandGroup.add(g);
   // 標籤高度微調至火箭頭部上方
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 17.5, 0), action: openInfo});
+  infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
 }
 
 function updateRocketAndSmoke(t, dt) {
@@ -1227,7 +1244,42 @@ function createWavingHand(v, s){
   return {outer, wave};
 }
 
+/* ---- 懸浮反饋（電腦版）：滑鼠在房子或標籤上 → 房子浮起提亮＋標籤白框；在火箭或服務台標籤上 → 火箭提亮＋橘框 ---- */
+const HOVER_FX = { v:null, rocket:false, rayV:null, labelV:null, rayRocket:false, labelRocket:false, rk:0, rkOn:false, station:false, rayStation:false, labelStation:false, sk:0, skOn:false };
+const _hb = new THREE.Color(0x2a2a2a);
+function hoverBright(root, k){
+  root.traverse(m => {
+    if(m.isMesh && Array.isArray(m.material)){   /* 多材質（例如月台的頂面＋側面） */
+      if(!m.userData.hvOwn){ m.material = m.material.map(x => x.clone()); m.userData.hvOwn = true; m.userData.e0s = m.material.map(x => x.emissive.clone()); }
+      m.material.forEach((x, i) => x.emissive.copy(m.userData.e0s[i]).lerp(m.userData.e0s[i].clone().add(_hb), k)); return;
+    }
+    if(!m.isMesh || !m.material || !m.material.emissive) return;
+    if(m.material.emissive.getHex() === 0xffb347 && !m.userData.hvOwn) return;   /* 窗戶（夜晚會亮燈）不動，避免影響日夜效果 */
+    if(!m.userData.hvOwn){ m.material = m.material.clone(); m.userData.hvOwn = true; m.userData.e0 = m.material.emissive.clone(); }
+    m.material.emissive.copy(m.userData.e0).lerp(m.userData.e0.clone().add(_hb), k);
+  });
+}
+function refreshHover(){
+  const H = HOVER_FX, clean = document.body.classList.contains('clean');
+  const v = clean ? null : (H.labelV || H.rayV), rocket = !clean && !v && (H.labelRocket || H.rayRocket);
+  const station = !clean && !v && !rocket && (H.labelStation || H.rayStation);
+  if(station !== H.station){ H.station = station; infoLabels.forEach(i => { if(i.el && i.kind === 'station') i.el.classList.toggle('hover', station); }); }
+  if(v !== H.v){ if(H.v && H.v.label) H.v.label.classList.remove('hover'); H.v = v; if(v && v.label) v.label.classList.add('hover'); }
+  if(rocket !== H.rocket){ H.rocket = rocket; infoLabels.forEach(i => { if(i.el && i.kind !== 'station' && i.action) i.el.classList.toggle('hover', rocket); }); }
+  hovered = v;
+}
 function updateHouses(t){
+  /* 車站懸浮：站房發光、輕輕浮起放大；月台跟著發光 */
+  HOVER_FX.sk += ((HOVER_FX.station ? 1 : 0) - HOVER_FX.sk) * 0.18;
+  if((HOVER_FX.sk > 0.002 || HOVER_FX.skOn) && window.stationGroup){ const e = HOVER_FX.sk*HOVER_FX.sk*(3 - 2*HOVER_FX.sk), G = window.stationGroup;
+    hoverBright(G, e); (window.platformGroups || []).forEach(pg => hoverBright(pg, e));
+    if(G.userData.s0 === undefined){ G.userData.y0 = G.position.y; G.userData.s0 = G.scale.x; }
+    G.position.y = G.userData.y0 + 0.35*e; G.scale.setScalar(G.userData.s0*(1 + 0.04*e)); HOVER_FX.skOn = HOVER_FX.sk > 0.002; }
+  HOVER_FX.rk += ((HOVER_FX.rocket ? 1 : 0) - HOVER_FX.rk) * 0.18;
+  if(HOVER_FX.rk > 0.002 || HOVER_FX.rkOn){ const e = HOVER_FX.rk*HOVER_FX.rk*(3 - 2*HOVER_FX.rk); centerMeshes.forEach(m => hoverBright(m, e)); HOVER_FX.rkOn = HOVER_FX.rk > 0.002;
+    /* 火箭也跟房子一樣輕輕浮起、微微放大 */
+    if(rocketGroup){ const R = rocketGroup; if(R.userData.y0 === undefined){ R.userData.y0 = R.position.y; R.userData.s0 = R.scale.x; }
+      R.position.y = R.userData.y0 + 0.6*e; R.scale.setScalar(R.userData.s0*(1 + 0.04*e)); } }
   vendors.forEach(v => {
     let y = 0, sy = 1;
     if(v.matched){
@@ -1239,8 +1291,13 @@ function updateHouses(t){
       const k = (t - v.hopAt)/0.4;
       if(k < 1) y += Math.sin(k*Math.PI)*1.0; else v.hopAt = null;
     }
+    /* 懸浮反饋：房子輕輕浮起、微微放大並提亮 */
+    v.hk = (v.hk || 0) + (((HOVER_FX.v === v) ? 1 : 0) - (v.hk || 0)) * 0.18;
+    const he = v.hk*v.hk*(3 - 2*v.hk);
+    if(v.hk > 0.002 || v.hkOn){ hoverBright(v.group, he); v.hkOn = v.hk > 0.002; }
+    y += 0.45*he;
     v.group.position.y = y;
-    v.group.scale.set(v.s, v.s*sy, v.s);
+    v.group.scale.set(v.s*(1 + 0.04*he), v.s*sy*(1 + 0.04*he), v.s*(1 + 0.04*he));
     const h = v.hand;
     h.outer.visible = v.matched;
     if(v.matched){
@@ -1289,11 +1346,14 @@ function buildVegetation(){
     rock:  new Batch(new THREE.DodecahedronGeometry(1,0))
   };
   const placed = window.vegObstacles = [];
-  const PLAZA = 10.8, RIM = 48.8;
+  const PLAZA = 10.8, RIM = 46.6;   /* 草地最外圈留給環島鐵路 */
   const rr = (a,b) => Math.sqrt(R(a*a, b*b)); // 依面積均勻取半徑，外圍不會比中間稀疏
   function free(x, z, rad, strict=true){
     const r = Math.hypot(x,z);
     if(r > RIM - rad || r < PLAZA + rad) return false;
+    if(r > 35 - rad && Math.abs(Math.atan2(x, -z)) < 0.31) return false;
+    if(r > 39 - rad && Math.abs(Math.atan2(x, -z)) < 0.42) return false;   /* 北站斜坡下方的走道淨空 */   /* 北方車站預留空地 */
+    if(r > 39 - rad && Math.abs(Math.atan2(x, z)) < 0.36) return false;   /* 南方小月台與斜坡下方淨空 */    /* 南方小月台預留空地（農作物避開） */
     for(const P of pathRings) if(Math.abs(r - P) < 1.3 + rad) return false;
     for(const o of houseSpots) if((x-o.x)**2 + (z-o.z)**2 < (o.r + rad)**2) return false;
     if(strict) for(const o of placed) if((x-o.x)**2 + (z-o.z)**2 < (o.r + rad)**2) return false;
@@ -1642,6 +1702,8 @@ function buildLabels(){
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = v.name;
     el.append(no, nm);
     el.addEventListener('click', e => { e.stopPropagation(); selectVendor(v); });
+    el.addEventListener('mouseenter', () => { HOVER_FX.labelV = v; refreshHover(); });
+    el.addEventListener('mouseleave', () => { if(HOVER_FX.labelV === v){ HOVER_FX.labelV = null; refreshHover(); } });
     wrap.appendChild(el);
     v.label = el;
   });
@@ -1649,7 +1711,10 @@ function buildLabels(){
     const el = document.createElement(info.action ? 'button' : 'div'); 
     el.className = 'tag tag-info'; 
     el.textContent = info.text;
-    if(info.action) el.addEventListener('click', e => { e.stopPropagation(); info.action(); });
+    if(info.action){ el.addEventListener('click', e => { e.stopPropagation(); info.action(); });
+      const key = info.kind === 'station' ? 'labelStation' : 'labelRocket';   /* 車站標籤只觸發車站，不會連動火箭 */
+      el.addEventListener('mouseenter', () => { HOVER_FX[key] = true; refreshHover(); });
+      el.addEventListener('mouseleave', () => { HOVER_FX[key] = false; refreshHover(); }); }
     wrap.appendChild(el); info.el = el;
   });
 }
@@ -1688,18 +1753,19 @@ function onHover(e){
   raycaster.setFromCamera(mouse, camera);
 
   let cursor = '';
-  const vendorHits = raycaster.intersectObjects(houseMeshes, false);
+  /* 火箭（服務台）擋在前面時，以最靠近鏡頭的物件為準，不會感應到被擋住的房子 */
+  const centerHit0 = raycaster.intersectObjects(centerMeshes, false)[0];
+  let vendorHits = raycaster.intersectObjects(houseMeshes, false);
+  if(centerHit0 && vendorHits.length && centerHit0.distance < vendorHits[0].distance) vendorHits = [];
   const v = vendorHits.length ? vendorHits[0].object.userData.vendor : null;
-  
-  if(v !== hovered){
-    if(hovered && hovered.label) hovered.label.classList.remove('hover');
-    hovered = v;
-    if(v && v.label) v.label.classList.add('hover');
-  }
+  const stH = window.stationMeshes ? raycaster.intersectObjects(window.stationMeshes, false)[0] : null;
+  HOVER_FX.rayV = v; HOVER_FX.rayRocket = !v && !!centerHit0 && !(stH && stH.distance < centerHit0.distance);
+  HOVER_FX.rayStation = !v && !!stH && !(centerHit0 && centerHit0.distance < stH.distance);
+  refreshHover();
 
   if(v) {
     cursor = 'pointer';
-  } else if (raycaster.intersectObjects(centerMeshes, false).length) {
+  } else if (centerHit0 || (window.stationMeshes && raycaster.intersectObjects(window.stationMeshes, false).length)) {
     cursor = 'pointer';
   }
   
@@ -1711,19 +1777,29 @@ function onPointerClick(e){
   mouse.y = -(e.clientY/innerHeight)*2 + 1;
   raycaster.setFromCamera(mouse, camera);
   
-  const vendorHits = raycaster.intersectObjects(houseMeshes, false);
+  let vendorHits = raycaster.intersectObjects(houseMeshes, false);
+  const centerHit0 = raycaster.intersectObjects(centerMeshes, false)[0];
+  /* 火箭擋在房子前面時，點到的是火箭，不是後面的房子 */
+  if(centerHit0 && vendorHits.length && centerHit0.distance < vendorHits[0].distance) vendorHits = [];
   const vp = window.pickVillager ? window.pickVillager() : null;
+  /* 點車站 → 打開「換列車樣式」面板（以最靠近鏡頭的物件為準） */
+  const stHit = (window.stationMeshes && !document.body.classList.contains('clean')) ? raycaster.intersectObjects(window.stationMeshes, false)[0] : null;
+  if(stHit && (!vendorHits.length || stHit.distance < vendorHits[0].distance) && (!centerHit0 || stHit.distance < centerHit0.distance) && (!vp || stHit.distance < vp.dist)){
+    closeVendorCard(); if(window.openTrainPanel) openTrainPanel(); return;
+  }
+  if(vp && centerHit0 && centerHit0.distance < vp.dist && !vendorHits.length && !document.body.classList.contains('clean')){ openInfo(); return; }
   if(vp && (!vendorHits.length || vp.dist < vendorHits[0].distance)){
     closeVendorCard();
     followVillager(vp.v);
     return;
   }
-  if(vendorHits.length) {
+  const clean = document.body.classList.contains('clean');   /* 純景模式：點房子、服務台不開卡片（島民仍可點擊跟隨） */
+  if(vendorHits.length && !clean) {
     selectVendor(vendorHits[0].object.userData.vendor);
     return;
   }
   
-  const centerHits = raycaster.intersectObjects(centerMeshes, false);
+  const centerHits = clean || !centerHit0 ? [] : [centerHit0];
   if(centerHits.length) {
     openInfo();
     return;
@@ -1738,7 +1814,7 @@ function selectVendor(v){
   v.hopAt = clock.elapsedTime;
   vendors.forEach(o => o.label && o.label.classList.toggle('active', o === v));
   showVendorCard(v);
-  if(IS_PORTRAIT) focusVendor(v); // 手機：鏡頭自動拉近，房子會停在卡片上方
+  focusVendor(v); // 鏡頭移到房子旁邊（電腦、手機都一樣，比照配對結果的運鏡）
 }
 function showVendorCard(v){
   stopIdle(); // 展開視窗強制中斷閒置動畫
@@ -2281,9 +2357,11 @@ class Villager{
 
     /* 基本站姿 */
     Object.assign(tg,{hipY:1.08,lean:0,hy:0,hp:0,hr:0,alx:0,alz:0.14,ael:-0.06,arx:0,arz:-0.14,arel:-0.06,tl:0,kl:0,tr:0,kr:0,sp:0});
-    const scripted=(st==='enter'||st==='exit');
+    const scripted=(st==='enter'||st==='exit'||st==='rail');
     const walking=st==='walk'||scripted;
-    this.walkAmt+=((walking?1:0)-this.walkAmt)*Math.min(1,dt*5);
+    this.walkAmt+=((walking&&!this.halted?1:0)-this.walkAmt)*Math.min(1,dt*5);
+    /* 列車快到時，站在軌道上的人（坐著、看手機、聊天）起身離開軌道 */
+    if(!scripted&&!this.railPlan&&(st==='idle'||st==='sit'||st==='phone'||st==='chat')){const q=this.root.position,td=trainDanger(q.x,q.z);if(td&&td.on)this.setState('walk',{timer:rand(3,5)});}
     this.phoneAmt+=((st==='phone'?1:0)-this.phoneAmt)*Math.min(1,dt*6);
     const breathe=Math.sin(this.t*2.1)*0.012;
 
@@ -2315,8 +2393,22 @@ class Villager{
       const sp=this.speed*this.walkAmt*dt*VS;
       const px=this.root.position.x,pz=this.root.position.z,sy=Math.sin(this.yaw),cy=Math.cos(this.yaw);
       const inside=WORLD.blocked(px,pz);
+      /* 列車經過：在軌道上就往最近的一側快步離開；在軌道旁且正要穿越的人停下來，面向軌道等列車過去 */
+      this.halted=false;
+      const td=(this.ghost>0||this.railPlan)?null:trainDanger(px,pz);
+      const towardTrack=td?(Math.sin(this.yaw)*px+Math.cos(this.yaw)*pz)/td.r*(td.dr>0?-1:1):-1;
+      if(td&&(td.on||towardTrack>-0.3)){
+        const s=td.dr>=0?1:-1;
+        if(td.on){
+          this.heading=Math.atan2(px/td.r*s,pz/td.r*s);this.yaw+=angDiff(this.yaw,this.heading)*Math.min(1,dt*10);
+          this.root.position.x+=Math.sin(this.heading)*Math.max(sp,dt*VS*this.speed*0.6)*1.8;this.root.position.z+=Math.cos(this.heading)*Math.max(sp,dt*VS*this.speed*0.6)*1.8;
+        }else{
+          this.halted=true;this.heading=Math.atan2(-px/td.r*s,-pz/td.r*s);this.yaw+=angDiff(this.yaw,this.heading)*Math.min(1,dt*4);
+        }
+        this.goal=null;this.stkT=0;this.stuck=0;this.wT=0;this.wR=0;this.wX=px;this.wZ=pz;this.wander=Math.max(this.wander||0,0.5);
+      }
       /* 穿透模式：判定受困後的 3 秒內忽略障礙物，直直走向附近一塊開闊的空地 */
-      if(this.ghost>0){
+      else if(this.ghost>0){
         this.ghost-=dt;
         const g=this.ghostTo,gx=g.x-px,gz=g.z-pz,gd=Math.hypot(gx,gz);
         this.heading=Math.atan2(gx,gz);this.yaw+=angDiff(this.yaw,this.heading)*Math.min(1,dt*8);
@@ -2357,7 +2449,7 @@ class Villager{
       }
       }
     }
-    if(!scripted){const gp=this.root.position;gp.y=islandY(Math.hypot(gp.x,gp.z));}   /* 走到沙灘時順著坡往下，不懸空 */
+    if(!scripted){const gp=this.root.position;gp.y=window.groundY?groundY(gp.x,gp.z):islandY(Math.hypot(gp.x,gp.z));}   /* 走到沙灘時順著坡往下，不懸空 */
     this.root.rotation.y=this.yaw;
 
     const wa=this.walkAmt;
@@ -2433,6 +2525,7 @@ class Villager{
     if(this.blinking>0)this.blinking-=dt;
     const by=this.blinking>0?0.12:1;this.eyes.forEach(e=>e.scale.y=0.1*by);
     if(this.state==='fish'&&this.rod)this.fishPose(dt);else if(this.state==='castle'&&this.castle)this.castlePose(dt);
+    else if(this.benchSit&&this.state==='sit'){this.hip.position.y+=0.5;this.legs.forEach(l=>{l.kn.rotation.x=1.45;});}   /* 坐在月台長椅上：小腿自然垂下 */
   }
   /* ================= 沙灘活動：釣魚、堆沙堡 ================= */
   startFish(){
@@ -2505,7 +2598,9 @@ class Villager{
   }
   /* 找附近一塊「四周也空」的開闊空地（穿透脫困的目的地） */
   openSpot(px,pz){
-    const ok=(x,z)=>{if(WORLD.blocked(x,z)||Math.hypot(x,z)>=(this.bound||60))return false;
+    const hitHouse=(x,z)=>{for(let k=1;k<=12;k++){const t=k/12,qx=px+(x-px)*t,qz=pz+(z-pz)*t;   /* 穿透路線不能穿過房子或火箭 */
+        if(Math.hypot(qx,qz)<5.2)return true;for(const o of WORLD.houseObs)if((qx-o.x)**2+(qz-o.z)**2<(o.r+0.3)**2)return true;}return false;};
+    const ok=(x,z)=>{if(WORLD.blocked(x,z)||Math.hypot(x,z)>=(this.bound||60)||hitHouse(x,z))return false;
       for(let k=0;k<8;k++){const a=k/8*Math.PI*2;if(WORLD.blocked(x+Math.sin(a)*1.4,z+Math.cos(a)*1.4))return false;}return true;};
     for(let r=2;r<=34;r+=1.5){const o=Math.random()*Math.PI*2,n=Math.min(40,8+Math.round(r*2));for(let k=0;k<n;k++){
       const a=o+k/n*Math.PI*2,x=px+Math.sin(a)*r,z=pz+Math.cos(a)*r;if(ok(x,z))return {x,z};}}
@@ -2521,6 +2616,7 @@ class Villager{
   }
   /* 進出房子：state 'enter' 走到門口進屋並消失；state 'exit' 從門走出來變回一般漫步 */
   script(dt){
+    if(this.state==='rail'){if(window.RAIL_MOVE)RAIL_MOVE(this,dt);return;}   /* 上下月台、走到車門 */
     const H=this.house,p=this.root.position,sp=this.speed*dt*VS*(this.walkAmt>0.3?1:this.walkAmt);
     if(!H){this.setState('walk',{timer:rand(3,6)});return;}
     const dcx=p.x-H.x,dcz=p.z-H.z,dc=Math.hypot(dcx,dcz);
@@ -2528,19 +2624,24 @@ class Villager{
     this.scriptT=(this.scriptT||0)+dt;
     if(this.state==='enter'){
       if(this.sph===0){                                 // 1. 走向門前
-        const gx=H.ax-p.x,gz=H.az-p.z,d=Math.hypot(gx,gz);
-        if(d<0.4||dc<4.0)this.sph=1;
-        else if(this.scriptT>30){H.v.doorWant=0;this.house=null;p.y=0;this.setState('walk',{timer:rand(3,6)});return;}
+        /* 先繞到房子正前方、房子範圍外的一個點，再沿著門前走道直直走向門口；只有從正面才會開門進屋，不會從側面或後面穿牆 */
+        const fr=(dcx*H.ix+dcz*H.iz)/H.s,lat=Math.abs(dcx*H.iz-dcz*H.ix)/H.s,R0=H.obs.r+1.7;
+        if(!this.atFront&&((Math.hypot(p.x-(H.x+H.ix*R0),p.z-(H.z+H.iz*R0))<1.0)||(lat<0.9&&fr*H.s>H.obs.r+0.6)))this.atFront=true;
+        const inFront=this.atFront&&fr>0.8&&lat<1.3;
+        if(this.atFront&&!inFront)this.atFront=false;
+        const gx=(inFront?H.ax:H.x+H.ix*R0)-p.x,gz=(inFront?H.az:H.z+H.iz*R0)-p.z,d=Math.hypot(gx,gz);
+        if(inFront&&(d<0.6||dc<4.0))this.sph=1;
+        else if(this.scriptT>45){H.v.doorWant=0;this.house=null;p.y=0;this.setState('walk',{timer:rand(3,6)});return;}
         else{
           const gh=Math.atan2(gx,gz);
           let pick=null;
           for(const off of [0,0.6,-0.6,1.2,-1.2,1.9,-1.9]){
             const h=gh+off,qx=p.x+Math.sin(h)*0.9,qz=p.z+Math.cos(h)*0.9;
-            if(!WORLD.blocked(qx,qz,H.obs)){pick=h;break;}
+            if(!WORLD.blocked(qx,qz,inFront?H.obs:null)){pick=h;break;}   /* 還沒繞到門前時，自己的房子也算障礙物 */
           }
           this.heading=pick===null?this.yaw+dt*2.5:pick;
           this.yaw+=angDiff(this.yaw,this.heading)*Math.min(1,dt*4.5);
-          const ok=!WORLD.blocked(p.x+Math.sin(this.yaw)*0.5,p.z+Math.cos(this.yaw)*0.5,H.obs);
+          const ok=!WORLD.blocked(p.x+Math.sin(this.yaw)*0.5,p.z+Math.cos(this.yaw)*0.5,inFront?H.obs:null);
           if(ok){p.x+=Math.sin(this.yaw)*sp;p.z+=Math.cos(this.yaw)*sp;}
         }
       }
@@ -2576,6 +2677,14 @@ class Villager{
   }
 }
 
+/* 列車危險區：列車正在跑（或快發車），島民在軌道附近、而且位在列車車身或前方一段距離內 */
+function trainDanger(px,pz){
+  const TS=window.TRAIN_STATE;if(!TS||!TS.moving)return null;
+  const r=Math.hypot(px,pz),dr=r-TS.R;if(Math.abs(dr)>3.4||r<1)return null;
+  let da=Math.atan2(pz,px)-TS.theta;da=((da+Math.PI)%TAU+TAU)%TAU-Math.PI;
+  if(da<-(TS.lenA+0.08)||da>0.3)return null;
+  return {r,dr,on:Math.abs(dr)<1.8};
+}
 /* ============ 沙灘活動：道具與觸發 ============ */
 const SAND_C=0xd8bd84,SAND_D=0xc7a96d,CASTLE_STEP=2.4,_bv=new T.Vector3(),BEACH_LEFT=[];
 function makeRod(){
@@ -2629,7 +2738,7 @@ function updateBeach(dt){
       if(!v.goal){const a=Math.atan2(p.z,p.x);v.goal={x:Math.cos(a)*57.6,z:Math.sin(a)*57.6};}
       return;
     }
-    if(v.state!=='walk'||!v.auto||v.house||v.partner||v.beachCool>0||v.ghost>0||v.umbWant)return;
+    if(v.state!=='walk'||!v.auto||v.house||v.partner||v.beachCool>0||v.ghost>0||v.umbWant||v.railPlan)return;
     const p=v.root.position,r=Math.hypot(p.x,p.z);
     if(r<53.6||Math.random()>dt*0.25)return;
     if(fishing<2&&(building>=1||Math.random()<0.55)){v.beachPlan='fish';v.planT=0;const a=Math.atan2(p.z,p.x);v.goal={x:Math.cos(a)*57.6,z:Math.sin(a)*57.6};}
@@ -2648,6 +2757,10 @@ const WORLD={
     this.houseObs=[];
     houseSpots.forEach(h=>{const o={x:h.x,z:h.z,r:h.r+0.5};list.push(o);this.houseObs.push(o);});
     (window.vegObstacles||[]).forEach(o=>list.push({x:o.x,z:o.z,r:o.r}));
+    /* 北方車站：站房與月台 */
+    list.push({x:0,z:-41.4,r:4.8});
+    for(let a=-0.26;a<=0.261;a+=0.033)list.push({x:Math.cos(-Math.PI/2+a)*46.1,z:Math.sin(-Math.PI/2+a)*46.1,r:1.3});
+    for(let a=-0.2;a<=0.201;a+=0.035)list.push({x:Math.cos(Math.PI/2+a)*46.1,z:Math.sin(Math.PI/2+a)*46.1,r:1.3});   /* 南方小月台 */
     list.forEach(o=>{
       const reach=o.r+0.7,x0=Math.floor((o.x-reach)/this.CS),x1=Math.floor((o.x+reach)/this.CS),z0=Math.floor((o.z-reach)/this.CS),z1=Math.floor((o.z+reach)/this.CS);
       for(let i=x0;i<=x1;i++)for(let j=z0;j<=z1;j++){const k=i+','+j;let a=this.cells.get(k);if(!a)this.cells.set(k,a=[]);a.push(o);}
@@ -2699,7 +2812,9 @@ function respawnLook(old){
 function updateDirector(dt){
   DIR.t-=dt;
   if(DIR.mode==='wait-enter'&&DIR.t<=0&&vendors.length){
-    const walkers=crowd.filter(v=>v.state==='walk'&&!v.partner);
+    /* 只挑離房子不遠（16 以內）的島民去進屋，避免從沙灘一路走過來、走太久而放棄 */
+    const nearHouse=v=>{const q=v.root.position;return vendors.some(o=>o.group&&Math.hypot(o.group.position.x-q.x,o.group.position.z-q.z)<16);};
+    const walkers=crowd.filter(v=>v.state==='walk'&&!v.partner&&!v.noHouse&&!v.railPlan&&nearHouse(v));
     if(!walkers.length){DIR.t=2;return;}
     const who=pick(walkers),p=who.root.position;
     const near=vendors.map((_,i)=>i).sort((a,b)=>{
@@ -2708,7 +2823,7 @@ function updateDirector(dt){
     }).slice(0,3);
     const cand=near.map(houseInfo).filter(h=>h&&!WORLD.blocked(h.ax,h.az,h.obs));   // 門前要走得到
     const H=cand.length?pick(cand):null;if(!H){DIR.t=2;return;}
-    who.house=H;who.sph=0;who.scriptT=0;who.goal=null;who.setState('enter');
+    who.house=H;who.sph=0;who.atFront=false;who.scriptT=0;who.goal=null;who.setState('enter');
     DIR.who=who;DIR.mode='entering';
   }else if(DIR.mode==='entering'){
     if(DIR.who.state==='gone'){DIR.mode='away';DIR.t=rand(15,30);}
@@ -2745,7 +2860,7 @@ function updateVillagers(dt){
   for(let i=0;i<w.length;i++)for(let j=i+1;j<w.length;j++){
     const a=w[i],b=w[j];
     if(a.cool>0||b.cool>0)continue;
-    if(a.root.position.distanceTo(b.root.position)<1.5)startChat(a,b,5);
+    if(!a.railPlan&&!b.railPlan&&a.root.position.distanceTo(b.root.position)<1.5)startChat(a,b,5);
   }
   crowd.forEach(v=>{
     if(v.state==='chat'&&v.partner&&v.chatEnd!==undefined){
@@ -2816,8 +2931,9 @@ function mkRing(){
 function updateFollow(dt, t){
   if(!follow) return;
   const r = follow.v.root;
-  if(!r.visible || !r.parent){ stopFollow(); return; }   // 走進房子或被替換 → 解除
+  if((!r.visible && !(follow.v.railPlan && follow.v.railPlan.phase === 'ride')) || !r.parent){ stopFollow(); return; }   /* 搭火車時鏡頭跟著列車 */   // 走進房子或被替換 → 解除
   if(ringG){
+    ringG.visible = r.visible;
     ringG.position.set(r.position.x, r.position.y, r.position.z);   /* 跟著腳底高度（沙灘下坡也貼地） */
     { const x = r.position.x, z = r.position.z, rr = Math.hypot(x, z), sl = rr > 0.5 ? islandY(rr + 0.5) - islandY(rr - 0.5) : 0;   /* 依坡度傾斜，整圈都貼著地面 */
       ringG.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(-sl*x/(rr||1), 1, -sl*z/(rr||1)).normalize()); }
@@ -2922,7 +3038,7 @@ function mapIsOpen(){return document.getElementById('mapv').classList.contains('
 </script>
 
 <div id="dn-panel" hidden>
-  <h4><span>時段</span><button class="icon-btn snd-x" id="dn-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h4>
+  <h4><span>晝夜變化</span><button class="icon-btn snd-x" id="dn-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h4>
   <div class="dn-opts"><button data-m="dawn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M7 19a5 5 0 0 1 10 0"/><path d="M12 3v6M9.5 5.5 12 3l2.5 2.5"/><path d="M4.2 13.6l1.4 1M19.8 13.6l-1.4 1"/></svg><span>清晨</span></button><button data-m="day" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span>白天</span></button><button data-m="dusk" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M7 19a5 5 0 0 1 10 0"/><path d="M12 3v6M9.5 6.5 12 9l2.5-2.5"/><path d="M4.2 13.6l1.4 1M19.8 13.6l-1.4 1"/></svg><span>傍晚</span></button><button data-m="night" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg><span>夜晚</span></button><button data-m="cycle" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14.3 4.9"/><path d="M4 12a8 8 0 0 1 14.3-4.9"/><path d="M18.6 3.5v3.8h-3.8"/><path d="M5.4 20.5v-3.8h3.8"/></svg><span>循環</span></button></div>
 </div>
 <div id="snd-panel" hidden>
@@ -3519,6 +3635,482 @@ const wait = setInterval(() => {
 }, 100);
 })();
 
+</script>
+<script>
+/* 純景模式：按眼睛按鈕隱藏所有介面，右下角的小眼睛或 ESC 回來 */
+function setClean(on){
+  if(on){ if(typeof closeVendorCard==='function' && !document.getElementById('vendor-card').hidden) closeVendorCard();
+    ['snd-panel','dn-panel'].forEach(id=>{const e=document.getElementById(id);if(e)e.hidden=true;}); }
+  document.body.classList.toggle('clean', on);
+}
+addEventListener('keydown', e => { if(e.key === 'Escape' && document.body.classList.contains('clean')) setClean(false); });
+</script>
+<script>
+/* ================= 環島鐵路：軌道、求職島站、列車（可在車站換樣式） ================= */
+(function(){
+const T = THREE, TAU = Math.PI*2;
+const L = c => new T.MeshLambertMaterial({color:c});
+const RC = 48.6, GAUGE = 1.2, RAIL_Y = 0.28, ST_A = -Math.PI/2;   /* 軌道中心半徑；車站在北方（-z） */
+const box = (g, w,h,d, m, x,y,z) => { const o = new T.Mesh(new T.BoxGeometry(w,h,d), m); o.position.set(x,y,z); o.castShadow = true; o.receiveShadow = true; g.add(o); return o; };
+const cyl = (g, r1,r2,h, m, x,y,z, seg=14) => { const o = new T.Mesh(new T.CylinderGeometry(r1,r2,h,seg), m); o.position.set(x,y,z); o.castShadow = true; g.add(o); return o; };
+function wheels(g, zs, r, m, hub){
+  zs.forEach(z => [-0.62, 0.62].forEach(x => {
+    const w = new T.Mesh(new T.CylinderGeometry(r, r, 0.16, 14), m); w.rotation.z = Math.PI/2; w.position.set(x, r, z); g.add(w);
+    if(hub){ const h = new T.Mesh(new T.CylinderGeometry(r*0.35, r*0.35, 0.18, 8), hub); h.rotation.z = Math.PI/2; h.position.set(x*1.02, r, z); g.add(h); }
+  }));
+}
+function roofTop(g, len, m, y, w=0.95, h=0.32){ const r = new T.Mesh(new T.CylinderGeometry(1, 1, len, 18).rotateX(Math.PI/2), m); r.scale.set(w, h, 1); r.position.set(0, y, 0); r.castShadow = true; g.add(r); return r; }
+function windows(g, zs, y, h, w, m, side=0.96){ zs.forEach(z => [-side, side].forEach(x => box(g, 0.04, h, w, m, x, y, z))); }
+
+/* ---------- 五款列車（每款兩節，各自回傳 [前車, 後車]，車頭朝 +z） ---------- */
+const DESIGNS = [
+  { key:'steam', name:'蒸汽小火車', build(){
+      const red = L(0xc8463c), blk = L(0x2b2b30), gold = L(0xe8b84a), cream = L(0xf3e6c8), win = L(0x9fc8de);
+      const a = new T.Group();                                   /* 蒸汽車頭 */
+      box(a, 1.5, 0.35, 4.6, blk, 0, 0.55, 0);
+      const boiler = new T.Mesh(new T.CylinderGeometry(0.72, 0.72, 2.8, 16), blk); boiler.rotation.x = Math.PI/2; boiler.position.set(0, 1.35, 0.6); boiler.castShadow = true; a.add(boiler);
+      [0.0, 0.9, 1.8].forEach(z => { const b = new T.Mesh(new T.TorusGeometry(0.73, 0.05, 6, 20), gold); b.position.set(0, 1.35, z - 0.2); a.add(b); });
+      const front = new T.Mesh(new T.CylinderGeometry(0.74, 0.74, 0.1, 16), L(0x444448)); front.rotation.x = Math.PI/2; front.position.set(0, 1.35, 2.02); a.add(front);
+      cyl(a, 0.2, 0.28, 0.75, blk, 0, 2.3, 1.45); cyl(a, 0.36, 0.2, 0.25, blk, 0, 2.72, 1.45);
+      cyl(a, 0.22, 0.22, 0.3, gold, 0, 2.17, 0.5, 10);
+      box(a, 1.6, 1.7, 1.5, red, 0, 1.6, -1.45); box(a, 1.8, 0.14, 1.8, blk, 0, 2.5, -1.45);
+      windows(a, [-1.45], 1.85, 0.6, 0.8, win, 0.81);
+      const cc = new T.Mesh(new T.ConeGeometry(0.75, 0.6, 4), red); cc.rotation.set(-Math.PI/2, Math.PI/4, 0); cc.scale.set(1, 1, 0.55); cc.position.set(0, 0.45, 2.45); a.add(cc);
+      const lamp = cyl(a, 0.16, 0.16, 0.2, L(0xfff1b0), 0, 2.05, 2.05, 10); lamp.rotation.x = Math.PI/2;
+      wheels(a, [1.3, 0.1, -1.3], 0.38, red, gold);
+      a.userData.smoke = new T.Vector3(0, 2.9, 1.45);
+      const b = new T.Group();                                   /* 紅色客車 */
+      box(b, 1.5, 0.3, 4.4, blk, 0, 0.5, 0);
+      box(b, 1.8, 1.45, 4.3, red, 0, 1.35, 0); box(b, 1.82, 0.38, 4.32, cream, 0, 1.75, 0);
+      windows(b, [-1.45, -0.5, 0.45, 1.4], 1.75, 0.34, 0.6, win, 0.92);
+      roofTop(b, 4.4, blk, 2.06, 1.0, 0.35);
+      wheels(b, [1.4, -1.4], 0.3, blk, gold);
+      return [a, b];
+  }},
+  { key:'sugar', name:'糖廠五分車', build(){
+      const yel = L(0xf0b030), grn = L(0x2f6b4f), blk = L(0x2b2b30), wood = L(0xa0683a), woodD = L(0x7a4a26), win = L(0x9fc8de), white = L(0xf5f1e6);
+      const a = new T.Group();                                   /* 黃色柴油小車頭 */
+      box(a, 1.5, 0.35, 4.0, blk, 0, 0.5, 0);
+      box(a, 1.3, 1.05, 2.2, yel, 0, 1.2, 0.8);                  /* 引擎蓋 */
+      box(a, 1.32, 0.2, 2.22, grn, 0, 0.78, 0.8);
+      for(let i=0;i<5;i++) box(a, 1.34, 0.06, 0.06, L(0xc58a1c), 0, 1.25, 0.1 + i*0.35);
+      box(a, 1.7, 1.75, 1.6, yel, 0, 1.55, -1.1); box(a, 1.9, 0.14, 1.9, grn, 0, 2.5, -1.1);
+      windows(a, [-1.1], 1.9, 0.6, 1.0, win, 0.86); box(a, 1.2, 0.55, 0.04, win, 0, 1.9, -0.28);
+      cyl(a, 0.12, 0.12, 0.5, blk, 0.35, 1.95, 1.5, 8);
+      box(a, 1.72, 0.18, 0.12, white, 0, 0.62, 2.0); box(a, 1.72, 0.18, 0.12, white, 0, 0.62, -2.0);
+      wheels(a, [1.2, -1.2], 0.3, blk, yel);
+      const b = new T.Group();                                   /* 木造開放式觀光車廂 */
+      box(b, 1.6, 0.25, 4.4, blk, 0, 0.48, 0);
+      box(b, 1.8, 0.2, 4.4, woodD, 0, 0.7, 0);
+      box(b, 1.8, 0.45, 0.1, wood, 0, 1.02, 2.15); box(b, 1.8, 0.45, 0.1, wood, 0, 1.02, -2.15);
+      [-1, 1].forEach(s => box(b, 0.08, 0.4, 4.3, wood, s*0.86, 1.0, 0));
+      for(let i=0;i<6;i++){ const z = -1.95 + i*0.78; [-0.86, 0.86].forEach(x => box(b, 0.1, 1.3, 0.1, woodD, x, 1.45, z)); }
+      [-1.3, -0.4, 0.5, 1.4].forEach(z => box(b, 1.2, 0.14, 0.4, wood, 0, 0.98, z));
+      box(b, 2.0, 0.12, 4.6, grn, 0, 2.16, 0); box(b, 1.6, 0.1, 4.2, L(0x3f8a63), 0, 2.26, 0);
+      wheels(b, [1.5, -1.5], 0.28, blk, yel);
+      return [a, b];
+  }},
+  { key:'bullet', name:'流線子彈列車', build(){
+      /* 參考台鐵新自強號（EMU3000）：白色車身、黑色流線車鼻，用自訂曲面一體成形 */
+      const WH = new T.Color(0xf1f3f2), BK = new T.Color(0x1d2226), GY = L(0x8d969b), dark = L(0x2a3036);
+      const W = 0.9, H = 0.82, YC = 1.55, RR = 0.34;
+      /* 圓角矩形斷面（單位座標 -1~1） */
+      const sec = []; const N = 72;
+      for(let i=0;i<N;i++){
+        const u = i/N*4, side = Math.floor(u), f = u - side;
+        let x, y; const cw = W - RR, ch = H - RR;
+        /* 沿周長取點：四邊各含一個圓角 */
+        const per = [[cw, -ch, -Math.PI/2, 0], [cw, ch, 0, Math.PI/2], [-cw, ch, Math.PI/2, Math.PI], [-cw, -ch, Math.PI, Math.PI*1.5]][side];
+        const a = per[2] + (per[3]-per[2])*f; x = per[0] + Math.cos(a)*RR; y = per[1] + Math.sin(a)*RR;
+        sec.push([x/W, y/H]);
+      }
+      /* 曲面：每個頂點記住它在斷面上的位置 (x0,y0) 與車鼻進度 t，由著色器逐像素決定黑白，分色線才會俐落 */
+      const mkMat = (mode) => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
+        m.onBeforeCompile = sh => {
+          sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect;');
+          sh.fragmentShader = 'varying vec3 vSect;\n' + sh.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
+            float x0 = abs(vSect.x), y0 = vSect.y, t = vSect.z;
+            float win = step(0.14, y0) * step(y0, 0.6) * step(0.62, x0);
+            float line = 0.32 - 0.5*pow(t, 0.85) + 0.16*x0*(1.0 - t);
+            float blk = ${mode === 1 ? 'mix(win, step(line, y0), step(0.015, t))' : 'win'};
+            vec4 diffuseColor = vec4(mix(vec3(0.945,0.953,0.949), vec3(0.11,0.13,0.15), blk), opacity);`);
+        }; m.customProgramCacheKey = () => 'emu-' + mode; return m; };
+      const loft = (slices, mode) => {
+        const pos = [], st = [], idx = [];
+        slices.forEach(s => sec.forEach(([x0, y0]) => { const [x, y] = s.f(x0, y0); pos.push(x, y, s.z); st.push(x0, y0, s.t); }));
+        for(let j=0;j<slices.length-1;j++) for(let i=0;i<N;i++){ const a = j*N + i, b = j*N + (i+1)%N, c = a + N, d = b + N; idx.push(a, c, b, b, c, d); }
+        const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('sect', new T.Float32BufferAttribute(st, 3)); g.setIndex(idx); g.computeVertexNormals();
+        const m = new T.Mesh(g, mkMat(mode)); m.castShadow = true; return m;
+      };
+      const flat = (x0, y0) => [x0*W, YC + y0*H];
+      const body = (z0, z1) => loft([{z:z0, t:0, f:flat}, {z:z1, t:0, f:flat}], 0);
+      const cap = (z, dir) => { const s = new T.Shape(); sec.forEach(([x0,y0],i) => { const p = flat(x0,y0); i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]); });
+        const m = new T.Mesh(new T.ShapeGeometry(s), new T.MeshLambertMaterial({color:0xe6e9e8})); m.position.z = z; if(dir < 0) m.rotation.y = Math.PI; return m; };
+      const nose = () => {
+        const Ln = 2.3, yTip = 1.08, M = 36, sl = [];
+        for(let j=0;j<=M;j++){
+          const t = j/M, mid = YC + (yTip - YC)*Math.pow(t, 1.25);
+          const top = mid + H*Math.pow(Math.max(0, 1 - Math.pow(t, 1.25)), 0.62);
+          const bot = mid - H*Math.pow(Math.max(0, 1 - Math.pow(t, 3)), 0.42);
+          const sx = Math.pow(Math.max(0, 1 - Math.pow(t, 2.8)), 0.45);
+          sl.push({z: t*Ln, t, f:(x0, y0) => [x0*W*sx, y0 >= 0 ? mid + (top - mid)*y0 : mid + (mid - bot)*y0]});
+        }
+        /* 黑色車鼻：從車窗帶往前、往下包覆，兩側畫出流線曲線；下方保留白色的圓弧保險桿 */
+        return loft(sl, 1);
+      };
+      const car = (front) => {
+        const g = new T.Group();
+        const z0 = front ? -2.4 : -2.4, z1 = front ? 0.0 : 2.4;
+        g.add(body(z0, z1));
+        g.add(cap(z0, -1)); if(!front) g.add(cap(z1, 1));
+        box(g, 1.6, 0.3, z1 - z0 - 0.2, GY, 0, 0.6, (z0 + z1)/2);
+        if(front){
+          const n = nose(); g.add(n);
+          /* 底盤往前延伸到車鼻下方並逐漸收窄（前端寬度約為原本的四成） */
+          const ug = new T.BoxGeometry(1.6, 0.3, 1.8, 1, 1, 1), up = ug.attributes.position;
+          for(let i=0;i<up.count;i++){ if(up.getZ(i) > 0){ up.setX(i, up.getX(i)*0.4); if(up.getY(i) > 0) up.setY(i, up.getY(i) - 0.06); } }
+          ug.computeVertexNormals();
+          const uf = new T.Mesh(ug, GY); uf.position.set(0, 0.6, 0.8); uf.castShadow = true; g.add(uf);
+          /* 頭燈：用射線找到車鼻表面的位置，貼在黑色區塊上 */
+          n.updateMatrixWorld(); const rc = new T.Raycaster();
+          [-0.5, 0.5].forEach(x => { rc.set(new T.Vector3(x, 1.42, 6), new T.Vector3(0, 0, -1)); const h = rc.intersectObject(n)[0];
+            if(h){ const l = new T.Mesh(new T.SphereGeometry(0.13, 10, 8), new T.MeshLambertMaterial({color:0xfff6d0, emissive:0x8a7a40})); l.scale.set(1.5, 0.55, 0.5); l.position.copy(h.point); l.position.z -= 0.03; g.add(l); } });
+          wheels(g, [-0.6, -1.9], 0.28, dark, GY);
+        }else wheels(g, [1.6, -1.6], 0.28, dark, GY);
+        return g;
+      };
+      const a = car(true), b = car(false);
+      a.position.z = 0; return [a, b];
+  }},
+  { key:'toy', name:'積木玩具火車', build(){
+      const blu = L(0x3a86d1), yel = L(0xf0b030), red = L(0xe2453a), grn = L(0x46b39a), pur = L(0x9176cf), wht = L(0xfaf6ec);
+      const a = new T.Group();
+      box(a, 1.6, 0.5, 4.2, red, 0, 0.75, 0);
+      const bo = new T.Mesh(new T.CylinderGeometry(0.7, 0.7, 2.2, 12), blu); bo.rotation.x = Math.PI/2; bo.position.set(0, 1.6, 0.8); bo.castShadow = true; a.add(bo);
+      cyl(a, 0.3, 0.3, 0.5, red, 0, 2.5, 1.35, 10); cyl(a, 0.45, 0.3, 0.3, yel, 0, 2.85, 1.35, 10);
+      box(a, 1.7, 1.6, 1.4, yel, 0, 1.8, -1.2); box(a, 1.9, 0.25, 1.7, red, 0, 2.72, -1.2);
+      box(a, 1.72, 0.55, 0.7, wht, 0, 2.0, -1.2);
+      const face = new T.Mesh(new T.CylinderGeometry(0.62, 0.62, 0.08, 16), wht); face.rotation.x = Math.PI/2; face.position.set(0, 1.6, 1.92); a.add(face);
+      [-0.22, 0.22].forEach(x => { const e = new T.Mesh(new T.SphereGeometry(0.07, 8, 6), L(0x2b2b30)); e.position.set(x, 1.72, 1.97); a.add(e); });
+      const sm = new T.Mesh(new T.TorusGeometry(0.2, 0.04, 6, 12, Math.PI), L(0x2b2b30)); sm.rotation.z = Math.PI; sm.position.set(0, 1.5, 1.97); a.add(sm);
+      [[0.95,red],[-0.15,grn],[-1.25,pur]].forEach(([z,m]) => [-0.62,0.62].forEach(x => { const w = new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.22, 16), m); w.rotation.z = Math.PI/2; w.position.set(x*1.05, 0.42, z); a.add(w); }));
+      a.userData.smoke = new T.Vector3(0, 3.05, 1.35);
+      const b = new T.Group();
+      box(b, 1.6, 0.5, 4.0, blu, 0, 0.75, 0);
+      box(b, 1.7, 0.7, 3.8, grn, 0, 1.35, 0);
+      [[red,-1.1,0],[yel,0,0.4],[pur,1.1,0.1],[blu,0.5,-0.3]].forEach(([m,z,x],i) => { const c = box(b, 0.75, 0.75, 0.75, m, x*0.6, 2.05 + (i===1?0.2:0), z); c.rotation.y = i*0.4; });
+      const tri = new T.Mesh(new T.ConeGeometry(0.45, 0.8, 3), yel); tri.position.set(-0.3, 2.3, 1.2); b.add(tri);
+      [[1.2,yel],[-1.2,red]].forEach(([z,m]) => [-0.62,0.62].forEach(x => { const w = new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.22, 16), m); w.rotation.z = Math.PI/2; w.position.set(x*1.05, 0.42, z); b.add(w); }));
+      return [a, b];
+  }}
+];
+
+
+/* ---------- 軌道：鋪在草地最外圈（草地之後才接斜坡與沙灘） ---------- */
+function buildTrack(){
+  const g = new T.Group();
+  const bed = new T.Mesh(new T.RingGeometry(RC - 1.35, RC + 1.35, 180, 1).rotateX(-Math.PI/2), L(0x9a8f7e)); bed.position.y = 0.06; bed.receiveShadow = true; g.add(bed);
+  const n = Math.round(TAU*RC/0.9), sl = new T.InstancedMesh(new T.BoxGeometry(1.95, 0.12, 0.34), L(0x6b4a33), n), d = new T.Object3D();
+  for(let i=0;i<n;i++){ const a = i/n*TAU; d.position.set(Math.cos(a)*RC, 0.14, Math.sin(a)*RC); d.rotation.set(0, -a, 0); d.updateMatrix(); sl.setMatrixAt(i, d.matrix); }
+  sl.receiveShadow = true; g.add(sl);
+  [RC - GAUGE/2, RC + GAUGE/2].forEach(r => { const rail = new T.Mesh(new T.TorusGeometry(r, 0.07, 6, 280), L(0x8c939a)); rail.rotation.x = Math.PI/2; rail.position.y = 0.25; g.add(rail); });
+  scene.add(g);
+}
+/* ---------- 北方車站：求職島站 ---------- */
+const stationMeshes = [];
+/* 月台：扇形實心平台（頂面、內外側面、兩端都有封邊），沿著軌道內側；A＝所在角度，span＝半幅角度 */
+function buildPlatform(A, span){
+  const g = new T.Group(), r0 = RC - 3.6, r1 = RC - 1.45, H = 0.55, n = 28;
+  const sector = (ra, rb, h, mats) => {
+    const sh = new T.Shape();
+    for(let i=0;i<=n;i++){ const a = A - span + 2*span*i/n; const x = Math.cos(a)*rb, z = Math.sin(a)*rb; i ? sh.lineTo(x, z) : sh.moveTo(x, z); }
+    for(let i=n;i>=0;i--){ const a = A - span + 2*span*i/n; sh.lineTo(Math.cos(a)*ra, Math.sin(a)*ra); }
+    const geo = new T.ExtrudeGeometry(sh, {depth:h, bevelEnabled:false, curveSegments:1});
+    geo.rotateX(Math.PI/2); geo.translate(0, h, 0);   /* 形狀平面 (x,z) 往上長出高度 h */
+    const m = new T.Mesh(geo, mats); m.castShadow = true; m.receiveShadow = true; return m;
+  };
+  g.add(sector(r0, r1, H, [L(0xd8cdb5), L(0xbfb39a)]));
+  const edge = sector(r1 - 0.3, r1, 0.02, [L(0xe8c04a), L(0xe8c04a)]); edge.position.y = H; g.add(edge);   /* 月台邊緣黃線 */
+  /* 兩端的三角形斜坡（讓島民走上月台） */
+  [-1, 1].forEach(dir => {
+    const RA = 2.6/46.1, N = 8, pos = [], a0 = A + dir*span;
+    const V = (i, r, top) => { const a = a0 + dir*RA*i/N; return [Math.cos(a)*r, top ? H*(1 - i/N) : 0, Math.sin(a)*r]; };
+    const tri = (p1, p2, p3) => pos.push(...p1, ...p2, ...p3);
+    for(let i=0;i<N;i++){
+      tri(V(i,r0,1), V(i,r1,1), V(i+1,r1,1)); tri(V(i,r0,1), V(i+1,r1,1), V(i+1,r0,1));   /* 斜面 */
+      [r0, r1].forEach(r => { tri(V(i,r,0), V(i,r,1), V(i+1,r,1)); tri(V(i,r,0), V(i+1,r,1), V(i+1,r,0)); });   /* 兩側三角形 */
+    }
+    const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); geo.computeVertexNormals();
+    const m = new T.Mesh(geo, new T.MeshLambertMaterial({color:0xcbbfa4, side:T.DoubleSide})); m.castShadow = true; m.receiveShadow = true; g.add(m);
+    for(let i=1;i<N;i++){ const a = a0 + dir*RA*i/N; const st = new T.Mesh(new T.BoxGeometry(0.06, 0.03, r1 - r0), L(0xb3a68a)); st.position.set(Math.cos(a)*(r0 + r1)/2, H*(1 - i/N) + 0.01, Math.sin(a)*(r0 + r1)/2); st.rotation.y = -a + Math.PI/2; g.add(st); }   /* 階梯紋 */
+  });
+  scene.add(g); return g;
+}
+function buildStation(){
+  const g = new T.Group();
+  const wall = L(0xf3ead6), roof = L(0x2f6b7a), wood = L(0x9a6a40), dark = L(0x34424c), plat = L(0xd8cdb5), edge = L(0xe8c04a), win = L(0x9fc8de);
+  const pg = buildPlatform(ST_A, 0.26);   /* 北站月台（三節列車的長度） */
+  const sx = Math.cos(ST_A)*(RC - 7.2), sz = Math.sin(ST_A)*(RC - 7.2);
+  g.position.set(sx, 0, sz); g.rotation.y = Math.atan2(Math.cos(ST_A), Math.sin(ST_A));
+  box(g, 8.4, 0.5, 4.6, L(0xc9bea6), 0, 0.25, 0);
+  box(g, 7.6, 3.2, 3.8, wall, 0, 2.1, 0);
+  box(g, 7.7, 0.35, 3.9, wood, 0, 0.67, 0);
+  [-1, 1].forEach(s => { const r = box(g, 8.6, 0.25, 2.6, roof, 0, 4.25, s*1.0); r.rotation.x = s*0.42; });
+  box(g, 8.7, 0.3, 0.3, L(0x24525e), 0, 4.75, 0);
+  box(g, 1.8, 2.2, 1.8, wall, 0, 5.5, 0.2);
+  const tr = new T.Mesh(new T.ConeGeometry(1.5, 1.4, 4), roof); tr.rotation.y = Math.PI/4; tr.position.set(0, 7.3, 0.2); tr.castShadow = true; g.add(tr);
+  const clk = new T.Mesh(new T.CylinderGeometry(0.55, 0.55, 0.08, 20), L(0xffffff)); clk.rotation.x = Math.PI/2; clk.position.set(0, 5.6, 1.12); g.add(clk);
+  const rim = new T.Mesh(new T.TorusGeometry(0.56, 0.06, 6, 20), dark); rim.position.set(0, 5.6, 1.15); g.add(rim);
+  box(g, 0.05, 0.38, 0.03, dark, 0, 5.72, 1.17); const hand = box(g, 0.05, 0.28, 0.03, dark, 0.08, 5.6, 1.17); hand.rotation.z = -1.1;
+  box(g, 1.5, 2.0, 0.1, wood, 0, 1.5, 1.92);
+  [-2.6, -1.6, 1.6, 2.6].forEach(x => { box(g, 0.75, 1.0, 0.08, win, x, 2.3, 1.92); box(g, 0.85, 0.1, 0.12, wood, x, 1.75, 1.94); });
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const cx = cv.getContext('2d');
+  cx.fillStyle = '#2f5d50'; cx.fillRect(0,0,512,128); cx.fillStyle = '#faf6ec'; cx.font = 'bold 64px "Noto Serif TC","Noto Serif CJK TC",serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('求 職 島 站', 256, 68);
+  const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshLambertMaterial({map:new T.CanvasTexture(cv)})); sign.position.set(0, 3.25, 1.96); g.add(sign);
+  const cg = new T.Group(); cg.position.set(0, 0, 4.1); g.add(cg);
+  box(cg, 9.5, 0.18, 2.6, roof, 0, 3.5, 0);
+  [-4, -1.3, 1.3, 4].forEach(x => box(cg, 0.16, 3.0, 0.16, dark, x, 2.05, -0.6));
+  [-2.8, 2.8].forEach(x => { box(cg, 1.6, 0.12, 0.45, wood, x, 1.0, -0.2); box(cg, 1.6, 0.4, 0.08, wood, x, 1.3, -0.42); [-0.65,0.65].forEach(dx => box(cg, 0.08, 0.45, 0.4, dark, x+dx, 0.78, -0.2)); });
+  [-4.6, 4.6].forEach(x => { box(cg, 0.1, 2.4, 0.1, dark, x, 1.75, 0.6); const l = new T.Mesh(new T.SphereGeometry(0.22, 10, 8), new T.MeshLambertMaterial({color:0xfff1b0, emissive:0x8a6a20})); l.position.set(x, 3.0, 0.6); cg.add(l); });
+  scene.add(g);
+  /* 南方小月台（列車也會停靠） */
+  const sp = buildPlatform(ST_A + Math.PI, 0.2);
+  g.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); pg.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); sp.traverse(o => { if(o.isMesh) stationMeshes.push(o); });
+  window.stationMeshes = stationMeshes; window.stationGroup = g; window.platformGroups = [pg, sp];
+}
+
+/* ---------- 列車：停靠車站 → 發車繞島一圈 → 回站停靠 ---------- */
+const DWELL = 20, DWELL_S = 8, SPEED = 0.16, GAP = 5.0/RC;   /* 北站停 20 秒、南方小月台停 8 秒；約 40 秒繞一圈 */
+const OFF = GAP*1.05;   /* 三節列車停靠時讓整列置中在月台上 */
+let train = null, design = 0, theta = ST_A + OFF, state = 'stop', stT = 8, traveled = 0;
+const puffs = [];
+window.TRAIN_STATE = { R:RC, theta:ST_A + OFF, lenA:GAP*2.6, moving:false };
+function setTrain(i){
+  if(train) train.forEach(c => scene.remove(c));
+  design = i; train = DESIGNS[i].build();
+  if(train.length === 2) train.push(train[1].clone(true));   /* 全部改成三節：車頭＋兩節車廂 */
+  train.forEach(c => { c.traverse(o => { if(o.isMesh) o.castShadow = true; }); scene.add(c); });
+  try{ localStorage.setItem('jobisle-train', String(i)); }catch(e){}
+  placeTrain(); syncTrainPanel();
+}
+function placeTrain(){
+  let a = theta;
+  train.forEach((c, i) => {
+    if(i > 0) a -= GAP;
+    c.position.set(Math.cos(a)*RC, RAIL_Y - 0.06, Math.sin(a)*RC);
+    c.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a));
+  });
+}
+function trainSmoke(dt){
+  const a = train[0];
+  if(a.userData.smoke && state === 'run' && Math.random() < dt*6){
+    const p = a.userData.smoke.clone(); a.localToWorld(p);
+    const m = new T.Mesh(new T.SphereGeometry(0.35, 8, 6), new T.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:0.85, depthWrite:false}));
+    m.position.copy(p); scene.add(m); puffs.push({m, t:0});
+  }
+  for(let i=puffs.length-1;i>=0;i--){ const f = puffs[i]; f.t += dt; f.m.position.y += dt*1.2; f.m.scale.setScalar(1 + f.t*1.4); f.m.material.opacity = 0.85*(1 - f.t/1.8);
+    if(f.t > 1.8){ scene.remove(f.m); f.m.geometry.dispose(); f.m.material.dispose(); puffs.splice(i,1); } }
+}
+let last = performance.now();
+function tick(){
+  const now = performance.now(), dt = Math.min(0.1, (now - last)/1000); last = now;
+  if(!train) return;
+  stT += dt;
+  const dw = traveled > 0.1 && traveled < TAU - 0.1 ? DWELL_S : DWELL;
+  if(state === 'stop' && stT > dw){ state = 'run'; stT = 0; if(traveled >= TAU - 1e-4) traveled = 0; }
+  if(state === 'run'){
+    const goal = traveled < Math.PI - 1e-4 ? Math.PI : TAU, remain = goal - traveled;   /* 下一站：南方小月台 → 北站 */
+    const k = Math.min(1, stT/3, Math.max(0.12, remain/0.35));      /* 出站加速、進站減速 */
+    const step = Math.min(remain, SPEED*dt*k);
+    theta += step; traveled += step;
+    if(traveled >= goal - 1e-4){ traveled = goal; theta = ST_A + OFF + goal; state = 'stop'; stT = 0; railArrival(goal >= TAU - 1e-4 ? 0 : 1); }
+  }
+  placeTrain(); trainSmoke(dt); curDw = dw; updateRail(dt);
+  const TS = window.TRAIN_STATE; TS.theta = theta; TS.moving = state === 'run' || (state === 'stop' && stT > dw - 3);
+}
+
+/* ---------- 換列車樣式面板（點車站或「求職島站」標籤開啟） ---------- */
+function syncTrainPanel(){ const p = document.getElementById('train-panel'); if(!p) return;
+  p.querySelectorAll('[data-t]').forEach(b => { const on = +b.dataset.t === design; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); }
+window.openTrainPanel = () => {
+  const p = document.getElementById('train-panel'); if(!p) return;
+  ['snd-panel','dn-panel'].forEach(id => { const e = document.getElementById(id); if(e) e.hidden = true; });
+  p.hidden = false; syncTrainPanel();
+};
+function buildTrainPanel(){
+  const p = document.createElement('div'); p.id = 'train-panel'; p.hidden = true;
+  p.innerHTML = `<h4><span>求職島站．列車樣式</span><button class="icon-btn snd-x" id="train-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h4>
+    <div class="tr-opts">${DESIGNS.map((d,i) => `<button data-t="${i}" aria-pressed="false"><span>${d.name}</span></button>`).join('')}</div>`;
+  (document.getElementById('ui') || document.body).appendChild(p);
+  p.querySelector('#train-x').onclick = () => { p.hidden = true; };
+  p.querySelectorAll('[data-t]').forEach(b => b.onclick = () => setTrain(+b.dataset.t));
+  const css = document.createElement('style');
+  css.textContent = `#train-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:80;width:340px;padding:14px;border-radius:4px;background:var(--paper);box-shadow:0 10px 30px rgba(20,40,45,.22);font-size:13px;color:var(--ink);pointer-events:auto}
+#train-panel[hidden]{display:none}
+#train-panel h4{display:flex;align-items:center;justify-content:space-between;margin:-4px -6px 10px 0;font-size:13px;letter-spacing:.14em}
+#train-panel .tr-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#train-panel .tr-opts button{font:inherit;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:3px;cursor:pointer;font-size:13px;text-align:left;transition:background .2s,color .2s,border-color .2s}
+#train-panel .tr-opts button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media(max-width:720px){#train-panel{bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(340px,calc(100vw - 24px))}}`;
+  document.head.appendChild(css);
+  ['snd-btn','dn-btn'].forEach(id => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => { p.hidden = true; }); });
+}
+
+
+/* ---------- 島民搭火車：同一批 24 位島民上下車（不換人） ---------- */
+const STN = [{A:ST_A, span:0.26}, {A:ST_A + Math.PI, span:0.2}];   /* 0＝北站、1＝南方小月台 */
+const PR0 = RC - 3.6, PR1 = RC - 1.45, PH = 0.55, RMID = 46.1, RAMP = 2.6/46.1, DOOR_R = 46.85;
+const rnd = (a, b) => a + Math.random()*(b - a);
+const angD = (a, b) => { let d = b - a; d = ((d + Math.PI) % TAU + TAU) % TAU - Math.PI; return d; };
+const P2 = (a, r) => ({x:Math.cos(a)*r, z:Math.sin(a)*r});
+/* 地面高度：月台 0.55、斜坡依位置遞減，其餘依島嶼地形 */
+window.groundY = (x, z) => {
+  const r = Math.hypot(x, z); let h = islandY(r);
+  if(r > PR0 - 0.05 && r < PR1 + 0.05){ const a = Math.atan2(z, x);
+    for(const s of STN){ const d = Math.abs(angD(s.A, a));
+      if(d <= s.span) h = Math.max(h, PH); else if(d <= s.span + RAMP) h = Math.max(h, PH*(1 - (d - s.span)/RAMP)); } }
+  return h;
+};
+let stopAt = 0, curDw = 20;
+const seats = [];   /* 北站兩張長椅 */
+const arcPts = (a0, a1, r) => { const out = [], n = Math.max(1, Math.ceil(Math.abs(angD(a0, a1))/0.07)); for(let i=1;i<=n;i++) out.push(P2(a0 + angD(a0, a1)*i/n, r)); return out; };
+const carAng = i => theta - i*GAP;
+function nearestEnd(S, a){ const s = STN[S]; return angD(s.A, a) >= 0 ? 1 : -1; }
+function finishRail(v){
+  v.railPlan = null; v.benchSit = false; v.auto = true; v.root.visible = true;
+  v.setState('walk', {timer:rnd(4, 8)}); const p = v.root.position; v.heading = Math.atan2(-p.x, -p.z) + rnd(-0.5, 0.5);
+  v.railCool = rnd(60, 120);
+}
+function exitVia(v, S, fromA){   /* 從月台上的某個角度，沿月台走到最近的斜坡下去，再往島內走 */
+  const s = STN[S], dir = nearestEnd(S, fromA), aTop = s.A + dir*s.span, aBot = s.A + dir*(s.span + RAMP);
+  v.railPts = [...arcPts(fromA, aTop, RMID), P2(aBot, RMID), P2(aBot, 43.4)];
+  v.railPlan.phase = 'leave'; v.benchSit = false; v.auto = false; v.setState('rail', {timer:1e9});
+}
+function goWait(v, S, fromA){   /* 走到候車位置：北站優先坐長椅，其餘站在月台上 */
+  const s = STN[S]; let spot = null, yaw = Math.atan2(Math.cos(s.A), Math.sin(s.A));
+  if(S === 0 && Math.random() < 0.75){ const free = seats.filter(q => !q.by); if(free.length){ const q = free[Math.floor(Math.random()*free.length)]; q.by = v; v.railSeat = q; spot = {x:q.x, z:q.z}; yaw = q.yaw; } }
+  if(!spot){ const a = s.A + rnd(-0.7, 0.7)*s.span; spot = P2(a, rnd(45.7, 46.4)); }
+  const aSpot = Math.atan2(spot.z, spot.x);
+  v.railPts = [...arcPts(fromA, aSpot, 46.3), spot]; v.railWaitYaw = yaw;
+  v.railPlan.phase = 'climb'; v.setState('rail', {timer:1e9});
+}
+window.RAIL_MOVE = (v, dt) => {
+  const p = v.root.position, P = v.railPts;
+  if(!P || !P.length){ railArrive(v); return; }
+  const t = P[0], dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
+  if(d < 0.12){ P.shift(); if(!P.length) railArrive(v); return; }
+  const h = Math.atan2(dx, dz); v.heading = h; v.yaw += angD(v.yaw, h)*Math.min(1, dt*8);
+  const sp = Math.min(d, v.speed*0.62*dt*(v.railPlan && v.railPlan.phase === 'door' ? 1.4 : 1));
+  p.x += Math.sin(h)*sp; p.z += Math.cos(h)*sp; p.y = groundY(p.x, p.z); v.root.rotation.y = v.yaw;
+};
+function railArrive(v){
+  const R = v.railPlan; if(!R){ finishRail(v); return; }
+  if(R.phase === 'climb'){
+    R.phase = 'wait'; R.waitT = 0;
+    if(v.railSeat){ v.setState('sit', {timer:1e9}); v.benchSit = true; v.faceTo = v.railWaitYaw; v.yaw = v.railWaitYaw; }
+    else{ v.setState('idle', {timer:1e9}); v.yaw = v.heading = v.railWaitYaw; }
+  }else if(R.phase === 'door'){
+    if(stopAt === R.st && state === 'stop' && stT < curDw - 0.6){   /* 上車：島民進入車廂（之後跟著列車移動） */
+      R.phase = 'ride'; R.stops = 0; R.alightAt = Math.random() < 0.5 ? 1 - R.st : R.st; R.need = R.alightAt === R.st ? 2 : 1;
+      v.setState('ride', {timer:1e9}); v.root.visible = false;
+    }else{ const p = v.root.position; goWait(v, R.st, Math.atan2(p.z, p.x)); }   /* 沒趕上，回去等下一班 */
+  }else if(R.phase === 'leave') finishRail(v);
+}
+function railArrival(k){   /* 列車到站：該下車的人從車門走出來 */
+  (window.__crowd || []).forEach(v => { const R = v.railPlan; if(!R || R.phase !== 'ride') return;
+    R.stops++;
+    if(k === R.alightAt && R.stops >= R.need){
+      const a = carAng(R.car) + rnd(-0.015, 0.015), d = P2(a, DOOR_R);
+      v.root.position.set(d.x, PH, d.z); v.root.visible = true; v.yaw = Math.atan2(-Math.cos(a), -Math.sin(a));
+      R.st = k; exitVia(v, k, a);
+    } });
+}
+let recruitT = 0;
+function updateRail(dt){
+  const C = window.__crowd; if(!C || !C.length || !seats.length && window.stationGroup) initSeats();
+  if(!C) return;
+  stopAt = state === 'stop' ? (traveled > 0.1 && traveled < TAU - 0.1 ? 1 : 0) : -1;
+  C.forEach(v => { if(v.railCool > 0) v.railCool -= dt; });
+  /* 招募乘客：每個月台最多 2～3 人候車，車上＋候車總共最多 6 人 */
+  recruitT -= dt;
+  if(recruitT <= 0){ recruitT = 1;
+    const plans = C.filter(v => v.railPlan);
+    if(plans.length < 6) STN.forEach((s, S) => {
+      const waiting = plans.filter(v => v.railPlan.st === S && v.railPlan.phase !== 'ride' && v.railPlan.phase !== 'leave').length;
+      if(waiting >= (S === 0 ? 3 : 2) || Math.random() > 0.3) return;
+      const c = P2(s.A, 44);
+      const cand = C.filter(v => v.state === 'walk' && v.auto && !v.house && !v.partner && !v.beachPlan && !(v.ghost > 0) && !v.railPlan && !(v.railCool > 0) && v.root.visible
+        && Math.hypot(v.root.position.x - c.x, v.root.position.z - c.z) < 26);
+      if(!cand.length) return;
+      const v = cand[Math.floor(Math.random()*cand.length)], a = Math.atan2(v.root.position.z, v.root.position.x), dir = nearestEnd(S, a);
+      v.railPlan = {st:S, phase:'approach', planT:0, dir}; v.timer = 60;   /* 走去車站的路上不會中途改做別的事 */
+    });
+  }
+  C.forEach(v => {
+    const R = v.railPlan; if(!R) return;
+    const s = STN[R.st], p = v.root.position;
+    if(R.phase === 'approach'){   /* 一般走路走到斜坡下 */
+      R.planT += dt;
+      if(v.state !== 'walk' || R.planT > 45){ v.railPlan = null; v.goal = null; return; }
+      const b = P2(s.A + R.dir*(s.span + RAMP), RMID);
+      if(Math.hypot(p.x - b.x, p.z - b.z) < 0.9){ v.auto = false; v.goal = null;
+        const top = P2(s.A + R.dir*s.span, RMID); v.railPts = [top]; v.railPlan.phase = 'climb0'; v.setState('rail', {timer:1e9}); }
+      else v.goal = {x:b.x, z:b.z};
+    }else if(R.phase === 'climb0' && !(v.railPts && v.railPts.length)){ goWait(v, R.st, s.A + R.dir*s.span); }
+    else if(R.phase === 'wait'){
+      R.waitT += dt;
+      if(stopAt === R.st && stT > 2 && stT < curDw - 2.5){   /* 列車停妥：走到最近的車門上車 */
+        const a = Math.atan2(p.z, p.x); let best = 0, bd = 9;
+        [0, 1, 2].forEach(i => { const d = Math.abs(angD(carAng(i), a)); if(d < bd){ bd = d; best = i; } });
+        if(v.railSeat){ v.railSeat.by = null; v.railSeat = null; } v.benchSit = false;
+        R.car = best; const da = carAng(best) + rnd(-0.015, 0.015); v.railPts = [P2(da, DOOR_R)]; R.phase = 'door'; v.setState('rail', {timer:1e9});
+      }else if(R.waitT > 150){ if(v.railSeat){ v.railSeat.by = null; v.railSeat = null; } exitVia(v, R.st, Math.atan2(p.z, p.x)); }
+    }else if(R.phase === 'ride' && train){
+      const c = train[Math.min(R.car, train.length - 1)].position; v.root.position.set(c.x, c.y, c.z); v.root.visible = false;
+    }
+  });
+}
+function initSeats(){
+  const G = window.stationGroup; if(!G) return; G.updateMatrixWorld(true);
+  [-2.8, 2.8].forEach(x => { const w = G.localToWorld(new T.Vector3(x, 0, 3.86)); seats.push({x:w.x, z:w.z, yaw:Math.atan2(Math.cos(ST_A), Math.sin(ST_A)), by:null}); });
+}
+window.RAIL = { get stopAt(){ return stopAt; }, seats };
+
+const wait = setInterval(() => {
+  if(typeof renderer === 'undefined' || !renderer || !scene || !window.__crowd || !vendors.length) return;
+  clearInterval(wait);
+  buildTrack(); buildStation(); buildTrainPanel();
+  let saved = 0; try{ saved = +(localStorage.getItem('jobisle-train') || 0); }catch(e){}
+  setTrain(saved >= 0 && saved < DESIGNS.length ? saved : 0);
+  const r0 = renderer.render.bind(renderer);
+  renderer.render = (s, c) => { tick(); r0(s, c); };
+}, 100);
+})();
+
+</script>
+<script>
+/* outside-close：音量、晝夜變化、列車樣式這類彈出小卡，點擊卡片以外的任何地方就關閉 */
+(function(){
+  const PANELS = [['snd-panel','snd-btn'],['dn-panel','dn-btn'],['train-panel',null]];
+  let downX = 0, downY = 0;
+  document.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; }, true);
+  document.addEventListener('pointerup', e => {
+    if(Math.abs(e.clientX - downX) > 4 || Math.abs(e.clientY - downY) > 4) return;   /* 拖曳旋轉畫面不算點擊 */
+    PANELS.forEach(([pid, bid]) => {
+      const p = document.getElementById(pid); if(!p || p.hidden) return;
+      if(p.contains(e.target)) return;                                  /* 點在卡片裡 */
+      if(bid){ const b = document.getElementById(bid); if(b && b.contains(e.target)) return; }   /* 開關按鈕自己處理 */
+      if(pid === 'train-panel' && p.dataset.justOpened) return;          /* 剛點車站打開的那一下 */
+      p.hidden = true;
+    });
+    /* 產業別：點外面任意處自動收合（已選的產業篩選保留） */
+    const lg = document.getElementById('legend');
+    if(lg && lg.open && !lg.contains(e.target)) lg.open = false;
+  }, true);
+  /* 點車站開啟列車面板時，同一次點擊不要馬上被關掉 */
+  const wait = setInterval(() => { if(!window.openTrainPanel) return; clearInterval(wait);
+    const o = window.openTrainPanel; window.openTrainPanel = () => { o(); const p = document.getElementById('train-panel'); if(p){ p.dataset.justOpened = '1'; setTimeout(() => delete p.dataset.justOpened, 0); } }; }, 100);
+})();
 </script>
 </body>
 </html>
