@@ -1800,7 +1800,7 @@ function buildLegend(){
   });
   const lg = $('legend');
   lg.hidden = false;
-  if(innerWidth < 720) lg.open = false;
+  lg.open = false;   /* 預設收合（電腦、手機都一樣） */
 }
 
 /* 履歷表單 */
