@@ -1411,6 +1411,7 @@ function buildVegetation(){
   for(let i=0;i<15;i++){
     const a = i/15*TAU + R(-.14,.14), r = R(53.6, 56.2);
     let x = Math.cos(a)*r, z = Math.sin(a)*r, y = islandY(r);
+    placed.push({x, z, r:0.9});   /* 椰子樹幹當作障礙物 */
     const lx = Math.cos(a), lz = Math.sin(a), lean = R(.12,.24);
     for(let k=0;k<7;k++){
       const f = k/7, tilt = lean*(1+f);
@@ -1422,6 +1423,7 @@ function buildVegetation(){
   }
   for(let i=0;i<20;i++){
     const a = R(0,TAU), r = R(54, 58.6), s = R(.5,1.3);
+    placed.push({x:Math.cos(a)*r, z:Math.sin(a)*r, r:s*0.9});   /* 岩石當作障礙物 */
     B.rock.add(Math.cos(a)*r, islandY(r) + .1, Math.sin(a)*r, s,s*.7,s, R(0,3),R(0,3),0, pick([0x9a958c,0x85817a,0xa8a398]));
   }
 
@@ -2259,7 +2261,7 @@ class Villager{
     this.P={};POSE_KEYS.forEach(k=>this.P[k]=0);this.P.hipY=1.08;
     this.state='idle';this.timer=1e9;this.auto=false;this.phase=rand(0,TAU);this.walkAmt=0;this.phoneAmt=0;
     this.yaw=0;this.heading=0;this.speed=rand(1.0,1.35);this.wander=rand(2,4);this.lookMode='around';this.lookOff=rand(0,10);
-    this.blinkT=rand(1,4);this.blinking=0;this.talking=false;this.partner=null;this.cool=0;this.goal=null;this.bound=47;this.path=null;
+    this.blinkT=rand(1,4);this.blinking=0;this.talking=false;this.partner=null;this.cool=0;this.goal=null;this.bound=57.5;this.path=null;
     this.t=rand(0,100);
   }
   recolor(pal){this.pal=pal||randomPal();const m=this.mats,P=this.pal;
@@ -2355,6 +2357,7 @@ class Villager{
       }
       }
     }
+    if(!scripted){const gp=this.root.position;gp.y=islandY(Math.hypot(gp.x,gp.z));}   /* 走到沙灘時順著坡往下，不懸空 */
     this.root.rotation.y=this.yaw;
 
     const wa=this.walkAmt;
@@ -2429,6 +2432,65 @@ class Villager{
     this.blinkT-=dt;if(this.blinkT<=0){this.blinking=0.13;this.blinkT=rand(2,5.5);}
     if(this.blinking>0)this.blinking-=dt;
     const by=this.blinking>0?0.12:1;this.eyes.forEach(e=>e.scale.y=0.1*by);
+    if(this.state==='fish'&&this.rod)this.fishPose(dt);else if(this.state==='castle'&&this.castle)this.castlePose(dt);
+  }
+  /* ================= 沙灘活動：釣魚、堆沙堡 ================= */
+  startFish(){
+    const p=this.root.position;this.beachA=Math.atan2(p.z,p.x);
+    this.yaw=this.heading=Math.atan2(Math.cos(this.beachA),Math.sin(this.beachA));   /* 面向大海 */
+    this.setState('fish',{timer:rand(28,45)});this.bt=rand(0,5);this.cycle=rand(9,14);
+    this.rod=makeRod();this.upper.add(this.rod);
+    this.fLine=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3()]),new T.LineBasicMaterial({color:0xf5f5f5,transparent:true,opacity:0.8}));
+    this.fLine.frustumCulled=false;scene.add(this.fLine);
+    this.bob=makeBobber();scene.add(this.bob);this.fishM=makeFish();this.fishM.visible=false;scene.add(this.fishM);
+  }
+  startCastle(){
+    const p=this.root.position;this.beachA=Math.atan2(p.z,p.x);
+    this.yaw=this.heading=Math.atan2(Math.cos(this.beachA),Math.sin(this.beachA));
+    this.setState('castle',{timer:CASTLE_STEP*7+rand(5,9)});this.bt=0;this.bhp=0.4;
+    const fx=Math.sin(this.yaw),fz=Math.cos(this.yaw),cx=p.x+fx*1.85,cz=p.z+fz*1.85;
+    this.castle=makeCastle();this.castle.position.set(cx,islandY(Math.hypot(cx,cz))-0.02,cz);this.castle.rotation.y=this.yaw;this.castle.scale.setScalar(0.7);
+    scene.add(this.castle);
+  }
+  endBeach(){
+    if(this.rod){this.upper.remove(this.rod);this.rod=null;}
+    [this.fLine,this.bob,this.fishM].forEach(o=>{if(o)scene.remove(o);});this.fLine=this.bob=this.fishM=null;
+    if(this.castle){BEACH_LEFT.push({g:this.castle,t:0});this.castle=null;}   /* 沙堡留在原地，之後慢慢消失 */
+    this.hip.position.y=1.08;
+    this.setState('walk',{timer:rand(5,9)});this.heading=Math.atan2(-this.root.position.x,-this.root.position.z)+rand(-0.6,0.6);   /* 往島內走 */
+    this.beachCool=rand(40,70);
+  }
+  fishPose(dt){
+    this.bt+=dt;const ph=this.bt%this.cycle,biteAt=this.cycle-3.2;
+    const pulling=ph>biteAt+0.6,bite=ph>biteAt&&!pulling,lift=pulling?Math.min(1,(ph-biteAt-0.6)/0.4):0;
+    this.upper.rotation.x=-0.06*lift;
+    const [l,r]=this.arms;
+    r.sh.rotation.set(-1.05-0.55*lift,0,0.18);r.el.rotation.x=-0.55+0.25*lift;
+    l.sh.rotation.set(-0.95-0.5*lift,0,-0.1);l.el.rotation.x=-0.85+0.2*lift;
+    this.headPivot.rotation.x=0.12-0.18*lift;
+    this.upper.updateMatrixWorld(true);
+    _bv.set(0,-0.42,0);r.el.localToWorld(_bv);this.upper.worldToLocal(_bv);
+    this.rod.position.copy(_bv);this.rod.rotation.set(0.95-0.5*lift+Math.sin(this.t*1.3)*0.03,0,0.12);
+    const a=this.beachA,ox=Math.cos(a),oz=Math.sin(a),p=this.root.position;
+    const bx=p.x+ox*7.5-oz*1.2,bz=p.z+oz*7.5+ox*1.2;
+    let by=SEA_Y+waveH(bx,bz,clock.elapsedTime)*dampAt(Math.hypot(bx,bz))+0.05;
+    if(bite)by-=0.35*Math.sin((ph-biteAt)/0.6*Math.PI);
+    const tip=this.rod.userData.tip.getWorldPosition(new T.Vector3());
+    if(pulling){
+      const q=Math.min(1,(ph-biteAt-0.6)/0.9),fx=bx+(tip.x-bx)*q*0.55,fz=bz+(tip.z-bz)*q*0.55,fy=by+(tip.y-1.2-by)*q;
+      this.fishM.visible=true;this.fishM.position.set(fx,fy,fz);this.fishM.rotation.set(0,0,Math.sin(this.t*14)*0.5);this.bob.position.set(fx,fy+0.45,fz);
+    }else{this.fishM.visible=false;this.bob.position.set(bx,by,bz);}
+    this.fLine.geometry.setFromPoints([tip,this.bob.position.clone().add(new T.Vector3(0,0.12,0))]);
+  }
+  castlePose(dt){
+    this.bt+=dt;const parts=this.castle.userData.parts,working=this.bt<parts.length*CASTLE_STEP;
+    this.hip.position.y=0.22;this.upper.rotation.x=0.42;
+    this.legs[0].th.rotation.set(-1.45,0,0.3);this.legs[1].th.rotation.set(-1.45,0,-0.3);this.legs[0].kn.rotation.x=0.35;this.legs[1].kn.rotation.x=0.35;
+    const pat=working?Math.sin(this.t*7):0,[l,r]=this.arms;
+    l.sh.rotation.set(-0.95+0.28*pat,0,0.15);l.el.rotation.x=-0.35;
+    r.sh.rotation.set(-0.95-0.28*pat,0,-0.15);r.el.rotation.x=-0.35;
+    this.bhp+=((working?0.42:0.05)-this.bhp)*Math.min(1,dt*2);this.headPivot.rotation.x=this.bhp;
+    parts.forEach((pt,i)=>{const k=Math.min(1,Math.max(0,(this.bt-i*CASTLE_STEP)/0.8));pt.scale.setScalar(Math.max(0.001,1-Math.pow(1-k,3)));});
   }
   /* 找一個前方 2.4 格內沒有障礙的方向；near 有給時取離該方向最近的 */
   freeDir(px,pz,near){
@@ -2503,6 +2565,7 @@ class Villager{
   /* 自動行為 */
   next(){
     const s=this.state,r=Math.random();
+    if(s==='fish'||s==='castle'){this.endBeach();return;}
     if(s==='walk'){
       if(r<0.26){this.setState('phone',{timer:rand(4.5,7.5)});this.faceTo=this.yaw+rand(-0.6,0.6);}
       else if(r<0.42){this.setState('sit',{timer:rand(6,10)});this.faceTo=this.yaw+rand(-1,1);}
@@ -2513,6 +2576,69 @@ class Villager{
   }
 }
 
+/* ============ 沙灘活動：道具與觸發 ============ */
+const SAND_C=0xd8bd84,SAND_D=0xc7a96d,CASTLE_STEP=2.4,_bv=new T.Vector3(),BEACH_LEFT=[];
+function makeRod(){
+  const g=new T.Group();
+  const rod=new T.Mesh(new T.CylinderGeometry(0.035,0.06,3.4,6),new T.MeshLambertMaterial({color:0x5a3d2a}));rod.position.y=1.7;g.add(rod);
+  const reel=new T.Mesh(new T.CylinderGeometry(0.14,0.14,0.12,12),new T.MeshLambertMaterial({color:0x3d4a55}));reel.rotation.z=Math.PI/2;reel.position.set(0.12,0.45,0);g.add(reel);
+  const grip=new T.Mesh(new T.CylinderGeometry(0.075,0.075,0.6,8),new T.MeshLambertMaterial({color:0x2b2b2b}));grip.position.y=0.25;g.add(grip);
+  const tip=new T.Object3D();tip.position.y=3.4;g.add(tip);g.userData.tip=tip;return g;
+}
+function makeBobber(){
+  const g=new T.Group();
+  g.add(new T.Mesh(new T.SphereGeometry(0.16,10,8,0,TAU,0,Math.PI/2),new T.MeshLambertMaterial({color:0xe2453a})));
+  g.add(new T.Mesh(new T.SphereGeometry(0.16,10,8,0,TAU,Math.PI/2,Math.PI/2),new T.MeshLambertMaterial({color:0xffffff})));return g;
+}
+function makeFish(){
+  const g=new T.Group(),m=new T.MeshLambertMaterial({color:0x7fb6d6});
+  const b=new T.Mesh(new T.SphereGeometry(0.28,10,8),m);b.scale.set(0.55,1,0.3);g.add(b);
+  const t=new T.Mesh(new T.ConeGeometry(0.16,0.3,4),m);t.position.y=-0.36;t.rotation.x=Math.PI;g.add(t);return g;
+}
+function makeCastle(){
+  const g=new T.Group(),sm=new T.MeshLambertMaterial({color:SAND_C}),dm=new T.MeshLambertMaterial({color:SAND_D}),parts=[];
+  const add=(o,x,y,z)=>{o.position.set(x,y,z);g.add(o);parts.push(o);o.scale.setScalar(0.001);return o;};
+  add(new T.Mesh(new T.CylinderGeometry(0.62,0.72,0.26,10),dm),0,0.13,0);
+  add(new T.Mesh(new T.BoxGeometry(0.8,0.34,0.8),sm),0,0.42,0);
+  [[-0.4,-0.4],[0.4,-0.4],[-0.4,0.4],[0.4,0.4]].forEach(([x,z])=>{
+    const tw=new T.Group(),c=new T.Mesh(new T.CylinderGeometry(0.15,0.17,0.55,8),sm);c.position.y=0.27;tw.add(c);
+    for(let k=0;k<4;k++){const b=new T.Mesh(new T.BoxGeometry(0.07,0.08,0.07),sm),a=k/4*TAU;b.position.set(Math.cos(a)*0.11,0.58,Math.sin(a)*0.11);tw.add(b);}
+    add(tw,x,0.26,z);
+  });
+  const keep=new T.Group(),kc=new T.Mesh(new T.CylinderGeometry(0.2,0.24,0.75,8),sm);kc.position.y=0.37;keep.add(kc);
+  const roof=new T.Mesh(new T.ConeGeometry(0.26,0.34,8),dm);roof.position.y=0.91;keep.add(roof);
+  const pole=new T.Mesh(new T.CylinderGeometry(0.012,0.012,0.42,4),new T.MeshLambertMaterial({color:0x6b4a33}));pole.position.y=1.27;keep.add(pole);
+  const fg=new T.BufferGeometry().setFromPoints([new T.Vector3(0,0,0),new T.Vector3(0.24,-0.07,0),new T.Vector3(0,-0.15,0)]);fg.computeVertexNormals();
+  const flag=new T.Mesh(fg,new T.MeshLambertMaterial({color:0xe2453a,side:T.DoubleSide}));flag.position.y=1.47;keep.add(flag);
+  add(keep,0,0.58,0);
+  g.userData.parts=parts;
+  const bucket=new T.Mesh(new T.CylinderGeometry(0.2,0.15,0.3,12),new T.MeshLambertMaterial({color:0x3fa6d9}));bucket.position.set(0.95,0.15,0.35);g.add(bucket);
+  const spade=new T.Group(),y1=new T.MeshLambertMaterial({color:0xf0ae32}),s1=new T.Mesh(new T.BoxGeometry(0.16,0.03,0.2),y1),s2=new T.Mesh(new T.CylinderGeometry(0.02,0.02,0.36,5),y1);
+  s2.rotation.x=Math.PI/2;s2.position.z=0.26;spade.add(s1,s2);spade.position.set(-0.9,0.03,0.4);spade.rotation.y=0.6;g.add(spade);
+  return g;
+}
+/* 走到沙灘的島民有機會停下來釣魚或堆沙堡；同一時間最多 2 人釣魚、1 人堆沙堡 */
+function updateBeach(dt){
+  const fishing=crowd.filter(v=>v.state==='fish'||v.beachPlan==='fish').length,building=crowd.filter(v=>v.state==='castle').length;
+  crowd.forEach(v=>{
+    if(v.beachCool>0)v.beachCool-=dt;
+    if(v.beachPlan==='fish'){            /* 正在走去水邊 */
+      v.planT=(v.planT||0)+dt;const p=v.root.position,r=Math.hypot(p.x,p.z);
+      if(v.state!=='walk'||v.planT>20){v.beachPlan=null;return;}
+      if(r>56.9&&!crowd.some(o=>o!==v&&o.state==='fish'&&o.root.position.distanceTo(p)<4)){v.beachPlan=null;v.goal=null;v.startFish();return;}
+      if(!v.goal){const a=Math.atan2(p.z,p.x);v.goal={x:Math.cos(a)*57.6,z:Math.sin(a)*57.6};}
+      return;
+    }
+    if(v.state!=='walk'||!v.auto||v.house||v.partner||v.beachCool>0||v.ghost>0||v.umbWant)return;
+    const p=v.root.position,r=Math.hypot(p.x,p.z);
+    if(r<53.6||Math.random()>dt*0.25)return;
+    if(fishing<2&&(building>=1||Math.random()<0.55)){v.beachPlan='fish';v.planT=0;const a=Math.atan2(p.z,p.x);v.goal={x:Math.cos(a)*57.6,z:Math.sin(a)*57.6};}
+    else if(building<1&&r<56.2)v.startCastle();
+  });
+  /* 留在沙灘上的沙堡：25 秒後慢慢沉下去消失 */
+  for(let i=BEACH_LEFT.length-1;i>=0;i--){const c=BEACH_LEFT[i];c.t+=dt;
+    if(c.t>25){const k=Math.min(1,(c.t-25)/3);c.g.scale.set(0.7,0.7*(1-k)+0.001,0.7);if(k>=1){scene.remove(c.g);BEACH_LEFT.splice(i,1);}}}
+}
 /* ============ 島民管理：障礙物、生成、閒聊 ============ */
 const WORLD={
   cells:new Map(), CS:4, ready:false,
@@ -2613,6 +2739,7 @@ function updateVillagers(dt){
   if(!crowd.length)return;
   _vt+=dt;
   updateDirector(dt);
+  updateBeach(dt);
   crowd.forEach(v=>{if(v.state!=='gone')v.update(dt,_vt);});
   const w=crowd.filter(v=>v.state==='walk');
   for(let i=0;i<w.length;i++)for(let j=i+1;j<w.length;j++){
@@ -2691,12 +2818,14 @@ function updateFollow(dt, t){
   const r = follow.v.root;
   if(!r.visible || !r.parent){ stopFollow(); return; }   // 走進房子或被替換 → 解除
   if(ringG){
-    ringG.position.set(r.position.x, 0, r.position.z);
+    ringG.position.set(r.position.x, r.position.y, r.position.z);   /* 跟著腳底高度（沙灘下坡也貼地） */
+    { const x = r.position.x, z = r.position.z, rr = Math.hypot(x, z), sl = rr > 0.5 ? islandY(rr + 0.5) - islandY(rr - 0.5) : 0;   /* 依坡度傾斜，整圈都貼著地面 */
+      ringG.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(-sl*x/(rr||1), 1, -sl*z/(rr||1)).normalize()); }
     const k = (t*0.9)%1;
     ringPulse.scale.setScalar(1 + k*1.2);
     ringPulse.material.opacity = .6*(1-k);
   }
-  const want = new THREE.Vector3(r.position.x, 1.3, r.position.z);
+  const want = new THREE.Vector3(r.position.x, r.position.y + 1.3, r.position.z);
   const old = controls.target.clone();
   controls.target.lerp(want, 1 - Math.exp(-dt*7));
   camera.position.add(controls.target.clone().sub(old));
@@ -3313,6 +3442,7 @@ function tick(){
   const R = window.DN && DN._rain, C = window.__crowd;
   C.forEach(v => {
     const want = (v.root.visible && v.state !== 'gone' && underRain(v, R)) ? 1 : 0;
+    if(want && (v.state === 'fish' || v.state === 'castle')) v.endBeach();   /* 下雨了就收起釣竿/離開沙堡去撐傘 */
     if(want && !v.umb) attach(v, Math.floor(Math.random()*UMB.length));
     if(!v.umb) return;
     v.umbWant = want;
