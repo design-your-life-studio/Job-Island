@@ -250,6 +250,49 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
 #snd-panel .tst{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 #snd-panel .tst button{text-align:center;padding:6px 4px;font-size:12px}
 @media(max-width:720px){#snd-panel{bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(250px,calc(100vw - 24px))}}
+/* ===== 手機版面精簡（島嶼最大化） ===== */
+@media (max-width:720px){
+:root{--sheet:45vh;--sheet:45dvh}
+.brand{top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;padding:6px 11px}
+.brand-kicker{font-size:8px;letter-spacing:.18em}
+.brand h1{font-size:14px;margin-top:1px}
+.legend{left:8px;top:calc(56px + env(safe-area-inset-top));width:116px}
+.legend summary{padding:6px 10px;font-size:11px;letter-spacing:.12em}
+.legend li button{padding:7px 6px;font-size:12.5px}
+#follow-tip{left:auto;right:8px;transform:none;top:calc(56px + env(safe-area-inset-top));padding:5px 11px;font-size:11.5px;letter-spacing:.03em}
+.dock{bottom:calc(10px + env(safe-area-inset-bottom));gap:8px}
+.dock .btn-primary{height:42px;font-size:14px;max-width:250px;padding:0 14px}
+.dock .btn-primary svg{width:16px;height:16px}
+.dock{width:auto;justify-content:center}
+.dock .btn-primary{flex:none;width:auto;max-width:none;padding:0 22px;gap:7px}
+.btn-round{width:42px;height:42px}
+.btn-round svg{width:19px;height:19px}
+.results{bottom:calc(62px + env(safe-area-inset-bottom));padding:7px 8px 8px}
+.results-head{font-size:11px;padding-bottom:6px}
+.results-head b{font-size:12px}
+.results-head button{font-size:11px}
+.r-chip{padding:7px 10px;font-size:12.5px;gap:6px}
+.card{max-height:var(--sheet);height:var(--sheet);padding:16px 16px calc(12px + env(safe-area-inset-bottom))}
+.card::before{top:6px}
+.card-close{top:6px;right:4px}
+.card h2{font-size:17px;margin:6px 0 4px}
+.booth{font-size:10px}.booth b{font-size:22px}
+.card .cat,.card-cat{font-size:12.5px}
+.sec-title{margin:10px 0 0;font-size:10.5px}
+.jobs li{padding:9px 0;gap:5px}
+.job-title{font-size:14px}
+.job-meta{font-size:12.5px;gap:2px 8px;padding-left:24px;grid-template-columns:34px 1fr}
+.job-stamp{width:34px;height:34px;font-size:8.5px;border-width:1.5px}
+.card-note{margin-top:10px;padding:8px 10px;font-size:12px}
+.card:not([hidden]) ~ .results{bottom:calc(var(--sheet) + 8px)}
+.brand,.legend{transition:transform .38s cubic-bezier(.22,.8,.22,1),opacity .3s ease}
+.legend{transition-delay:.05s}
+body.card-open .brand{transform:translateY(calc(-100% - 24px));opacity:0;pointer-events:none}
+body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointer-events:none;transition-delay:0s}
+}
+
+#snd-panel h4{display:flex;align-items:center;justify-content:space-between;margin:-4px -6px 6px 0}
+#snd-panel .snd-x{margin:0}
 </style>
 </head>
 <body>
@@ -1697,9 +1740,11 @@ function showVendorCard(v){
   card.scrollTop = 0;
   card.hidden = false;
   requestAnimationFrame(() => card.classList.add('show'));
+  document.body.classList.add('card-open'); // 手機：頂端標題與產業別向上收起
 }
 function closeVendorCard(){
   const card = $('vendor-card');
+  document.body.classList.remove('card-open'); // 標題與產業別由上往下回來
   card.classList.remove('show');
   vendors.forEach(o => o.label && o.label.classList.remove('active'));
   currentVendor = null;
@@ -1897,8 +1942,8 @@ function focusVendor(v){
     // 手機：鏡頭從房子的斜前方拉近（避免穿進中央火箭），房子停在底部卡片上方
     const R = Math.hypot(hp.x, hp.z), d = clamp(R - 8, 7, 20);
     const side = new THREE.Vector3(-out.z, 0, out.x).multiplyScalar(d < 16 ? 9 : 5);
-    const tgt = new THREE.Vector3(hp.x, -3, hp.z);
-    startTween(hp.clone().addScaledVector(out, -d).add(side).add(new THREE.Vector3(0, 21, 0)), tgt);
+    const tgt = new THREE.Vector3(hp.x, -10, hp.z);
+    startTween(hp.clone().addScaledVector(out, -d).add(side).add(new THREE.Vector3(0, 23, 0)), tgt);
     return;
   }
   // 鏡頭站在房子「靠中心那一側」（正對房門），距離依所在圈層調整，
@@ -2643,10 +2688,10 @@ function mapIsOpen(){return document.getElementById('mapv').classList.contains('
 </script>
 
 <div id="snd-panel" hidden>
-  <h4>音樂與音效</h4>
+  <h4><span>音樂與音效</span><button class="icon-btn snd-x" id="snd-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h4>
   <div class="row"><span>總音量</span><input id="snd-vol" type="range" min="0" max="100" value="80"></div>
   <div class="row"><span>背景音樂</span><button class="sw on" data-k="music" aria-label="背景音樂"></button></div>
-  <div class="row"><span>環境音（海浪・風・海鷗）</span><button class="sw on" data-k="amb" aria-label="環境音"></button></div>
+  <div class="row"><span>環境音</span><button class="sw on" data-k="amb" aria-label="環境音"></button></div>
   <div class="row"><span>互動音效</span><button class="sw on" data-k="sfx" aria-label="互動音效"></button></div>
 </div>
 <script>
@@ -2793,6 +2838,7 @@ const SND=(function(){
   const begin=()=>{SND.start();btn.classList.toggle('off',!(SND.st.music||SND.st.amb||SND.st.sfx));};
   addEventListener('pointerdown',begin,{capture:true,once:true});addEventListener('keydown',begin,{capture:true,once:true});
   btn.onclick=()=>{begin();pn.hidden=!pn.hidden;};
+  document.getElementById('snd-x').onclick=()=>{pn.hidden=true;};
   document.getElementById('snd-vol').oninput=e=>{begin();SND.setVol(e.target.value/100);};
   pn.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{begin();const k=b.dataset.k,on=!SND.st[k];b.classList.toggle('on',on);({music:SND.setMusic,amb:SND.setAmb,sfx:SND.setSfx})[k](on);btn.classList.toggle('off',!(SND.st.music||SND.st.amb||SND.st.sfx));});
   document.addEventListener('visibilitychange',()=>{const c=SND.ctx;if(!c)return;if(document.hidden)c.suspend();else c.resume();});
