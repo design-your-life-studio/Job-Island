@@ -268,7 +268,7 @@ body.clean #ui *,body.clean #labels *,body.clean #snd-panel *,body.clean #dn-pan
 #clean-exit{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:90;width:44px;height:44px;border-radius:50%;border:none;display:grid;place-items:center;
   background:rgba(250,246,236,.55);color:#2b3a3a;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .45s ease,background .2s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 #clean-exit svg{width:20px;height:20px}
-body.clean #clean-exit{opacity:.45;pointer-events:auto}
+body.clean #clean-exit{opacity:.15;pointer-events:auto}
 body.clean #clean-exit:hover{opacity:1;background:rgba(250,246,236,.92)}
 #snd-btn svg{width:22px;height:22px}
 #snd-btn.off .wave{display:none}
@@ -3641,8 +3641,13 @@ const wait = setInterval(() => {
 function setClean(on){
   if(on){ if(typeof closeVendorCard==='function' && !document.getElementById('vendor-card').hidden) closeVendorCard();
     ['snd-panel','dn-panel'].forEach(id=>{const e=document.getElementById(id);if(e)e.hidden=true;}); }
+  if(on){   /* 顯示介面的按鈕放在原本「隱藏介面」按鈕的同一個位置（電腦、手機一樣） */
+    const r = document.getElementById('clean-btn').getBoundingClientRect(), x = document.getElementById('clean-exit');
+    Object.assign(x.style, {left:r.left+'px', top:r.top+'px', width:r.width+'px', height:r.height+'px', right:'auto', bottom:'auto'});
+  }
   document.body.classList.toggle('clean', on);
 }
+addEventListener('resize', () => { if(document.body.classList.contains('clean')){ setClean(true); } });
 addEventListener('keydown', e => { if(e.key === 'Escape' && document.body.classList.contains('clean')) setClean(false); });
 </script>
 <script>
