@@ -194,6 +194,8 @@ button.tag-info:hover{filter:brightness(1.05);outline:2px solid var(--sun);outli
   .info-layout { flex-direction: column; gap: 18px; }
   .map-card { min-height: 200px; }
 }
+#follow-tip{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:8px 16px;border-radius:999px;background:rgba(20,30,50,.78);color:#fff;font-size:13px;font-weight:600;letter-spacing:.06em;pointer-events:none;white-space:nowrap;backdrop-filter:blur(6px)}
+#follow-tip[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -566,7 +568,22 @@ function initScene(){
     onHover(e);
   });
   renderer.domElement.addEventListener('pointerup', onPointerClick);
-  addEventListener('keydown', e => { if(e.key === 'Escape'){ closeResume(); closeVendorCard(); closeInfo(); } });
+  addEventListener('keydown', e => { if(e.key === 'Escape'){ stopFollow(); closeResume(); closeVendorCard(); closeInfo(); } });
+  // F 鍵進入全螢幕；ESC 退出（瀏覽器全螢幕模式下 ESC 由瀏覽器處理）
+  addEventListener('keydown', e => {
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '')) return;
+    const k = (e.key || '').toLowerCase();
+    const root = document.documentElement;
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if(k === 'f' && !fsEl){
+      const req = root.requestFullscreen || root.webkitRequestFullscreen;
+      if(req) { try{ const r = req.call(root); if(r && r.catch) r.catch(() => {}); }catch(err){} }
+    }else if((k === 'escape') && fsEl){
+      const ex = document.exitFullscreen || document.webkitExitFullscreen;
+      if(ex) { try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(err){} }
+    }
+  });
 }
 
 /* 天空（漸層 + 太陽光暈） */
@@ -1561,6 +1578,12 @@ function onPointerClick(e){
   raycaster.setFromCamera(mouse, camera);
   
   const vendorHits = raycaster.intersectObjects(houseMeshes, false);
+  const vp = window.pickVillager ? window.pickVillager() : null;
+  if(vp && (!vendorHits.length || vp.dist < vendorHits[0].distance)){
+    closeVendorCard();
+    followVillager(vp.v);
+    return;
+  }
   if(vendorHits.length) {
     selectVendor(vendorHits[0].object.userData.vendor);
     return;
@@ -1572,9 +1595,11 @@ function onPointerClick(e){
     return;
   }
   
+  stopFollow();
   closeVendorCard();
 }
 function selectVendor(v){
+  stopFollow();
   currentVendor = v;
   v.hopAt = clock.elapsedTime;
   vendors.forEach(o => o.label && o.label.classList.toggle('active', o === v));
@@ -1822,6 +1847,7 @@ function focusVendor(v){
   startTween(p.clone().addScaledVector(out, -dist).add(new THREE.Vector3(0, 17, 0)), p);
 }
 function resetView(){
+  stopFollow();
   // 回到全景：沿著「目前視線方向」直線倒退並拉高，視線方位完全不旋轉，不會繞島、也不會急轉彎
   const dir = new THREE.Vector3(controls.target.x - camera.position.x, 0, controls.target.z - camera.position.z);
   let to;
@@ -2402,10 +2428,78 @@ function updateVillagers(dt){
     if(d<min&&d>0.001){const p=(min-d)/2;a.x-=dx/d*p;a.z-=dz/d*p;b.x+=dx/d*p;b.z+=dz/d*p;}
   }
 }
+window.pickVillager=function(){
+  if(!grp) return null;
+  const hits=raycaster.intersectObjects(grp.children,true);
+  for(const h of hits){
+    let o=h.object;
+    while(o&&o.parent!==grp)o=o.parent;
+    if(!o||!o.visible)continue;
+    const v=crowd.find(c=>c.root===o);
+    if(v)return {v,dist:h.distance};
+  }
+  return null;
+};
 window.createVillagers=createVillagers;window.updateVillagers=updateVillagers;window.__DIR=DIR;window.__crowd=crowd;
 
 })();
 
+/* ================= 跟隨島民 ================= */
+let follow = null;
+function followVillager(v){
+  stopIdle();
+  tween = null; controls.enabled = true;
+  follow = {v, t0:clock.elapsedTime, last:null};
+  $('follow-tip').hidden = false;
+  mkRing();
+}
+function stopFollow(){
+  if(!follow) return;
+  follow = null;
+  $('follow-tip').hidden = true;
+  if(ringG) ringG.visible = false;
+}
+/* 鎖定標示：腳下青色雷達圈（正常深度判定，會被人物與場景物件遮擋，並向外擴散脈動） */
+let ringG = null, ringPulse = null;
+function mkRing(){
+  if(!ringG){
+    const mk = (a,b,o) => {
+      const mt = new THREE.MeshBasicMaterial({color:0x37e6ff, transparent:true, opacity:o, depthWrite:false, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+      const m = new THREE.Mesh(new THREE.RingGeometry(a,b,48), mt);
+      m.rotation.x = -Math.PI/2; m.position.y = .1; m.renderOrder = 1; return m;
+    };
+    ringG = new THREE.Group();
+    ringPulse = mk(.95,1.1,.6);
+    ringG.add(mk(.95,1.15,.95), ringPulse, mk(.2,.9,.18));
+    scene.add(ringG);
+  }
+  ringG.visible = true;
+}
+function updateFollow(dt, t){
+  if(!follow) return;
+  const r = follow.v.root;
+  if(!r.visible || !r.parent){ stopFollow(); return; }   // 走進房子或被替換 → 解除
+  if(ringG){
+    ringG.position.set(r.position.x, 0, r.position.z);
+    const k = (t*0.9)%1;
+    ringPulse.scale.setScalar(1 + k*1.2);
+    ringPulse.material.opacity = .6*(1-k);
+  }
+  const want = new THREE.Vector3(r.position.x, 1.3, r.position.z);
+  const old = controls.target.clone();
+  controls.target.lerp(want, 1 - Math.exp(-dt*7));
+  camera.position.add(controls.target.clone().sub(old));
+  // 剛鎖定的 1.8 秒：順勢把鏡頭拉近（保持目前視角方向，不繞圈）
+  const k = (t - follow.t0)/1.8;
+  if(k < 1){
+    const off = camera.position.clone().sub(controls.target);
+    const dist = off.length(), goal = IS_PORTRAIT ? 20 : 15;
+    if(dist > goal){
+      off.setLength(dist + (goal - dist)*(1 - Math.exp(-dt*3.5)));
+      camera.position.copy(controls.target).add(off);
+    }
+  }
+}
 /* ================= 動畫循環 ================= */
 function animate(){
   requestAnimationFrame(animate);
@@ -2417,6 +2511,7 @@ function animate(){
   updateSkyEcosystem(t); // 更新天空生態 (雲朵與飛鳥)
   updateSeagulls(t);
   updateVillagers(dt);
+  updateFollow(dt, t);
   updateRocketAndSmoke(t, dt); // 更新火箭自轉與底部煙霧
   rays.forEach(m => m.uniforms.uTime.value = t);
   if (IS_PORTRAIT) { // 手機窄視角：鏡頭拉近時淡出光束，避免整個畫面被光束洗白
@@ -2436,5 +2531,6 @@ function animate(){
 document.addEventListener('selectstart',e=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName||(e.target.parentElement||{}).tagName||''))e.preventDefault();});
 document.addEventListener('dragstart',e=>e.preventDefault());
 </script>
+<div id="follow-tip" hidden>🎯 跟隨島民中・點擊空白處或按 ESC 取消</div>
 </body>
 </html>
