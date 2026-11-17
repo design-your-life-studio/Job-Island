@@ -227,6 +227,27 @@ button.tag-info:hover,button.tag-info.hover{filter:brightness(1.05);outline:2px 
 
 
 /* ===== 場地圖檢視器 ===== */
+.results-head .venue-btn{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:5px 10px 5px 8px;border-radius:999px;background:var(--ink);color:var(--paper);text-decoration:none;font-weight:700;letter-spacing:.06em}
+.results-head .venue-btn svg{width:14px;height:14px}
+.results-head .venue-btn+button{margin-left:6px}
+/* 會場實際位置：平面圖上標出推薦攤位 */
+#mapv .mv-pins{position:absolute;inset:0;pointer-events:none;z-index:2}
+#mapv .mv-frame{position:absolute;box-sizing:border-box;border:3px solid #e8603a;border-radius:4px;box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 18px 4px rgba(232,96,58,.75);pointer-events:auto;cursor:pointer;animation:mvPulse 1.4s ease-in-out infinite}
+#mapv .mv-frame::after{content:"";position:absolute;inset:-10px;border:2px solid rgba(232,96,58,.8);border-radius:8px;animation:mvRing 1.4s ease-out infinite}
+@keyframes mvPulse{0%,100%{box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 10px 2px rgba(232,96,58,.6)}50%{box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 24px 8px rgba(232,96,58,.95)}}
+@keyframes mvRing{0%{opacity:.9;transform:scale(.9)}100%{opacity:0;transform:scale(1.35)}}
+#mapv .mv-tag{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;white-space:nowrap;border:0;padding:6px 10px;border-radius:4px;background:#e8603a;color:#fff;font:700 13px/1 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+#mapv .mv-tag::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-bottom:0;border-top-color:#e8603a}
+#mapv .mv-tag b{font-weight:800;margin-right:5px}
+#mapv .mv-list{position:absolute;left:50%;top:62px;transform:translateX(-50%);z-index:3;display:none;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 24px);width:max-content;padding:10px 12px;border-radius:6px;background:var(--paper);box-shadow:0 6px 20px rgba(20,40,45,.18)}
+#mapv.hl .mv-list{display:flex}
+#mapv.hl .mv-hint{display:none}
+#mapv .mv-list button{border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:999px;padding:7px 12px;font:600 13px/1 "Noto Sans TC",system-ui,sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(20,40,45,.12)}
+#mapv .mv-list button b{color:#e8603a;margin-right:5px}
+#mapv .mv-list .mv-cap{width:100%;margin-bottom:2px;text-align:center;font:700 12px/1.4 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.12em;color:var(--ink-2)}
+body.map-hl #ui{z-index:620}   /* 從地圖點開職缺卡片時，卡片蓋在地圖上 */
+body.map-hl #ui > :not(#vendor-card){visibility:hidden!important}
+@media(max-width:720px){.results-head .venue-btn{padding:4px 8px 4px 6px}#mapv .mv-tag{font-size:12px;padding:5px 8px}#mapv .mv-list button{font-size:12px;padding:6px 10px}}
 #mapv{position:fixed;inset:0;z-index:500;display:none;-webkit-user-select:none;user-select:none}
 #mapv.open{display:block}
 #mapv .mv-back{position:absolute;inset:0;background:rgba(10,16,24,.5);opacity:0;transition:opacity .25s}
@@ -366,7 +387,7 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
   </aside>
 
   <div class="results paper" id="results" hidden>
-    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button onclick="clearMatch()">清除配對</button></div>
+    <div class="results-head"><span>為你推薦的攤位</span><b id="results-count"></b><button class="venue-btn" onclick="openVenueMap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>會場實際位置</button><button onclick="clearMatch()">清除配對</button></div>
     <div class="results-list" id="results-list"></div>
   </div>
 
@@ -3000,7 +3021,8 @@ document.addEventListener('dragstart',e=>e.preventDefault());
   <div class="mv-back"></div>
   <div class="mv-box" role="dialog" aria-modal="true" aria-label="大會平面圖">
     <div class="mv-head"><b></b><button class="mv-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <div class="mv-vp"><img alt="大會平面圖" draggable="false"></div>
+    <div class="mv-vp"><img alt="大會平面圖" draggable="false"><div class="mv-pins"></div></div>
+    <div class="mv-list"></div>
     <div class="mv-hint">滾輪／雙指縮放・拖曳移動・雙擊放大</div>
         <div class="mv-tools"><button data-z="out" aria-label="縮小">−</button><input type="range" min="0" max="100" value="0" aria-label="縮放"><button data-z="in" aria-label="放大">+</button></div>
   </div>
@@ -3012,11 +3034,12 @@ function MapViewer(root){
   let s=1,tx=0,ty=0,fit=1,max=8,iw=1,ih=1;const P=new Map();let pinch=null,drag=null;
   const W=()=>vp.clientWidth,H=()=>vp.clientHeight;
   function clamp(){const w=iw*s,h=ih*s;tx=w<=W()?(W()-w)/2:Math.min(0,Math.max(W()-w,tx));ty=h<=H()?(H()-h)/2:Math.min(0,Math.max(H()-h,ty));}
-  function apply(){clamp();img.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;    rng.value=Math.round(Math.log(s/fit)/Math.log(max/fit)*100);
+  function apply(){clamp();img.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;if(root._onApply)root._onApply(s,tx,ty);    rng.value=Math.round(Math.log(s/fit)/Math.log(max/fit)*100);
   }
   function zoomAt(cx,cy,ns){ns=Math.min(max,Math.max(fit,ns));const k=ns/s;tx=cx-(cx-tx)*k;ty=cy-(cy-ty)*k;s=ns;apply();}
   function reset(){iw=img.naturalWidth||1600;ih=img.naturalHeight||1000;img.style.width=iw+'px';img.style.height=ih+'px';
-    fit=Math.min(W()/iw,H()/ih);max=Math.max(fit*8,1.5);s=fit;tx=ty=0;apply();}
+    fit=Math.min(W()/iw,H()/ih);max=Math.max(fit*8,1.5);s=fit;tx=ty=0;apply();if(root._afterReset)root._afterReset();}
+  function fitRect(x0,y0,x1,y1,pad,cap){const ns=Math.min(cap?fit*cap:max,max,Math.max(fit,Math.min((W()-pad*2)/(x1-x0),(H()-pad*2)/(y1-y0))));s=ns;tx=W()/2-(x0+x1)/2*s;ty=H()/2-(y0+y1)/2*s;apply();}
   vp.addEventListener('wheel',e=>{e.preventDefault();const r=vp.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,s*Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0016)));hint.style.opacity=0;},{passive:false});
   vp.addEventListener('pointerdown',e=>{vp.setPointerCapture(e.pointerId);P.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(P.size===1){drag={x:e.clientX,y:e.clientY,tx,ty};vp.classList.add('drag');}
@@ -3031,7 +3054,7 @@ function MapViewer(root){
     zoomAt(W()/2,H()/2,s*(z==='in'?1.5:1/1.5));});
   rng.addEventListener('input',()=>zoomAt(W()/2,H()/2,fit*Math.pow(max/fit,rng.value/100)));
   img.addEventListener('load',reset);addEventListener('resize',()=>{if(root.classList.contains('open')){const r=s/fit;reset();if(r>1.01)zoomAt(W()/2,H()/2,fit*r);}});
-  return {reset,img,hint};
+  return {reset,img,hint,fitRect};
 }
 let _mv=null;
 function openMap(){const r=document.getElementById('mapv');if(!_mv){_mv=MapViewer(r);r.querySelector('.mv-x').onclick=closeMap;r.querySelector('.mv-back').onclick=closeMap;
@@ -4130,6 +4153,57 @@ const wait = setInterval(() => {
   /* 點車站開啟列車面板時，同一次點擊不要馬上被關掉 */
   const wait = setInterval(() => { if(!window.openTrainPanel) return; clearInterval(wait);
     const o = window.openTrainPanel; window.openTrainPanel = () => { o(); const p = document.getElementById('train-panel'); if(p){ p.dataset.justOpened = '1'; setTimeout(() => delete p.dataset.justOpened, 0); } }; }, 100);
+})();
+</script>
+<script>
+/* ================= 會場實際位置：在平面圖上標出配對到的攤位 =================
+   BOOTH_MAP：攤位號碼 → 在 images/map.jpg 上的中心座標（原圖像素）。換成正式平面圖時，只要改這張表和 BOOTH_CELL。 */
+const BOOTH_CELL = {w:62, h:106};
+const BOOTH_MAP = {1:[1082,1174],2:[1082,1067],3:[1082,960],4:[1082,855],5:[1082,748],6:[1082,643],7:[1144,643],8:[1144,748],9:[1144,855],10:[1144,960],11:[1144,1067],12:[1144,1174],
+  13:[1339,1174],14:[1339,1067],15:[1339,960],16:[1339,855],17:[1339,748],18:[1339,643],19:[1399,643],20:[1399,748],21:[1399,855],22:[1399,960],23:[1399,1067],24:[1399,1174],
+  25:[1594,1174],26:[1594,1067],27:[1594,960],28:[1594,855],29:[1594,748],30:[1594,643],31:[1654,643],32:[1654,748],33:[1654,855],34:[1654,960],35:[1654,1067],36:[1654,1174]};
+let VENUE_HL = [];
+function venueBox(list, pad){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  list.forEach(o => { x0=Math.min(x0,o.x-BOOTH_CELL.w/2); x1=Math.max(x1,o.x+BOOTH_CELL.w/2); y0=Math.min(y0,o.y-BOOTH_CELL.h/2-60); y1=Math.max(y1,o.y+BOOTH_CELL.h/2); });
+  return [x0-pad,y0-pad,x1+pad,y1+pad]; }
+function openVenueMap(){
+  const list = vendors.filter(v => v.matched).map(v => { const n = parseInt(v.booth, 10), xy = BOOTH_MAP[n]; return xy ? {v, n, x:xy[0], y:xy[1]} : null; }).filter(Boolean);
+  VENUE_HL = list;
+  if(!list.length){ showToast('目前的平面圖上找不到這些攤位的位置'); return; }
+  const r = document.getElementById('mapv'), pins = r.querySelector('.mv-pins'), lst = r.querySelector('.mv-list');
+  pins.innerHTML = ''; lst.innerHTML = '<div class="mv-cap">你的推薦攤位在會場的這些位置，點一下看職缺</div>';
+  const short = n => n.replace(/股份有限公司|有限公司|股份/g, '');
+  const openCard = v => { document.body.classList.add('map-hl'); selectVendor(v); };
+  const tap = (el, fn) => { let d = null;   /* 標記上按下放開才算點擊，拖曳地圖不會誤觸 */
+    el.addEventListener('pointerdown', e => { e.stopPropagation(); d = {x:e.clientX, y:e.clientY}; });
+    el.addEventListener('pointerup', e => { e.stopPropagation(); if(d && Math.hypot(e.clientX-d.x, e.clientY-d.y) < 6) fn(); d = null; }); };
+  list.forEach(o => {
+    o.frame = document.createElement('div'); o.frame.className = 'mv-frame';
+    o.tag = document.createElement('button'); o.tag.className = 'mv-tag'; o.tag.innerHTML = `<b>${String(o.n).padStart(2,'0')}</b>${short(o.v.name)}`;
+    tap(o.frame, () => openCard(o.v)); tap(o.tag, () => openCard(o.v));
+    pins.append(o.frame, o.tag);
+    const b = document.createElement('button'); b.innerHTML = `<b>${String(o.n).padStart(2,'0')}</b>${short(o.v.name)}`;
+    b.onclick = () => { const [a,c,d2,e] = venueBox([o], 90); _mv.fitRect(a, c, d2, e, 30); };
+    lst.appendChild(b);
+  });
+  r.classList.add('hl');
+  r._onApply = (s, tx, ty) => { VENUE_HL.forEach(o => {
+    const w = BOOTH_CELL.w*s, h = BOOTH_CELL.h*s, x = tx + o.x*s, y = ty + o.y*s;
+    Object.assign(o.frame.style, {left:(x-w/2)+'px', top:(y-h/2)+'px', width:w+'px', height:h+'px'});
+    Object.assign(o.tag.style, {left:x+'px', top:(y-h/2-12)+'px'}); }); };
+  r._afterReset = () => { if(!VENUE_HL.length) return; const vp = r.querySelector('.mv-vp'), [a,c,d2,e] = venueBox(VENUE_HL, 120); _mv.fitRect(a, c, d2, e, vp.clientWidth < 500 ? 16 : 60, vp.clientWidth < 500 ? 3.2 : 2.6); };
+  openMap();
+  if(_mv.img.complete && _mv.img.naturalWidth) requestAnimationFrame(() => r._afterReset());
+}
+/* 從大會服務台打開時，不顯示攤位標記 */
+(function(){
+  const _open = window.openMap;
+  window.openMap = function(){ const r = document.getElementById('mapv');
+    if(!openVenueMap._busy){ VENUE_HL = []; r.classList.remove('hl'); r._afterReset = null; const pins = r.querySelector('.mv-pins'); if(pins) pins.innerHTML = ''; }
+    return _open.apply(this, arguments); };
+  const _ov = openVenueMap; window.openVenueMap = openVenueMap = function(){ openVenueMap._busy = true; try{ return _ov.apply(this, arguments); } finally { openVenueMap._busy = false; } };
+  const _close = window.closeMap;
+  window.closeMap = function(){ document.body.classList.remove('map-hl'); return _close.apply(this, arguments); };
 })();
 </script>
 </body>
