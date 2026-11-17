@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>揮手發光 demo｜2027屏東地區就業博覽會-求職島</title>
+<title>2027屏東地區就業博覽會-求職島</title>
 
 <!-- 清除社群分享時的預設抓取文字 -->
 <meta name="description" content=" ">
@@ -493,40 +493,10 @@ const COLS = {
 // 產業別標籤顏色
 const INDUSTRY_COLORS = ['#C2523C','#2E6A8E','#3E7C47','#C9952B','#7A4E8F','#17877B','#D9734E','#4B5D6A','#A35C7A','#8A6A3B','#3D5A99','#6E8B2F'];
 
-const DEMO_VENDORS = (() => {
-  const CATS = {
-    '製造業':['精密機械','金屬工業','塑膠科技','自動化設備','電子零件','食品加工','紡織','包裝材料'],
-    '觀光餐旅':['海灣度假飯店','民宿旅遊','餐飲集團','休閒農場','旅行社'],
-    '農業科技':['農產運銷','智慧農業','水產養殖','生技農場','冷鏈物流'],
-    '資訊科技':['軟體開發','雲端系統','資料科技','網路行銷','電商平台'],
-    '醫療照護':['聯合診所','長照中心','藥局連鎖','復健科技'],
-    '金融服務':['地區銀行','保險經紀','證券','信用合作社'],
-    '教育文化':['補教中心','文創工坊','幼兒園','職訓中心'],
-    '零售批發':['連鎖超市','便利商店','家電量販','生活百貨'],
-    '營建工程':['營造','室內設計','水電工程','建築師事務所'],
-    '運輸物流':['貨運','港務服務','汽車保修','航空地勤'],
-    '公部門':['縣府單位','公營事業','社福基金會'],
-    '能源環保':['太陽能','環保工程','水務']
-  };
-  const PREF = ['南州','恆春','潮州','東港','枋寮','里港','內埔','長治','佳冬','萬丹','車城','九如'];
-  const JOBS = ['業務專員','行政助理','生產技術員','品管人員','工程師','客服人員','倉儲物流員','設計企劃','會計助理','門市人員','專案管理','維修技師'];
-  const MAJ = ['機械','電機','資訊','餐旅','企管','外語','農學','護理','設計','財金','土木','不限'];
-  const out = []; let i = 0;
-  const names = Object.entries(CATS);
-  while(out.length < 50){
-    const [cat, kinds] = names[i % names.length];
-    const kind = kinds[Math.floor(i/names.length) % kinds.length];
-    const n = out.length;
-    const m1 = MAJ[(n*3)%MAJ.length], m2 = MAJ[(n*5+2)%MAJ.length];
-    out.push({booth:String(n+1).padStart(2,'0'), name:PREF[(n*7)%PREF.length]+kind+(n>=36?'有限公司':''), category:cat,
-      desc:'深耕屏東的在地企業，提供完整教育訓練與穩定的職涯發展，歡迎有志青年加入。',
-      jobs:[{name:JOBS[n%JOBS.length],salary:'月薪 '+(30+n%9)+',000元起',edu:['高中職','專科','大學'][n%3],major:m1},
-            {name:JOBS[(n+5)%JOBS.length],salary:'月薪 '+(28+n%7)+',000元起',edu:['專科','大學','高中職'][n%3],major:m2}],
-      majors:[m1,m2], edu:['高中職','專科','大學'][n%3], link:''});
-    i++;
-  }
-  return out;
-})();
+const DEMO_VENDORS = [
+  {booth:'01',name:'南州精密機械',category:'製造業',desc:'深耕屏東三十年的精密零組件製造廠，供應汽車與半導體設備關鍵零件。',jobs:[{name:'機械工程師',salary:'月薪 35,000~45,000元',edu:'專科',major:'機械、電機'},{name:'品管技術員',salary:'月薪 30,000元',edu:'高中職',major:'工業工程'}],majors:['機械','電機','工業工程'],edu:'高中職',link:''},
+  {booth:'02',name:'墾丁海灣度假飯店',category:'觀光餐旅',desc:'位於恆春半島的海景度假飯店，提供完整的餐旅職涯培訓與住宿福利。',jobs:[{name:'櫃檯接待',salary:'月薪 32,000元起',edu:'專科',major:'餐旅、外語'},{name:'餐飲服務',salary:'月薪 30,000元起',edu:'高中職',major:'不限'}],majors:['餐旅','觀光','外語'],edu:'高中職',link:''}
+];
 
 // 履歷：學歷與科系選項
 const EDU_LEVELS = [{lv:1,label:'高中職'},{lv:2,label:'專科'},{lv:3,label:'大學'},{lv:4,label:'碩士以上'}];
@@ -1288,11 +1258,18 @@ function createWavingHand(v, s){
   thumb.rotation.z = Math.PI/6;
   parts.push(thumb);
   parts.forEach(m => { m.userData.vendor = v; houseMeshes.push(m); });
+  /* 揮手發光：暖金色自發光＋背後柔光暈（DataTexture，避免 iPhone 彩色雜點） */
+  mat.emissive.setHex(0xffb020); mat.emissiveIntensity = 0.6;
+  if(!createWavingHand.tex){ const N = 64, d = new Uint8Array(N*N*4);
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){ const r = Math.min(1, Math.hypot(x+0.5-N/2, y+0.5-N/2)/(N/2)), i = (y*N+x)*4; d[i] = d[i+1] = d[i+2] = 255; d[i+3] = Math.round(255*Math.pow(1-r, 2.2)); }
+    const tx = new THREE.DataTexture(d, N, N, THREE.RGBAFormat); tx.magFilter = tx.minFilter = THREE.LinearFilter; tx.generateMipmaps = false; tx.needsUpdate = true; createWavingHand.tex = tx; }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:createWavingHand.tex, color:0xffd25a, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0.7}));
+  halo.position.set(0.2, 1.4, -0.3); halo.scale.set(6.5, 6.5, 1); halo.raycast = () => {}; wave.add(halo);
   wave.add(hand); outer.add(wave);
   outer.scale.setScalar(1.25*s);
   outer.visible = false;
   islandGroup.add(outer);
-  return {outer, wave};
+  return {outer, wave, mat, halo};
 }
 
 /* ---- 懸浮反饋（電腦版）：滑鼠在房子或標籤上 → 房子浮起提亮＋標籤白框；在火箭或服務台標籤上 → 火箭提亮＋橘框 ---- */
@@ -1355,6 +1332,9 @@ function updateHouses(t){
       h.outer.position.set(v.group.position.x, y + 9.4*v.s, v.group.position.z);
       h.outer.lookAt(camera.position.x, h.outer.position.y, camera.position.z);
       h.wave.rotation.z = Math.sin(t*7 + v.phase)*0.45;
+      const pulse = 0.5 + 0.5*Math.sin(t*4 + v.phase);   /* 光暈隨揮手呼吸閃動 */
+      h.mat.emissiveIntensity = 0.45 + 0.35*pulse; h.halo.material.opacity = 0.55 + 0.35*pulse;
+      const hs = 6 + 1.2*pulse; h.halo.scale.set(hs, hs, 1);
     }
   });
 }
@@ -3474,7 +3454,7 @@ function apply(s, t){
 }
 
 let last = performance.now(), rainClock = 0;
-const RAIN_EVERY = 300, RAIN_CHANCE = 0.5;   /* 每 5 分鐘擲一次骰子，50% 會下一場雨 */
+const RAIN_EVERY = 180, RAIN_CHANCE = 0.6;   /* 每 3 分鐘擲一次骰子，60% 會下一場雨 */
 function tick(){
   const now = performance.now(), dt = Math.min(0.1, (now-last)/1000); last = now;
   const t = clock.elapsedTime;
@@ -4235,62 +4215,6 @@ function openVenueMap(){
   const _close = window.closeMap;
   window.closeMap = function(){ document.body.classList.remove('map-hl'); return _close.apply(this, arguments); };
 })();
-</script>
-<script>
-/* ================= 揮手發光 demo：三種顏色 ================= */
-(function(){
-const T = THREE;
-const GLOWS = [
-  { key:'gold',  name:'① 暖金光',   emi:0xffb020, halo:0xffd25a },
-  { key:'coral', name:'② 珊瑚橘光', emi:0xff6a3a, halo:0xff8a5c },
-  { key:'cyan',  name:'③ 青藍光',   emi:0x2fd0ff, halo:0x7fe6ff }
-];
-function haloTex(){
-  const N = 64, d = new Uint8Array(N*N*4);
-  for(let y=0;y<N;y++) for(let x=0;x<N;x++){
-    const r = Math.min(1, Math.hypot(x + 0.5 - N/2, y + 0.5 - N/2)/(N/2)), a = Math.pow(1 - r, 2.2), i = (y*N + x)*4;
-    d[i] = d[i+1] = d[i+2] = 255; d[i+3] = Math.round(255*a);
-  }
-  const t = new T.DataTexture(d, N, N, T.RGBAFormat); t.magFilter = t.minFilter = T.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return t;
-}
-let cur = 0, tex = null;
-function setup(){
-  tex = haloTex();
-  vendors.forEach(v => {
-    const h = v.hand; if(!h || h.glow) return;
-    const meshes = []; h.wave.traverse(o => { if(o.isMesh) meshes.push(o); });
-    const mat = meshes[0].material.clone(); meshes.forEach(m => m.material = mat);
-    const sp = new T.Sprite(new T.SpriteMaterial({map:tex, color:0xffffff, transparent:true, depthWrite:false, blending:T.AdditiveBlending, opacity:0.9}));
-    sp.position.set(0.2, 1.4, -0.3); sp.scale.set(6.5, 6.5, 1); h.wave.add(sp);
-    h.glow = {mat, sp};
-  });
-}
-function setGlow(i){ cur = i; bar.querySelectorAll('button').forEach((b,k) => b.classList.toggle('on', k === i)); }
-function tick(){
-  const t = clock.elapsedTime, g = GLOWS[cur], pulse = 0.5 + 0.5*Math.sin(t*4);
-  vendors.forEach(v => { const G = v.hand && v.hand.glow; if(!G) return;
-    G.mat.emissive.setHex(g.emi); G.mat.emissiveIntensity = 0.45 + 0.35*pulse;
-    G.sp.material.color.setHex(g.halo); G.sp.material.opacity = 0.55 + 0.35*pulse;
-    const s = 6 + 1.2*pulse; G.sp.scale.set(s, s, 1); });
-}
-const css = document.createElement('style');
-css.textContent = `#hg{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:99;display:flex;gap:4px;background:#faf6ec;border-radius:999px;padding:6px;box-shadow:0 6px 20px rgba(0,0,0,.12);font:600 13px/1 "Noto Sans TC",system-ui,sans-serif;color:#3b3226}
-#hg button{all:unset;cursor:pointer;padding:8px 13px;border-radius:999px}#hg button.on{background:#2f5d50;color:#fff}`;
-document.head.appendChild(css);
-const bar = document.createElement('div'); bar.id = 'hg';
-bar.innerHTML = GLOWS.map(g => `<button>${g.name}</button>`).join('');
-document.body.appendChild(bar);
-['click','pointerdown','pointerup'].forEach(ev => bar.addEventListener(ev, e => { e.stopPropagation(); if(ev === 'click'){ const b = e.target.closest('button'); if(b) setGlow([...bar.children].indexOf(b)); } }));
-window.HG = { setGlow };
-const wait = setInterval(() => {
-  if(typeof renderer === 'undefined' || !vendors.length || !vendors[0].hand) return;
-  clearInterval(wait); setup(); setGlow(0);
-  /* demo：先讓 3 家廠商揮手 */
-  const L = []; vendors.forEach((v, i) => { v.matched = i === 0 || i === 4 || i === 10; if(v.matched) L.push(v); }); renderResults(L);
-  const r0 = renderer.render.bind(renderer); renderer.render = (s, c) => { tick(); r0(s, c); };
-}, 150);
-})();
-
 </script>
 </body>
 </html>
