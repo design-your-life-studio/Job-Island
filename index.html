@@ -177,6 +177,20 @@ button.tag-info:hover,button.tag-info.hover{filter:brightness(1.05);outline:2px 
 
 /* 標籤精簡模式（手機遠景） */
 .tag.compact .nm{display:none}
+/* 外籍生：可應徵的廠商以星星標示 */
+.tag .star{display:none;color:#ffd84a;font-size:13px;line-height:1;text-shadow:0 0 2px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.4);margin-right:-1px}
+.tag.intl .star{display:inline}
+.tag.compact.intl{gap:3px}
+.r-chip .star{color:#e3a51c;font-size:14px;line-height:1;margin-right:-3px}
+.intl-badge{display:inline-flex;width:max-content;align-self:flex-start;margin:-2px 0 0 26px;align-items:center;gap:3px;flex:none;padding:3px 7px;border-radius:999px;background:#fff4cf;color:#9a6a00;border:1px solid #f0cf6b;font-size:11.5px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.intl-badge b{color:#e3a51c;font-size:12.5px}
+.check-row{display:flex;align-items:center;gap:10px;margin:0 0 20px;padding:12px 14px;border:1px solid var(--line);border-radius:3px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.check-row input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;margin:0;border:1.5px solid var(--ink-2);border-radius:3px;display:grid;place-items:center;cursor:pointer;background:transparent}
+.check-row input:checked{background:var(--ink);border-color:var(--ink)}
+.check-row input:checked::after{content:'';width:5px;height:10px;border:solid var(--paper);border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.check-row .t{font-size:14px;font-weight:700;color:var(--ink)}
+.check-row em{font-style:normal;font-size:12px;color:var(--muted);margin-left:auto;text-align:right;line-height:1.4}
+.check-row em b{color:#e3a51c}
 .tag.compact{padding:4px 7px;gap:0}
 .tag.compact .no{opacity:1;font-size:11.5px;font-weight:700}
 
@@ -416,6 +430,7 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
       <label class="field"><span>年齡</span><input type="number" id="r-age" min="15" max="80" placeholder="例如 25" inputmode="numeric"></label>
       <div class="field"><span>最高學歷</span><div class="chips" id="r-edu"></div></div>
       <div class="field"><span>科系背景</span><div class="chips" id="r-major"></div></div>
+      <label class="check-row"><input type="checkbox" id="r-intl"><span class="t">我是外籍生</span><em>可應徵外籍生的廠商<br>會以 <b>★</b> 標示</em></label>
       <label class="field"><span>希望產業<em>選填</em></span><select id="r-ind"><option value="">不限產業</option></select></label>
       <div class="modal-foot">
         <button class="btn-text" onclick="closeResume()">取消</button>
@@ -487,8 +502,11 @@ const COLS = {
   salary:   ['薪資範圍','薪資','待遇'],
   majors:   ['科系背景','需求科系','相關科系','科系'],
   edu:      ['學歷要求','最低學歷','學歷'],
-  link:     ['投遞連結','職缺連結','連結','網址','官網']
+  link:     ['投遞連結','職缺連結','連結','網址','官網'],
+  intl:     ['外籍生','外籍生適用','是否接受外籍生','接受外籍生','外籍']
 };
+/* 「外籍生」欄位：填 是／可／V／○ 等表示該職缺可應徵外籍生；空白、否、不 則視為不適用 */
+const isYes = t => { t = String(t == null ? '' : t).trim(); return !!t && !/^(否|不|無|N|no|x|×|false|0)/i.test(t) && /(是|可|接受|歡迎|V|✓|✔|○|O|Y|yes|true|1)/i.test(t); };
 
 // 產業別標籤顏色
 const INDUSTRY_COLORS = ['#C2523C','#2E6A8E','#3E7C47','#C9952B','#7A4E8F','#17877B','#D9734E','#4B5D6A','#A35C7A','#8A6A3B','#3D5A99','#6E8B2F'];
@@ -531,6 +549,7 @@ const smokePool = []; let smokeAcc = 0;
 const smokeGeo = new THREE.IcosahedronGeometry(0.6, 0); 
 const smokeMat = new THREE.MeshLambertMaterial({color: 0xffffff, transparent: true, opacity: 0.8});
 const form = {edu:null, major:null};
+let INTL_ON = false;   /* 求職者勾選「我是外籍生」 */
 const IS_PORTRAIT = innerWidth/innerHeight < 0.9;
 const DEFAULT_CAM = IS_PORTRAIT ? new THREE.Vector3(0, 112, 132) : new THREE.Vector3(0, 46, 80), DEFAULT_TARGET = new THREE.Vector3(0, 2, 0);
 
@@ -641,6 +660,7 @@ function parseRows(rows){
     const rawJob = get('jobs');
     if(!rawJob) return; // 若沒填職缺則跳過
     
+    const rowIntl = isYes(get('intl'));
     const jobsArr = splitLines(rawJob);
     const isMulti = jobsArr.length > 1;
     
@@ -656,6 +676,7 @@ function parseRows(rows){
           salary: (rowSalaries[idx] || rowSalaries[0] || get('salary') || '依公司規定').trim(),
           edu: (rowEdus[idx] || rowEdus[0] || get('edu') || '不限').trim(),
           major: (rowMajorsForJob[idx] || rowMajorsForJob[0] || get('majors') || '不限').trim(),
+          intl: rowIntl,
           matched: false
         });
       }
@@ -663,6 +684,7 @@ function parseRows(rows){
     
     // 廠商總科系（用於配對）還是用全域符號切割
     splitTags(get('majors')).forEach(m => { if(!v.majors.includes(m)) v.majors.push(m); });
+    if(rowIntl) v.intl = true;
   });
   return list;
 }
@@ -1731,7 +1753,8 @@ function buildLabels(){
     el.style.setProperty('--c', v.color);
     const no = document.createElement('span'); no.className = 'no'; no.textContent = v.booth;
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = v.name;
-    el.append(no, nm);
+    const st = document.createElement('span'); st.className = 'star'; st.textContent = '★'; st.setAttribute('aria-label', '可應徵外籍生');
+    el.append(st, no, nm);
     el.addEventListener('click', e => { e.stopPropagation(); selectVendor(v); });
     el.addEventListener('mouseenter', () => { HOVER_FX.labelV = v; refreshHover(); });
     el.addEventListener('mouseleave', () => { if(HOVER_FX.labelV === v){ HOVER_FX.labelV = null; refreshHover(); } });
@@ -1870,7 +1893,8 @@ function showVendorCard(v){
       const li = document.createElement('li');
       // 將相符小印章蓋在職缺標題旁邊
       const stampHtml = j.matched ? `<span class="job-stamp">條件<br>相符</span>` : '';
-      li.innerHTML = `<div class="job-title">${j.name}${stampHtml}</div><dl class="job-meta"><dt>薪資</dt><dd>${j.salary}</dd><dt>學歷</dt><dd>${j.edu}</dd><dt>科系</dt><dd>${j.major}</dd></dl>`;
+      const intlHtml = j.intl ? `<span class="intl-badge"><b>★</b>外籍生可應徵</span>` : '';
+      li.innerHTML = `<div class="job-title">${j.name}${stampHtml}</div>${intlHtml}<dl class="job-meta"><dt>薪資</dt><dd>${j.salary}</dd><dt>學歷</dt><dd>${j.edu}</dd><dt>科系</dt><dd>${j.major}</dd></dl>`;
       ol.appendChild(li);
     });
   }else{
@@ -1937,6 +1961,7 @@ function buildResumeForm(){
       if(saved.edu){ form.edu = saved.edu; const b = eduWrap.querySelector(`[data-v="${saved.edu}"]`); b && b.setAttribute('aria-pressed','true'); }
       if(saved.major){ form.major = saved.major; const b = majorWrap.querySelector(`[data-v="${saved.major}"]`); b && b.setAttribute('aria-pressed','true'); }
       if(saved.ind && industryColor[saved.ind]) sel.value = saved.ind;
+      if(saved.intl) $('r-intl').checked = true;
     }
   }catch(e){}
   $('resume-modal').addEventListener('click', e => { if(e.target.id === 'resume-modal') closeResume(); });
@@ -1988,8 +2013,9 @@ function submitResume(){
   if(ageStr && (isNaN(age) || age < 15 || age > 80)) return showToast('年齡請填 15 到 80 之間的數字');
   if(!form.edu) return showToast('請選擇最高學歷');
   if(!form.major) return showToast('請選擇科系背景');
-  const ind = $('r-ind').value;
-  try{ localStorage.setItem('pt-job-isle-resume', JSON.stringify({age:ageStr, edu:form.edu, major:form.major, ind})); }catch(e){}
+  const ind = $('r-ind').value, intl = $('r-intl').checked;
+  INTL_ON = intl;
+  try{ localStorage.setItem('pt-job-isle-resume', JSON.stringify({age:ageStr, edu:form.edu, major:form.major, ind, intl})); }catch(e){}
   
   const list = [];
   vendors.forEach(v => {
@@ -2004,6 +2030,7 @@ function submitResume(){
     // 只要有一個以上的職缺符合，且產業也符合，這間廠商就會揮手被配對
     v.matched = hasMatchedJob && (!ind || v.category === ind);
     v.label.classList.toggle('match', v.matched);
+    v.label.classList.toggle('intl', INTL_ON && !!v.intl);   /* 外籍生：可應徵的廠商加上星星 */
     if(v.matched) list.push(v);
   });
   
@@ -2028,6 +2055,7 @@ function renderResults(list){
     const no = document.createElement('span'); no.className = 'no'; no.textContent = v.booth;
     const nm = document.createElement('span'); nm.textContent = v.name;
     b.append(sw, no, nm);
+    if(INTL_ON && v.intl){ const st = document.createElement('span'); st.className = 'star'; st.textContent = '★'; st.title = '可應徵外籍生'; b.insertBefore(st, no); }
     b.addEventListener('click', () => { selectVendor(v); focusVendor(v); });
     wrap.appendChild(b);
   });
@@ -2038,7 +2066,9 @@ function clearMatch(){
     v.matched = false; 
     v.jobs.forEach(j => j.matched = false);
     v.label.classList.remove('match'); 
+    v.label.classList.remove('intl');
   });
+  INTL_ON = false;
   $('results').hidden = true;
   if(currentVendor) showVendorCard(currentVendor);
 }
