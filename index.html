@@ -253,6 +253,8 @@ button.tag-info:hover,button.tag-info.hover{filter:brightness(1.05);outline:2px 
 #mapv .mv-tag{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;white-space:nowrap;border:0;padding:6px 10px;border-radius:4px;background:#e8603a;color:#fff;font:700 13px/1 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 #mapv .mv-tag::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-bottom:0;border-top-color:#e8603a}
 #mapv .mv-tag b{font-weight:800;margin-right:5px}
+#mapv .mv-star{font-style:normal;color:#ffe066;margin-right:4px;text-shadow:0 0 2px rgba(0,0,0,.45)}
+#mapv .mv-list .mv-star{color:#e3a51c;text-shadow:none}
 #mapv .mv-list{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:3;display:none;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 24px);width:max-content;padding:10px 12px;border-radius:6px;background:var(--paper);box-shadow:0 6px 20px rgba(20,40,45,.18)}
 #mapv.hl .mv-list{display:flex}
 #mapv.hl .mv-hint{display:none}
@@ -4293,10 +4295,11 @@ function openVenueMap(){
     el.addEventListener('pointerup', e => { e.stopPropagation(); if(d && Math.hypot(e.clientX-d.x, e.clientY-d.y) < 6) fn(); d = null; }); };
   list.forEach(o => {
     o.frame = document.createElement('div'); o.frame.className = 'mv-frame';
-    o.tag = document.createElement('button'); o.tag.className = 'mv-tag'; o.tag.innerHTML = `<b>${String(o.n).padStart(2,'0')}</b>${short(o.v.name)}`;
+    o.tag = document.createElement('button'); o.tag.className = 'mv-tag'; const star = (INTL_ON && o.v.intl) ? '<i class="mv-star" title="可應徵外籍生">★</i>' : '';   /* 外籍生：可應徵的攤位加星星 */
+    o.tag.innerHTML = `${star}<b>${String(o.n).padStart(2,'0')}</b>${short(o.v.name)}`;
     tap(o.frame, () => openCard(o.v)); tap(o.tag, () => openCard(o.v));
     pins.append(o.frame, o.tag);
-    const b = document.createElement('button'); b.innerHTML = `<b>${String(o.n).padStart(2,'0')}</b>${short(o.v.name)}`;
+    const b = document.createElement('button'); b.innerHTML = `${star}<b>${String(o.n).padStart(2,'0')}</b>${short(o.v.name)}`;
     b.onclick = () => { const [a,c,d2,e] = venueBox([o], 90); _mv.fitRect(a, c, d2, e, 30); };
     lst.appendChild(b);
   });
