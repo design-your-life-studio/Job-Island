@@ -370,6 +370,44 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
 
 #snd-panel h4{display:flex;align-items:center;justify-content:space-between;margin:-4px -6px 6px 0}
 #snd-panel .snd-x{margin:0}
+
+/* ---- 語言切換（中／EN） ---- */
+#lang-sw{position:absolute;top:10px;right:10px;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--paper)}
+#lang-sw button{all:unset;cursor:pointer;font:700 10.5px/1 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.04em;padding:5px 8px;color:var(--muted)}
+#lang-sw button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#lang-sw button:focus-visible{outline:2px solid var(--sun);outline-offset:-2px}
+.brand{padding-right:84px}
+@media(max-width:720px){#lang-sw{top:50%;transform:translateY(-50%);right:9px}#lang-sw button{font-size:10px;padding:5px 8px}}
+/* 英文版：拉近字距，避免按鈕太寬 */
+html[lang="en"] .brand h1{letter-spacing:0}
+html[lang="en"] .btn-primary,html[lang="en"] .results-head,html[lang="en"] .legend-head,html[lang="en"] .card-section-title,html[lang="en"] .modal-kicker,html[lang="en"] .brand-kicker{letter-spacing:.04em}
+html[lang="en"] .job-stamp{font-size:9px;letter-spacing:0}
+html[lang="en"] .job-meta{grid-template-columns:max-content 1fr;column-gap:14px}   /* 英文欄位名稱較長（Education），欄寬改為依文字自動調整 */
+html[lang="en"] .results-head span,html[lang="en"] .results-head b,html[lang="en"] .results-head .venue-btn{white-space:nowrap}
+
+/* ---- 引導按鈕 ---- */
+/* A3：第一次進站的提示氣泡（指向「啟動職缺配對」） */
+#cta-tip{position:fixed;z-index:45;transform:translate(-50%,-100%);background:var(--ink);color:var(--paper);font:600 13.5px/1.45 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.04em;padding:10px 14px;border-radius:6px;box-shadow:0 10px 26px rgba(20,40,45,.3);white-space:nowrap;cursor:pointer;opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+#cta-tip.show{opacity:1;visibility:visible;animation:tipBob 2.4s ease-in-out infinite}
+#cta-tip b{color:#f6c35b}
+#cta-tip::after{content:"";position:absolute;left:var(--ax,50%);bottom:-7px;transform:translateX(-50%);border:7px solid transparent;border-bottom:0;border-top-color:var(--ink)}
+@keyframes tipBob{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,calc(-100% - 5px))}}
+body.clean #cta-tip{display:none}
+/* B3：職缺卡片的平面圖入口 */
+#card-venue{display:flex;width:100%;margin-top:20px;height:44px;border:1.5px solid var(--ink);border-radius:3px;background:transparent;color:var(--ink);font:700 14px/1 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.06em;cursor:pointer;align-items:center;justify-content:center;gap:7px;white-space:nowrap;padding:0 10px}
+#card-venue svg{width:16px;height:16px;flex:none;color:var(--sun)}
+#card-venue:hover{background:var(--paper-2)}
+.card #card-venue + .btn-primary{margin-top:10px}
+/* 兩顆主要按鈕：點過之前持續彈跳 */
+.dock .btn-primary.hop,.results-head .venue-btn.hop{transform-origin:50% 100%;animation:btnHop .98s infinite}
+/* 跟配對到的房子一樣：連續彈跳，落地時微微壓扁 */
+@keyframes btnHop{
+  0%{transform:translateY(0) scale(1.05,.88);animation-timing-function:cubic-bezier(.33,.0,.67,1)}
+  10%{transform:translateY(-1.5px) scale(1,1);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+  50%{transform:translateY(-10px) scale(1,1);animation-timing-function:cubic-bezier(.6,0,.8,.4)}
+  90%{transform:translateY(-1.5px) scale(1,1);animation-timing-function:cubic-bezier(.33,0,.67,1)}
+  100%{transform:translateY(0) scale(1.05,.88)}}
+@media (prefers-reduced-motion:reduce){#cta-tip.show,.dock .btn-primary.hop,.results-head .venue-btn.hop{animation:none}}
 </style>
 </head>
 <body>
@@ -400,6 +438,7 @@ body.card-open .legend{transform:translateY(calc(-100% - 90px));opacity:0;pointe
     <p class="desc" id="card-desc"></p>
     <div class="sec-title">招募職缺</div>
     <ul class="jobs" id="card-jobs"></ul>
+    <button type="button" id="card-venue" onclick="openVenueFor(currentVendor)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>在會場平面圖找到這攤</button>
     <a id="card-link" class="btn-primary" target="_blank" rel="noopener">前往查看完整職缺內容 ↗</a>
     <p class="card-note" id="card-note">歡迎活動當天攜帶履歷，<br>直接到攤位現場投遞與面談。</p>
   </aside>
@@ -2045,7 +2084,7 @@ function submitResume(){
   if(currentVendor) showVendorCard(currentVendor); 
   
   showToast(list.length
-    ? `找到 ${list.length} 個適合你的攤位，島上正在跳動招手的就是！`
+    ? `找到 ${list.length} 個適合你的攤位！點「會場實際位置」看看它們在現場哪裡`
     : '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。');
 }
 function renderResults(list){
@@ -4491,6 +4530,169 @@ function updateLighthouse(g, t, night, dt, targets){
     if(off < 0.5 && goal === 0){ if(camera.view && camera.view.enabled){ camera.clearViewOffset(); } off = 0; return; }
     camera.setViewOffset(W, H, 0, off, W, H);
   };
+})();
+</script>
+<script>
+/* ================= 引導：第一次進站提示、卡片的平面圖入口 ================= */
+/* 從職缺卡片打開平面圖，並放大到這一攤 */
+function openVenueFor(v){
+  if(!v) return;
+  const was = v.matched; v.matched = true; openVenueMap(); v.matched = was;
+  const xy = BOOTH_MAP[parseInt(v.booth, 10)]; if(!xy) return;
+  const go = () => { const [a,c,d,e] = venueBox([{x:xy[0], y:xy[1]}], 160); _mv.fitRect(a, c, d, e, 30); };
+  setTimeout(go, 60); setTimeout(go, 400);
+}
+/* 兩顆主要按鈕：使用者點過之前一直彈跳，點過就停（記在瀏覽器，下次進站不再跳） */
+(function(){
+  const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+  const set = k => { try{ localStorage.setItem(k, '1'); }catch(e){} };
+  [['.dock .btn-primary', 'pt-job-isle-hop-match'], ['.results-head .venue-btn', 'pt-job-isle-hop-venue']].forEach(([sel, key]) => {
+    const b = document.querySelector(sel); if(!b || get(key)) return;
+    b.classList.add('hop');
+    b.addEventListener('click', () => { b.classList.remove('hop'); set(key); });
+  });
+})();
+(function(){
+  const KEY = 'pt-job-isle-tip';
+  let seen = false; try{ seen = !!localStorage.getItem(KEY) || !!localStorage.getItem('pt-job-isle-resume'); }catch(e){}
+  if(seen) return;   /* 只在第一次進站、還沒配對過時出現 */
+  const btn = document.querySelector('.dock .btn-primary'); if(!btn) return;
+  const tip = document.createElement('div'); tip.id = 'cta-tip'; tip.setAttribute('role', 'status');
+  tip.innerHTML = '從這裡開始！填 <b>3</b> 個條件，找到適合你的攤位';
+  document.body.appendChild(tip);
+  const place = () => { const r = btn.getBoundingClientRect(), cx = r.left + r.width/2, w = tip.offsetWidth || 300;
+    const x = Math.max(w/2 + 10, Math.min(innerWidth - w/2 - 10, cx));   /* 手機上氣泡不超出畫面，箭頭仍指向按鈕 */
+    tip.style.left = x + 'px'; tip.style.top = (r.top - 14) + 'px'; tip.style.setProperty('--ax', (cx - x + w/2) + 'px'); };
+  const hide = () => { tip.classList.remove('show'); removeEventListener('pointerdown', onDown, true); try{ localStorage.setItem(KEY, '1'); }catch(e){} };
+  const onDown = e => { if(!tip.contains(e.target)) hide(); };
+  tip.addEventListener('click', e => { e.stopPropagation(); hide(); openResume(); });
+  btn.addEventListener('click', hide);
+  addEventListener('resize', place);
+  /* 等島嶼載入完成（載入畫面消失）後再出現，9 秒後自動收起 */
+  const wait = setInterval(() => { const l = document.getElementById('loader'); if(l && !l.classList.contains('done')) return; clearInterval(wait);
+    setTimeout(() => { place(); tip.classList.add('show'); addEventListener('pointerdown', onDown, true); setTimeout(hide, 9000); }, 1200); }, 300);
+})();
+</script>
+<script>
+/* ================= 介面雙語（中文／English） =================
+   只翻譯介面文字；廠商名稱、簡介、職缺、薪資等來自 Excel 的資料維持原文。
+   做法：用對照表翻譯畫面上的文字節點與 title／aria-label／placeholder，
+   之後程式新產生的文字（提示、卡片、推薦列…）也會自動翻譯。 */
+(function(){
+  const EDU = {'高中職':'High school', '專科':'Junior college', '大學':"Bachelor's", '碩士':"Master's"};
+  const EN = new Map(Object.entries({
+    /* 標題、載入 */
+    '2027屏東地區就業博覽會':'2027 Pingtung Job Fair', '2027屏東地區就業博覽會-求職島':'2027 Pingtung Job Fair - Job Island',
+    '求職島':'Job Island', '求職島建造中':'Building Job Island…',
+    /* 下方按鈕列 */
+    '啟動職缺配對':'Find My Match', '重置視角':'Reset view', '隱藏介面':'Hide interface', '顯示介面':'Show interface',
+    '晝夜變化':'Day & night', '音樂與音效':'Music & sound', '關閉':'Close',
+    /* 產業別 */
+    '產業別':'Industries', '科技業':'Technology', '批發零售業':'Wholesale & Retail', '餐飲旅宿業':'Food & Hospitality',
+    '製造業':'Manufacturing', '服務業':'Services', '金融業':'Finance', '物流運輸業':'Logistics', '醫療照護':'Healthcare',
+    '觀光餐旅':'Tourism & Hospitality', '公部門':'Public sector', '其他':'Other',
+    /* 配對表單 */
+    '快速篩選攤位':'QUICK MATCH', '設定你的求職條件':'Tell us about you',
+    '不用登入。填寫基本背景後，島上適合你的攤位會跳起來向你招手！':'No sign-up needed. Fill in a few details and the booths that suit you will jump up and wave at you!',
+    '年齡':'Age', '例如 25':'e.g. 25', '最高學歷':'Highest education', '科系背景':'Field of study', '希望產業':'Preferred industry', '選填':'optional',
+    '高中職':'High school', '專科':'Junior college', '大學':"Bachelor's", '碩士以上':"Master's or above",
+    '品保測試與檢驗':'Quality Assurance & Testing', '採購生管與物流倉儲':'Purchasing, Production Control & Logistics',
+    '業務行銷與設計企劃':'Sales, Marketing & Design', '生產製造與製程技術':'Manufacturing & Process Engineering',
+    '經營管理與後勤行政':'Management & Administration', '設備維護與廠務工安':'Equipment Maintenance & Safety',
+    '資訊與研發工程':'IT, R&D & Engineering', '門市商場與客服銷售':'Retail & Customer Service', '餐飲與飯店旅宿服務':'Food, Beverage & Hotel Service',
+    '我是外籍生':"I'm an international student", '可應徵外籍生的廠商':'Employers open to you', '會以':'are marked', '標示':'',
+    '不限產業':'Any industry', '不限':'Any', '開始配對':'Find matches', '取消':'Cancel',
+    /* 推薦結果 */
+    '為你推薦的攤位':'Your matches', '會場實際位置':'Venue map', '清除配對':'Clear',
+    '可應徵外籍生':'Open to international students', '外籍生可應徵':'Open to international students',
+    /* 職缺卡片 */
+    '攤位':'Booth', '招募職缺':'Open positions', '薪資':'Salary', '學歷':'Education', '科系':'Field',
+    '條件':'GOOD', '相符':'MATCH', '職缺資訊請洽攤位':'Please ask at the booth for job details',
+    '前往查看完整職缺內容 ↗':'View full job details ↗', '不拘':'Any', '依公司規定':'Per company policy',
+    /* 會場平面圖 */
+    '大會平面圖':'Venue floor plan', '查看大會平面圖':'View floor plan', '點擊放大查看':'Tap to enlarge',
+    '滾輪／雙指縮放・拖曳移動・雙擊放大':'Scroll or pinch to zoom · Drag to move · Double-tap to zoom in',
+    '縮小':'Zoom out', '放大':'Zoom in', '縮放':'Zoom',
+    '你的推薦攤位在會場的這些位置，點一下看職缺':'Your recommended booths are here. Tap one to see its jobs.',
+    /* 大會服務台 */
+    '大會服務台':'Info Desk', '活動資訊':'Event info', '歡迎來到 2027 屏東地區就業博覽會！':'Welcome to the 2027 Pingtung Job Fair!',
+    '您可以透過右方平面圖熟悉現場動線，或點擊下方按鈕查看本次活動的完整電子書與職缺總表。':'Use the floor plan to find your way around the venue, or tap the button below to open the event e-book with the full job list.',
+    '歡迎活動當天攜帶履歷，':'Bring your résumé on the day', '直接到攤位現場投遞與面談。':'and apply or interview right at the booths.',
+    '查看大會電子書 (職缺手冊)':'Open the event e-book (job list)',
+    /* 晝夜、音效 */
+    '清晨':'Dawn', '白天':'Day', '傍晚':'Dusk', '夜晚':'Night', '循環':'Cycle',
+    '總音量':'Volume', '背景音樂':'Music', '環境音':'Ambience', '互動音效':'Effects', '海風烏克麗麗':'Sea Breeze Ukulele',
+    /* 車站、跟隨 */
+    '求職島站':'Job Island Station', '求職島站．列車樣式':'Job Island Station · Train style',
+    '蒸汽小火車':'Steam train', '糖廠五分車':'Sugar cane train', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train',
+    '跟隨島民中，點擊空白處取消':'Following an islander. Tap anywhere to stop.', '跟隨列車中，點擊空白處取消':'Following the train. Tap anywhere to stop.',
+    /* 引導 */
+    '從這裡開始！填':'Start here! Fill in', '個條件，找到適合你的攤位':'details to find booths that fit you',
+    '在會場平面圖找到這攤':'Find this booth on the venue map',
+    /* 提示訊息 */
+    '年齡請填 15 到 80 之間的數字':'Please enter an age between 15 and 80', '請選擇最高學歷':'Please choose your highest education', '請選擇科系背景':'Please choose your field of study',
+    '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。':'No exact matches yet. Try setting the preferred industry to "Any".',
+    '目前的平面圖上找不到這些攤位的位置':"These booths aren't on the current floor plan",
+    '讀不到「廠商資料.xlsx」，目前顯示範例資料':"Couldn't load the employer data. Showing sample data."
+  }));
+  const RX = [
+    [/^(\d+) 家$/, (m, n) => `${n} booth${n == 1 ? '' : 's'}`],
+    [/^找到 (\d+) 個適合你的攤位，島上正在跳動招手的就是！$/, (m, n) => `Found ${n} booth${n == 1 ? '' : 's'} for you. They're the ones waving on the island!`],
+    [/^找到 (\d+) 個適合你的攤位！點「會場實際位置」看看它們在現場哪裡$/, (m, n) => `Found ${n} booth${n == 1 ? '' : 's'} for you! Tap "Venue map" to see where they are.`],
+    [/^(高中職|專科|大學|碩士)以上$/, (m, x) => EDU[x] + ' or above']
+  ];
+  const tr = s => { const k = s.trim(); if(!k) return null; if(EN.has(k)) return EN.get(k); for(const [r, f] of RX){ if(r.test(k)) return k.replace(r, f); } return null; };
+  const ATTRS = ['title', 'aria-label', 'placeholder', 'alt'];
+  const ORIG = new WeakMap(), MINE = new WeakMap(), AORIG = new WeakMap();
+  let LANG = 'zh';
+  const skip = n => { const p = n.nodeType === 3 ? n.parentElement : n; return !p || !!p.closest('script,style,#lang-sw'); };
+  function doText(n){
+    if(skip(n)) return; const v = n.nodeValue; if(MINE.get(n) === v) return;
+    const t = tr(v); if(t === null) return;
+    const nv = v.match(/^\s*/)[0] + t + v.match(/\s*$/)[0];
+    ORIG.set(n, v); MINE.set(n, nv); n.nodeValue = nv;
+  }
+  function doAttr(el, a){
+    const v = el.getAttribute(a); if(v == null) return; const rec = AORIG.get(el) || {};
+    if(rec[a] && rec[a].mine === v) return;
+    const t = tr(v); if(t === null) return;
+    rec[a] = {zh:v, mine:t}; AORIG.set(el, rec); el.setAttribute(a, t);
+  }
+  function walk(root){
+    if(root.nodeType === 3){ doText(root); return; }
+    if(root.nodeType !== 1 || skip(root)) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while(n = w.nextNode()) doText(n);
+    const els = [root, ...root.querySelectorAll('[title],[aria-label],[placeholder],[alt]')];
+    els.forEach(el => ATTRS.forEach(a => el.hasAttribute && el.hasAttribute(a) && doAttr(el, a)));
+  }
+  function restore(){
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+    while(n = w.nextNode()){ if(MINE.get(n) === n.nodeValue){ n.nodeValue = ORIG.get(n); MINE.delete(n); } }
+    document.querySelectorAll('[title],[aria-label],[placeholder],[alt]').forEach(el => { const rec = AORIG.get(el); if(!rec) return;
+      Object.keys(rec).forEach(a => { if(el.getAttribute(a) === rec[a].mine) el.setAttribute(a, rec[a].zh); }); AORIG.delete(el); });
+  }
+  const mo = new MutationObserver(ms => { if(LANG !== 'en') return;
+    ms.forEach(m => { if(m.type === 'childList') m.addedNodes.forEach(walk); else if(m.type === 'characterData') doText(m.target); else doAttr(m.target, m.attributeName); }); });
+  mo.observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  const zhTitle = document.title;
+  function setLang(l, save){
+    LANG = l === 'en' ? 'en' : 'zh';
+    document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-Hant';
+    if(LANG === 'en'){ walk(document.body); document.title = '2027 Pingtung Job Fair - Job Island'; } else { restore(); document.title = zhTitle; }
+    document.querySelectorAll('#lang-sw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === LANG)));
+    if(save){ try{ localStorage.setItem('pt-job-isle-lang', LANG); }catch(e){} }
+  }
+  window.setLang = setLang; window.getLang = () => LANG;
+  /* 語言切換鈕：放在左上標題卡片的右上角 */
+  const sw = document.createElement('div'); sw.id = 'lang-sw'; sw.setAttribute('role', 'group');
+  sw.innerHTML = '<button type="button" data-l="zh" aria-label="中文">中</button><button type="button" data-l="en" aria-label="English">EN</button>';
+  sw.addEventListener('click', e => { const b = e.target.closest('button'); if(b) setLang(b.dataset.l, true); });
+  ['pointerdown', 'pointerup', 'touchstart'].forEach(ev => sw.addEventListener(ev, e => e.stopPropagation()));
+  const brand = document.querySelector('.brand'); (brand || document.body).appendChild(sw);
+  let saved = null; try{ saved = localStorage.getItem('pt-job-isle-lang'); }catch(e){}
+  /* 預設中文；使用者切換過語言才會記住並沿用 */
+  const first = saved === 'en' ? 'en' : 'zh';
+  setLang(first, false);
 })();
 </script>
 </body>
