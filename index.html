@@ -398,16 +398,7 @@ body.clean #cta-tip{display:none}
 #card-venue svg{width:16px;height:16px;flex:none;color:var(--sun)}
 #card-venue:hover{background:var(--paper-2)}
 .card #card-venue + .btn-primary{margin-top:10px}
-/* 兩顆主要按鈕：點過之前持續彈跳 */
-.dock .btn-primary.hop,.results-head .venue-btn.hop{transform-origin:50% 100%;animation:btnHop .98s infinite}
-/* 跟配對到的房子一樣：連續彈跳，落地時微微壓扁 */
-@keyframes btnHop{
-  0%{transform:translateY(0) scale(1.05,.88);animation-timing-function:cubic-bezier(.33,.0,.67,1)}
-  10%{transform:translateY(-1.5px) scale(1,1);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
-  50%{transform:translateY(-10px) scale(1,1);animation-timing-function:cubic-bezier(.6,0,.8,.4)}
-  90%{transform:translateY(-1.5px) scale(1,1);animation-timing-function:cubic-bezier(.33,0,.67,1)}
-  100%{transform:translateY(0) scale(1.05,.88)}}
-@media (prefers-reduced-motion:reduce){#cta-tip.show,.dock .btn-primary.hop,.results-head .venue-btn.hop{animation:none}}
+@media (prefers-reduced-motion:reduce){#cta-tip.show{animation:none}}
 </style>
 </head>
 <body>
@@ -438,7 +429,7 @@ body.clean #cta-tip{display:none}
     <p class="desc" id="card-desc"></p>
     <div class="sec-title">招募職缺</div>
     <ul class="jobs" id="card-jobs"></ul>
-    <button type="button" id="card-venue" onclick="openVenueFor(currentVendor)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>在會場平面圖找到這攤</button>
+    <button type="button" id="card-venue" onclick="openVenueFor(currentVendor)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>查看會場位置</button>
     <a id="card-link" class="btn-primary" target="_blank" rel="noopener">前往查看完整職缺內容 ↗</a>
     <p class="card-note" id="card-note">歡迎活動當天攜帶履歷，<br>直接到攤位現場投遞與面談。</p>
   </aside>
@@ -3595,6 +3586,7 @@ function apply(s, t){
   const rk = s.rays * (1 - rain.dim) * smooth(0.9, 0.99, sm.dir.dot(SUN_REST));   /* 光束只在太陽接近白天位置時出現 */
   rays.forEach((m,i) => { if(m.uniforms.uBase) m.uniforms.uStrength.value *= rk; else m.uniforms.uStrength.value = raysBase[i]*rk; });
   winMats.forEach(m => m.emissiveIntensity = s.win*1.15);
+  window.__winGlow = s.win;   /* 讓列車車窗跟房子窗戶同步亮燈 */
   porch.forEach(m => m.opacity = s.win*0.95);
   stars.mat.opacity = s.star * (1 - rain.dim) * (0.85 + 0.15*Math.sin(t*2.3));
   fire.mat.uniforms.uA.value = s.fire; fire.mat.uniforms.uT.value = t; fire.obj.visible = s.fire > 0.01;
@@ -3856,6 +3848,44 @@ function wheels(g, zs, r, m, hub){
   }));
 }
 function roofTop(g, len, m, y, w=0.95, h=0.32){ const r = new T.Mesh(new T.CylinderGeometry(1, 1, len, 18).rotateX(Math.PI/2), m); r.scale.set(w, h, 1); r.position.set(0, y, 0); r.castShadow = true; g.add(r); return r; }
+/* 列車車窗：比照房子窗戶，傍晚到夜晚亮起暖黃燈 */
+const TWIN = {value:0}, twMats = [];
+function glowWindows(cars){
+  twMats.length = 0; const map = new Map();
+  cars.forEach(c => c.traverse(m => {
+    if(!m.isMesh || !m.material || !m.material.isMeshLambertMaterial) return;
+    const isWin = m.userData.win || (m.material.color && m.material.color.getHex() === 0x9fc8de);
+    if(!isWin) return;
+    let nm = map.get(m.material); if(!nm){ nm = m.material.clone(); nm.emissive = new T.Color(0xffb347); nm.emissiveIntensity = 0; map.set(m.material, nm); twMats.push(nm); }
+    m.material = nm;
+  }));
+}
+/* 列車輪子：加上輪輻，跟著行駛距離轉動 */
+const twWheels = []; let lastTheta = null;
+function prepWheels(cars){
+  twWheels.length = 0; lastTheta = null;
+  cars.forEach(c => c.traverse(m => {
+    const g = m.geometry; if(!m.isMesh || !g || g.type !== 'CylinderGeometry') return;
+    const P = g.parameters; if(Math.abs(Math.abs(m.rotation.z) - Math.PI/2) > 0.01 || m.rotation.x || m.rotation.y || P.height > 0.3) return;
+    if(P.radiusTop < 0.2){ twWheels.push({m, r:null}); return; }   /* 輪轂：之後對到同一顆輪子 */
+    if(!m.userData.spokes){
+      const base = m.material.color || new T.Color(0x333333), lum = base.r*0.3 + base.g*0.59 + base.b*0.11;
+      const sm = new T.MeshLambertMaterial({color: lum < 0.35 ? base.clone().lerp(new T.Color(0xffffff), 0.45) : base.clone().multiplyScalar(0.62)});
+      const r = P.radiusTop, y = P.height/2 + 0.006;
+      [y, -y].forEach(yy => [0, Math.PI/2].forEach(a => { const s = new T.Mesh(new T.BoxGeometry(r*1.7, 0.012, r*0.2), sm); s.position.y = yy; s.rotation.y = a; m.add(s); }));
+      m.userData.spokes = true;
+    }
+    twWheels.push({m, r:P.radiusTop});
+  }));
+  /* 輪轂跟同位置的輪子用同樣轉速 */
+  twWheels.forEach(w => { if(w.r) return; const p = w.m.position; const o = twWheels.find(q => q.r && q.m.parent === w.m.parent && Math.abs(q.m.position.z - p.z) < 0.05 && Math.abs(q.m.position.y - p.y) < 0.05); w.r = o ? o.r : 0.3; });
+}
+function spinWheels(){
+  if(lastTheta === null){ lastTheta = theta; return; }
+  const d = (theta - lastTheta)*RC; lastTheta = theta; if(!d) return;
+  twWheels.forEach(w => { w.m.rotation.x += d/w.r; });
+}
+function syncTrainWin(){ const k = (window.__winGlow || 0)*1.15; TWIN.value = k; twMats.forEach(m => m.emissiveIntensity = k); }
 function windows(g, zs, y, h, w, m, side=0.96){ zs.forEach(z => [-side, side].forEach(x => box(g, 0.04, h, w, m, x, y, z))); }
 
 /* ---------- 五款列車（每款兩節，各自回傳 [前車, 後車]，車頭朝 +z） ---------- */
@@ -3923,8 +3953,9 @@ const DESIGNS = [
       /* 曲面：每個頂點記住它在斷面上的位置 (x0,y0) 與車鼻進度 t，由著色器逐像素決定黑白，分色線才會俐落 */
       const mkMat = (mode) => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
         m.onBeforeCompile = sh => {
+          sh.uniforms.uWin = TWIN;
           sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect;');
-          sh.fragmentShader = 'varying vec3 vSect;\n' + sh.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
+          sh.fragmentShader = 'varying vec3 vSect;\nuniform float uWin;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n            totalEmissiveRadiance += vec3(1.0, 0.80, 0.45) * uWin * win * 1.05;').replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
             float x0 = abs(vSect.x), y0 = vSect.y, t = vSect.z;
             float win = step(0.14, y0) * step(y0, 0.6) * step(0.62, x0);
             float line = 0.32 - 0.5*pow(t, 0.85) + 0.16*x0*(1.0 - t);
@@ -3985,7 +4016,7 @@ const DESIGNS = [
       const bo = new T.Mesh(new T.CylinderGeometry(0.7, 0.7, 2.2, 12), blu); bo.rotation.x = Math.PI/2; bo.position.set(0, 1.6, 0.8); bo.castShadow = true; a.add(bo);
       cyl(a, 0.3, 0.3, 0.5, red, 0, 2.5, 1.35, 10); cyl(a, 0.45, 0.3, 0.3, yel, 0, 2.85, 1.35, 10);
       box(a, 1.7, 1.6, 1.4, yel, 0, 1.8, -1.2); box(a, 1.9, 0.25, 1.7, red, 0, 2.72, -1.2);
-      box(a, 1.72, 0.55, 0.7, wht, 0, 2.0, -1.2);
+      box(a, 1.72, 0.55, 0.7, wht, 0, 2.0, -1.2).userData.win = true;
       const face = new T.Mesh(new T.CylinderGeometry(0.62, 0.62, 0.08, 16), wht); face.rotation.x = Math.PI/2; face.position.set(0, 1.6, 1.92); a.add(face);
       [-0.22, 0.22].forEach(x => { const e = new T.Mesh(new T.SphereGeometry(0.07, 8, 6), L(0x2b2b30)); e.position.set(x, 1.72, 1.97); a.add(e); });
       const sm = new T.Mesh(new T.TorusGeometry(0.2, 0.04, 6, 12, Math.PI), L(0x2b2b30)); sm.rotation.z = Math.PI; sm.position.set(0, 1.5, 1.97); a.add(sm);
@@ -4085,6 +4116,7 @@ function setTrain(i){
   if(train) train.forEach(c => scene.remove(c));
   design = i; train = DESIGNS[i].build();
   if(train.length === 2) train.push(train[1].clone(true));   /* 全部改成三節：車頭＋兩節車廂 */
+  glowWindows(train); syncTrainWin(); prepWheels(train);
   train.forEach(c => { c.traverse(o => { if(o.isMesh) o.castShadow = true; }); scene.add(c); });
   placeTrain(); syncTrainPanel();
 }
@@ -4120,7 +4152,7 @@ function tick(){
     theta += step; traveled += step;
     if(traveled >= goal - 1e-4){ traveled = goal; theta = ST_A + OFF + goal; state = 'stop'; stT = 0; railArrival(goal >= TAU - 1e-4 ? 0 : 1); }
   }
-  placeTrain(); trainSmoke(dt); curDw = dw; updateRail(dt);
+  placeTrain(); trainSmoke(dt); curDw = dw; updateRail(dt); syncTrainWin(); spinWheels();
   if(train){ trainProxy.position.copy(train[1].position); }
   const TS = window.TRAIN_STATE; TS.theta = theta; TS.moving = state === 'run' || (state === 'stop' && stT > dw - 3);
 }
@@ -4542,16 +4574,6 @@ function openVenueFor(v){
   const go = () => { const [a,c,d,e] = venueBox([{x:xy[0], y:xy[1]}], 160); _mv.fitRect(a, c, d, e, 30); };
   setTimeout(go, 60); setTimeout(go, 400);
 }
-/* 兩顆主要按鈕：使用者點過之前一直彈跳，點過就停（記在瀏覽器，下次進站不再跳） */
-(function(){
-  const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
-  const set = k => { try{ localStorage.setItem(k, '1'); }catch(e){} };
-  [['.dock .btn-primary', 'pt-job-isle-hop-match'], ['.results-head .venue-btn', 'pt-job-isle-hop-venue']].forEach(([sel, key]) => {
-    const b = document.querySelector(sel); if(!b || get(key)) return;
-    b.classList.add('hop');
-    b.addEventListener('click', () => { b.classList.remove('hop'); set(key); });
-  });
-})();
 (function(){
   const KEY = 'pt-job-isle-tip';
   let seen = false; try{ seen = !!localStorage.getItem(KEY) || !!localStorage.getItem('pt-job-isle-resume'); }catch(e){}
@@ -4628,7 +4650,7 @@ function openVenueFor(v){
     '跟隨島民中，點擊空白處取消':'Following an islander. Tap anywhere to stop.', '跟隨列車中，點擊空白處取消':'Following the train. Tap anywhere to stop.',
     /* 引導 */
     '從這裡開始！填':'Start here! Fill in', '個條件，找到適合你的攤位':'details to find booths that fit you',
-    '在會場平面圖找到這攤':'Find this booth on the venue map',
+    '查看會場位置':'See its spot at the venue',
     /* 提示訊息 */
     '年齡請填 15 到 80 之間的數字':'Please enter an age between 15 and 80', '請選擇最高學歷':'Please choose your highest education', '請選擇科系背景':'Please choose your field of study',
     '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。':'No exact matches yet. Try setting the preferred industry to "Any".',
