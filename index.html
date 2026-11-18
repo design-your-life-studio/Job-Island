@@ -653,7 +653,10 @@ function cleanLink(s){
   return '';
 }
 
+/* 英文欄位（雙語）：欄名需完全相同；沒填就顯示中文 */
+const COLS_EN = {name:'company name (en)', desc:'description (en)', jobs:'job title (en)', salary:'salary (en)', edu:'education (en)'};
 function parseRows(rows){
+  const EN_MAP = {};
   const map = new Map(), list = [];
   rows.forEach(row => {
     const norm = {};
@@ -664,6 +667,7 @@ function parseRows(rows){
       }
       return '';
     };
+    const getEn = key => norm[COLS_EN[key]] || '';
     
     const rawName = get('name');
     if(!rawName) return;
@@ -686,11 +690,14 @@ function parseRows(rows){
       map.set(name, v);
       list.push(v);
     }else{
-      if(!v.desc) v.desc = get('desc');
+      if(!v.desc){ v.desc = get('desc'); }
       if(!v.edu) v.edu = get('edu');
       if(!v.link) v.link = cleanLink(get('link'));
     }
     
+    /* 英文對照：廠商名稱、簡介 */
+    const nEn = getEn('name'); if(nEn){ EN_MAP[name] = nEn; EN_MAP[name.replace(/股份有限公司|有限公司|股份/g, '')] = nEn; }
+    const dEn = getEn('desc'), dZh = get('desc'); if(dEn && dZh) EN_MAP[dZh.trim()] = dEn;
     const rawJob = get('jobs');
     if(!rawJob) return; // 若沒填職缺則跳過
     
@@ -703,6 +710,14 @@ function parseRows(rows){
     const rowEdus = isMulti ? splitLines(get('edu')) : [get('edu')];
     const rowMajorsForJob = isMulti ? splitLines(get('majors')) : [get('majors')];
 
+    /* 英文對照：職缺、薪資、學歷（同一格多個職缺時依斷行對應） */
+    const enJobs = splitLines(getEn('jobs')), enSal = isMulti ? splitLines(getEn('salary')) : [getEn('salary')], enEdu = isMulti ? splitLines(getEn('edu')) : [getEn('edu')];
+    jobsArr.forEach((j, idx) => {
+      if(enJobs[idx]) EN_MAP[j] = enJobs[idx];
+      const zs = (rowSalaries[idx] || rowSalaries[0] || '').trim(), ze = (rowEdus[idx] || rowEdus[0] || '').trim();
+      if(zs && (enSal[idx] || enSal[0])) EN_MAP[zs] = enSal[idx] || enSal[0];
+      if(ze && (enEdu[idx] || enEdu[0])) EN_MAP[ze] = enEdu[idx] || enEdu[0];
+    });
     jobsArr.forEach((j, idx) => {
       if(!v.jobs.find(x => x.name === j)){
         v.jobs.push({
@@ -720,6 +735,8 @@ function parseRows(rows){
     splitTags(get('majors')).forEach(m => { if(!v.majors.includes(m)) v.majors.push(m); });
     if(rowIntl) v.intl = true;
   });
+  /* 交給雙語模組：切到 English 時，這些廠商資料也會換成英文 */
+  if(window.I18N_ADD) I18N_ADD(EN_MAP); else window.__i18nPending = Object.assign(window.__i18nPending || {}, EN_MAP);
   return list;
 }
 
@@ -4705,6 +4722,9 @@ function openVenueFor(v){
     if(save){ try{ localStorage.setItem('pt-job-isle-lang', LANG); }catch(e){} }
   }
   window.setLang = setLang; window.getLang = () => LANG;
+  /* 廠商資料的英文對照（由 Excel 的英文欄位提供） */
+  window.I18N_ADD = m => { Object.keys(m || {}).forEach(k => { const z = String(k).trim(); if(z && m[k]) EN.set(z, String(m[k]).trim()); }); if(LANG === 'en') walk(document.body); };
+  if(window.__i18nPending){ I18N_ADD(window.__i18nPending); window.__i18nPending = null; }
   /* 語言切換鈕：放在左上標題卡片的右上角 */
   const sw = document.createElement('div'); sw.id = 'lang-sw'; sw.setAttribute('role', 'group');
   sw.innerHTML = '<button type="button" data-l="zh" aria-label="中文">中</button><button type="button" data-l="en" aria-label="English">EN</button>';
