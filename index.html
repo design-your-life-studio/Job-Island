@@ -2074,7 +2074,7 @@ function submitResume(){
     
     // 檢查這家公司的每一個職缺是否符合條件
     v.jobs.forEach(j => {
-      j.matched = majorMatch(j.major, form.major) && eduLevel(j.edu) <= form.edu;
+      j.matched = majorMatch(j.major, form.major) && eduLevel(j.edu) <= form.edu && (!INTL_ON || !!j.intl);   /* 外籍生只配對可應徵外籍生的職缺 */
       if (j.matched) hasMatchedJob = true;
     });
 
@@ -2093,7 +2093,7 @@ function submitResume(){
   
   showToast(list.length
     ? `找到 ${list.length} 個適合你的攤位！點「會場實際位置」看看它們在現場哪裡`
-    : '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。');
+    : (INTL_ON ? '目前沒有可應徵外籍生且符合條件的攤位，可以試著調整科系或產業再試一次。' : '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。'));
 }
 function renderResults(list){
   const box = $('results'), wrap = $('results-list');
@@ -4670,6 +4670,7 @@ function openVenueFor(v){
     '查看會場位置':'See its spot at the venue',
     /* 提示訊息 */
     '年齡請填 15 到 80 之間的數字':'Please enter an age between 15 and 80', '請選擇最高學歷':'Please choose your highest education', '請選擇科系背景':'Please choose your field of study',
+    '目前沒有可應徵外籍生且符合條件的攤位，可以試著調整科系或產業再試一次。':'No booths open to international students match yet. Try a different field of study or industry.',
     '目前沒有完全符合的攤位，可以把希望產業改成「不限」再試一次。':'No exact matches yet. Try setting the preferred industry to "Any".',
     '目前的平面圖上找不到這些攤位的位置':"These booths aren't on the current floor plan",
     '讀不到「廠商資料.xlsx」，目前顯示範例資料':"Couldn't load the employer data. Showing sample data."
