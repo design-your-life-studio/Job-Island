@@ -1205,6 +1205,7 @@ function createCenterBuilding(){
     islandGroup.add(t);
     infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, t.userData.labelY, 0), action: openInfo});
     infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
+    infoLabels.push(window.MUSIC_LABEL = {text:'優職排行榜', kind:'music', pos:new THREE.Vector3(-57, 14, 0), action: () => window.openJobChart && openJobChart()});
     return;
   }
 
@@ -1297,6 +1298,7 @@ function createCenterBuilding(){
   // 標籤高度微調至火箭頭部上方
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 17.5, 0), action: openInfo});
   infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
+    infoLabels.push(window.MUSIC_LABEL = {text:'優職排行榜', kind:'music', pos:new THREE.Vector3(-57, 14, 0), action: () => window.openJobChart && openJobChart()});
 }
 
 function updateRocketAndSmoke(t, dt) {
@@ -1536,7 +1538,7 @@ function createWavingHand(v, s){
 }
 
 /* ---- 懸浮反饋（電腦版）：滑鼠在房子或標籤上 → 房子浮起提亮＋標籤白框；在火箭或服務台標籤上 → 火箭提亮＋橘框 ---- */
-const HOVER_FX = { v:null, rocket:false, rayV:null, labelV:null, rayRocket:false, labelRocket:false, rk:0, rkOn:false, station:false, rayStation:false, labelStation:false, sk:0, skOn:false };
+const HOVER_FX = { v:null, rocket:false, rayV:null, labelV:null, rayRocket:false, labelRocket:false, rk:0, rkOn:false, station:false, rayStation:false, labelStation:false, sk:0, skOn:false, music:false, rayMusic:false, labelMusic:false, mk:0, mkOn:false };
 const _hb = new THREE.Color(0x2a2a2a);
 function hoverBright(root, k){
   root.traverse(m => {
@@ -1556,7 +1558,9 @@ function refreshHover(){
   const station = !clean && !v && !rocket && (H.labelStation || H.rayStation);
   if(station !== H.station){ H.station = station; infoLabels.forEach(i => { if(i.el && i.kind === 'station') i.el.classList.toggle('hover', station); }); }
   if(v !== H.v){ if(H.v && H.v.label) H.v.label.classList.remove('hover'); H.v = v; if(v && v.label) v.label.classList.add('hover'); }
-  if(rocket !== H.rocket){ H.rocket = rocket; infoLabels.forEach(i => { if(i.el && i.kind !== 'station' && i.action) i.el.classList.toggle('hover', rocket); }); }
+  if(rocket !== H.rocket){ H.rocket = rocket; infoLabels.forEach(i => { if(i.el && !i.kind && i.action) i.el.classList.toggle('hover', rocket); }); }
+  const music = !clean && !v && !rocket && !station && (H.labelMusic || H.rayMusic);
+  if(music !== H.music){ H.music = music; infoLabels.forEach(i => { if(i.el && i.kind === 'music') i.el.classList.toggle('hover', music); }); }
   hovered = v;
 }
 function updateHouses(t){
@@ -1566,6 +1570,11 @@ function updateHouses(t){
     hoverBright(G, e); (window.platformGroups || []).forEach(pg => hoverBright(pg, e));
     if(G.userData.s0 === undefined){ G.userData.y0 = G.position.y; G.userData.s0 = G.scale.x; }
     G.position.y = G.userData.y0 + 0.35*e; G.scale.setScalar(G.userData.s0*(1 + 0.04*e)); HOVER_FX.skOn = HOVER_FX.sk > 0.002; }
+  /* 流行音樂中心懸浮：建築發亮、輕輕浮起放大（比照中央地標與車站） */
+  HOVER_FX.mk += ((HOVER_FX.music ? 1 : 0) - HOVER_FX.mk) * 0.18;
+  if((HOVER_FX.mk > 0.002 || HOVER_FX.mkOn) && window.MUSIC_NIGHT && MUSIC_NIGHT.pivot){ const e = HOVER_FX.mk*HOVER_FX.mk*(3 - 2*HOVER_FX.mk), P = MUSIC_NIGHT.pivot;
+    if(P.userData.y0 === undefined){ P.userData.y0 = P.position.y; P.userData.s0 = P.scale.x; }
+    P.position.y = P.userData.y0 + 0.5*e; P.scale.setScalar(P.userData.s0*(1 + 0.03*e)); MC_U.uHover.value = e; HOVER_FX.mkOn = HOVER_FX.mk > 0.002; }
   HOVER_FX.rk += ((HOVER_FX.rocket ? 1 : 0) - HOVER_FX.rk) * 0.18;
   if(HOVER_FX.rk > 0.002 || HOVER_FX.rkOn){ const e = HOVER_FX.rk*HOVER_FX.rk*(3 - 2*HOVER_FX.rk); centerMeshes.forEach(m => hoverBright(m, e)); HOVER_FX.rkOn = HOVER_FX.rk > 0.002;
     /* 中央地標（85 大樓／火箭）也跟房子一樣輕輕浮起、微微放大 */
@@ -2011,7 +2020,7 @@ function buildLabels(){
     el.className = 'tag tag-info'; 
     el.textContent = info.text;
     if(info.action){ el.addEventListener('click', e => { e.stopPropagation(); info.action(); });
-      const key = info.kind === 'station' ? 'labelStation' : 'labelRocket';   /* 車站標籤只觸發車站，不會連動火箭 */
+      const key = info.kind === 'station' ? 'labelStation' : info.kind === 'music' ? 'labelMusic' : 'labelRocket';   /* 車站、音樂中心標籤只觸發自己，不會連動中央地標 */
       el.addEventListener('mouseenter', () => { HOVER_FX[key] = true; refreshHover(); });
       el.addEventListener('mouseleave', () => { HOVER_FX[key] = false; refreshHover(); }); }
     wrap.appendChild(el); info.el = el;
@@ -2063,11 +2072,14 @@ function onHover(e){
   const stH = window.stationMeshes ? raycaster.intersectObjects(window.stationMeshes, false)[0] : null;
   HOVER_FX.rayV = v; HOVER_FX.rayRocket = !v && !!centerHit0 && !(stH && stH.distance < centerHit0.distance);
   HOVER_FX.rayStation = !v && !!stH && !(centerHit0 && centerHit0.distance < stH.distance);
+  const muH = window.musicHit ? raycaster.intersectObject(window.musicHit, false)[0] : null;
+  HOVER_FX.rayMusic = !v && !!muH && !(centerHit0 && centerHit0.distance < muH.distance) && !(stH && stH.distance < muH.distance);
+  if(HOVER_FX.rayMusic){ HOVER_FX.rayRocket = false; HOVER_FX.rayStation = false; }
   refreshHover();
 
   if(v) {
     cursor = 'pointer';
-  } else if (centerHit0 || (window.stationMeshes && raycaster.intersectObjects(window.stationMeshes, false).length) || (window.trainCars && raycaster.intersectObjects(window.trainCars(), true).length)) {
+  } else if (HOVER_FX.rayMusic || centerHit0 || (window.stationMeshes && raycaster.intersectObjects(window.stationMeshes, false).length) || (window.trainCars && raycaster.intersectObjects(window.trainCars(), true).length)) {
     cursor = 'pointer';
   }
   
@@ -2088,6 +2100,11 @@ function onPointerClick(e){
   const trHit = window.trainCars ? raycaster.intersectObjects(window.trainCars(), true)[0] : null;
   if(trHit && (!vendorHits.length || trHit.distance < vendorHits[0].distance) && (!centerHit0 || trHit.distance < centerHit0.distance) && (!vp || trHit.distance < vp.dist)){
     closeVendorCard(); window.followTrain(); return;
+  }
+  /* 點流行音樂中心 → 打開職缺排行榜（以最靠近鏡頭的物件為準） */
+  const muHit = (window.musicHit && !document.body.classList.contains('clean')) ? raycaster.intersectObject(window.musicHit, false)[0] : null;
+  if(muHit && (!vendorHits.length || muHit.distance < vendorHits[0].distance) && (!centerHit0 || muHit.distance < centerHit0.distance) && (!vp || muHit.distance < vp.dist)){
+    closeVendorCard(); if(window.openJobChart) openJobChart(); return;
   }
   /* 點車站 → 打開「換列車樣式」面板（以最靠近鏡頭的物件為準） */
   const stHit = (window.stationMeshes && !document.body.classList.contains('clean')) ? raycaster.intersectObjects(window.stationMeshes, false)[0] : null;
@@ -4725,19 +4742,19 @@ function openVenueMap(){
 /* ================= 高雄流行音樂中心 =================
    模型輪廓來自 Sketchfab「高雄_海洋文化及流行音樂中心」by samuel-lin（CC BY 4.0），
    已重新上色成求職島風格（白色鋼構、藍色玻璃），檔案 music-center.glb 需與 index.html 放在同一資料夾。 */
-const MC_U = { uNight:{value:0}, uTime:{value:0}, uY0:{value:0}, uY1:{value:12}, uTheme:{value:new THREE.Color(0xa45cff)} };
+const MC_U = { uHover:{value:0}, uNight:{value:0}, uTime:{value:0}, uY0:{value:0}, uY1:{value:12}, uTheme:{value:new THREE.Color(0xa45cff)} };
 /* 鋼構夜間打燈：參考實景，整棟用同一個主色（紫 ↔ 粉，緩慢變換）從下往上洗亮白色鋼構；越靠近地面越亮 */
 function mcFrameShader(mat, cells){
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, MC_U);
     sh.vertexShader = 'varying vec3 vMcW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vMcW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = 'uniform float uNight, uTime, uY0, uY1;\nuniform vec3 uTheme;\nvarying vec3 vMcW;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+    sh.fragmentShader = 'uniform float uNight, uTime, uY0, uY1, uHover;\nuniform vec3 uTheme;\nvarying vec3 vMcW;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       float mcH = clamp((vMcW.y - uY0)/(uY1 - uY0), 0.0, 1.0);
       diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb*uTheme, 0.55*uNight);
       vec3 mcG = uTheme*(0.30 + 0.40*(1.0 - mcH));
       ${cells ? `vec3 mcQ = floor(vMcW*0.7); float mcR = fract(sin(dot(mcQ, vec3(12.9898, 78.233, 37.719)))*43758.5453);
       if(mcR > 0.82) mcG += mix(uTheme, vec3(1.0, 0.9, 0.95), 0.55)*(0.35 + 0.25*sin(uTime*0.8 + mcR*40.0));` : ''}
-      totalEmissiveRadiance += mcG*uNight;`);
+      totalEmissiveRadiance += mcG*uNight + vec3(0.30, 0.26, 0.20)*uHover;`);
   };
   mat.customProgramCacheKey = () => 'mcFrame2' + (cells ? 1 : 0);
 }
@@ -4781,6 +4798,11 @@ function placeMusicCenter(opts){
     const p0 = root.position.clone(), r0 = root.rotation.y; root.position.set(0, 0, 0); root.rotation.y = 0; root.updateMatrixWorld(true);
     const b2 = new THREE.Box3().setFromObject(pivot), sz = b2.getSize(new THREE.Vector3());
     root.position.copy(p0); root.rotation.y = r0; root.updateMatrixWorld(true);
+    MUSIC_NIGHT.pivot = pivot;
+    /* 懸浮／點擊用的隱形感應盒（不直接對整個模型做射線檢測，比較省效能） */
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(sz.x, sz.y, sz.z), new THREE.MeshBasicMaterial({visible:false}));
+    hit.position.set((b2.min.x + b2.max.x)/2, (b2.min.y + b2.max.y)/2, (b2.min.z + b2.max.z)/2); root.add(hit); window.musicHit = hit;
+    if(window.MUSIC_LABEL){ const tp = root.localToWorld(new THREE.Vector3((b2.min.x + b2.max.x)/2, b2.max.y + 1.2, (b2.min.z + b2.max.z)/2)); MUSIC_LABEL.pos.copy(tp); }
     /* 碼頭廣場：沿海岸方向加寬，往海裡多伸出一大塊（像實景建築前的大廣場） */
     const IN = 1.2, OUT = 5.0, SIDE = 2.5;                       /* 往島內、往海、左右各多出的距離 */
     const cx = (b2.min.x + b2.max.x)/2, z0 = b2.min.z - OUT, z1 = b2.max.z + IN;
@@ -4868,7 +4890,20 @@ function placeMusicCenter(opts){
 }
 
 /* ===== 夜晚：85 大樓與流行音樂中心亮燈（跟著房子窗戶同一個晝夜亮度 __winGlow） ===== */
-const MUSIC_NIGHT = {};
+const MUSIC_NIGHT = {}; window.MUSIC_NIGHT = MUSIC_NIGHT;
+window.spotlightVendor = v => { const x = v.group.position.x, z = v.group.position.z;
+  MUSIC_NIGHT.spot = {p:new THREE.Vector3(x, 22, z), t0:performance.now()/1000};   /* 探照燈全部交會在那家廠商正上方的天空 */
+  let C = MUSIC_NIGHT.spotCone;
+  if(!C){ /* 從天而降的聚光燈光柱＋地面光圈 */
+    C = new THREE.Group();
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 3.2, 22, 24, 1, true).translate(0, 11, 0), new THREE.ShaderMaterial({transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide,
+      uniforms:{uOp:{value:0}}, vertexShader:`varying float vY; varying float vF; void main(){ vY = uv.y; vec4 mv = modelViewMatrix*vec4(position,1.0); vec3 n = normalize(normalMatrix*normal); vF = abs(dot(n, normalize(-mv.xyz))); gl_Position = projectionMatrix*mv; }`,
+      fragmentShader:`uniform float uOp; varying float vY; varying float vF; void main(){ float a = (0.25 + 0.75*vY)*pow(vF, 1.5)*uOp; gl_FragColor = vec4(vec3(1.0, 0.92, 0.75)*a, a); }`}));
+    const ringTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+      r.addColorStop(0, 'rgba(255,240,200,0.9)'); r.addColorStop(0.6, 'rgba(255,230,180,0.5)'); r.addColorStop(1, 'rgba(255,230,180,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+    const ring = new THREE.Mesh(new THREE.PlaneGeometry(8, 8).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({map:ringTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
+    ring.position.y = 0.15; C.add(cone, ring); C.userData = {cone, ring}; scene.add(C); MUSIC_NIGHT.spotCone = C; }
+  C.position.set(x, groundY ? groundY(x, z) : 0, z); };
 (function updateLandmarkNight(){
   requestAnimationFrame(updateLandmarkNight);
   const k = Math.min(1, (window.__winGlow || 0)), t = performance.now()/1000;
@@ -4888,6 +4923,7 @@ const MUSIC_NIGHT = {};
   (MUSIC_NIGHT.core  || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C(0x3a5a9a), k*0.7)));
   /* 屋頂：夜晚壓暗成深藍灰，白色稜線燈條浮出來 */
   (MUSIC_NIGHT.roof  || []).forEach(m => { m.color.copy(mix(m.userData.baseCol, new C(0x2c3a52), k*0.8)); m.emissive.copy(mix(m.userData.base, theme.clone().multiplyScalar(0.12), k)); });
+  { const hv = MC_U.uHover.value; if(hv > 0.002) [...(MUSIC_NIGHT.glass || []), ...(MUSIC_NIGHT.core || []), ...(MUSIC_NIGHT.roof || [])].forEach(m => m.emissive.add(new C(0.22, 0.2, 0.16).multiplyScalar(hv))); }   /* 懸浮時玻璃、屋頂一起亮 */
   (MUSIC_NIGHT.lines || []).forEach(l => { l.visible = k > 0.02; l.material.opacity = k*0.9; l.material.color.copy(new C(0xffffff).lerp(theme, 0.25)); });
   if(MUSIC_NIGHT.lens) MUSIC_NIGHT.lens.color.copy(new C(0x9aa3ad).lerp(new C(0xf4f6ff), k));   /* 燈面：白天灰色玻璃、夜晚亮白 */
   if(MUSIC_NIGHT.pool){ const P = MUSIC_NIGHT.pool; P.visible = k > 0.02; P.material.opacity = k*0.45; P.material.color.copy(theme); }
@@ -4899,12 +4935,20 @@ const MUSIC_NIGHT = {};
   const pose = (m, u) => m === 0 ? [u.tilt + 0.06*Math.sin(t*0.6 + u.ph), u.fan*1.15 + 0.32*Math.sin(t*0.75)]
                       : m === 1 ? [u.tilt - 0.05, u.fan*0.5 + (u.i % 2 ? 1 : -1)*0.55*Math.sin(t*0.9)]
                       :           [u.tilt + 0.22*Math.sin(t*1.6 - u.i*0.55) - 0.05, u.fan*1.25];
-  (MUSIC_NIGHT.beams || []).forEach(b => { const u = b.userData; b.visible = k > 0.02;
+  /* 排行榜點選職缺：探照燈全部轉向那家廠商的房子（約 9 秒），之後回到燈光秀 */
+  const SP = MUSIC_NIGHT.spot, spW = SP ? Math.max(0, Math.min(1, (t - SP.t0)/1.2, (SP.t0 + 9 - t)/1.5)) : 0;
+  if(MUSIC_NIGHT.spotCone){ const C = MUSIC_NIGHT.spotCone; C.visible = spW > 0; C.userData.cone.material.uniforms.uOp.value = spW*0.8; C.userData.ring.material.opacity = spW*0.9; }
+  const burst = MUSIC_NIGHT.burstAt ? Math.max(0, 1 - (t - MUSIC_NIGHT.burstAt)/2.5) : 0;   /* 打開排行榜時全體爆亮一下 */
+  (MUSIC_NIGHT.beams || []).forEach(b => { const u = b.userData; b.visible = k > 0.02 || spW > 0 || burst > 0;
     b.material.uniforms.uOp.value = k*0.95*flash; b.material.uniforms.uCol.value.copy(u.col);
     const a = pose(m0, u), c = pose(m1, u);
-    b.rotation.set(a[0] + (c[0] - a[0])*w, 0, a[1] + (c[1] - a[1])*w);
+    let rx = a[0] + (c[0] - a[0])*w, rz = a[1] + (c[1] - a[1])*w;
+    if(spW > 0){ const d = b.parent.worldToLocal(SP.p.clone()).sub(b.position).normalize();
+      const sz = Math.asin(Math.max(-1, Math.min(1, -d.x))), sx = Math.atan2(d.z, d.y); rx += (sx - rx)*spW; rz += (sz - rz)*spW; }
+    b.rotation.set(rx, 0, rz);
+    if(spW > 0 || burst > 0) b.material.uniforms.uOp.value = Math.max(b.material.uniforms.uOp.value, Math.max(spW*0.9, burst));
     if(u.head) u.head.rotation.copy(b.rotation);
-    if(u.flare){ u.flare.visible = k > 0.02; u.flare.material.opacity = k*0.9*flash; } });
+    if(u.flare){ u.flare.visible = b.visible; u.flare.material.opacity = Math.max(k*0.9*flash, spW*0.9, burst); } });
 })();
 
 /* 放在西側海灘，等場景建好再載入 */
@@ -4913,6 +4957,78 @@ const MUSIC_NIGHT = {};
     if(typeof scene === 'undefined' || !scene || typeof THREE === 'undefined' || !THREE.GLTFLoader) return; clearInterval(w);
     placeMusicCenter({url:'music-center.glb', angle:Math.PI, radius:57.0, scale:0.088, rot:Math.PI/2});
   }, 150);
+})();
+
+
+/* ================= 流行音樂中心：優職排行榜（點建築或標籤開啟） ================= */
+(function(){
+  /* 薪資文字 → 換算成月薪數字（取最低值；時薪 ×176、日薪 ×22、年薪 ÷12） */
+  /* 只看第一段薪資（例「月薪 32000元-38000元 依學經歷敘薪時薪205元」只取月薪那段） */
+  const parsePay = s => { s = String(s || '').replace(/,/g, ''); const m = s.match(/(月薪|時薪|日薪|年薪)?\s*(\d+(?:\.\d+)?)(萬)?\s*元?\s*(?:[-~～至到]\s*(\d+(?:\.\d+)?)(萬)?)?/);
+    if(!m) return null; const unit = m[1] || '月薪', f = x => x ? +x : 0; let lo = f(m[2])*(m[3] ? 10000 : 1), hi = f(m[4])*(m[5] || (m[3] && m[4]) ? 10000 : 1);
+    return {unit, lo, hi}; };
+  const monthly = s => { const P = parsePay(s); if(!P) return 0; return P.lo*({'時薪':176, '日薪':22, '年薪':1/12}[P.unit] || 1); };
+  const fmt = n => n >= 10000 ? (Math.round(n/1000)/10) + '萬' : n.toLocaleString();
+  const payText = s => { const P = parsePay(s); if(!P || !P.lo) return String(s || '').slice(0, 10); return P.unit + ' ' + fmt(P.lo) + (P.hi > P.lo ? '–' + fmt(P.hi) : ' 起'); };
+  const allJobs = () => (typeof vendors !== 'undefined' ? vendors : []).flatMap(v => (v.jobs || []).map(j => ({j, v, pay:monthly(j.salary)})));
+  const BOARDS = [
+    {key:'pay',   name:'高薪榜',   en:'Top Pay',      sub:'起薪最高的職缺', rows:() => allJobs().filter(x => x.pay > 0).sort((a,b) => b.pay - a.pay)},
+    {key:'fresh', name:'新鮮人榜', en:'Entry Level',  sub:'學歷不限／高中職即可應徵', rows:() => allJobs().filter(x => /不限|高中/.test(x.j.edu || '')).sort((a,b) => b.pay - a.pay)},
+    {key:'intl',  name:'國際人才榜', en:'Global Talent', sub:'外籍生可應徵的職缺', rows:() => allJobs().filter(x => x.j.intl).sort((a,b) => b.pay - a.pay)},
+    {key:'many',  name:'大量徵才榜', en:'Most Openings', sub:'開出最多職缺的廠商', rows:() => (typeof vendors !== 'undefined' ? vendors : []).filter(v => (v.jobs||[]).length).sort((a,b) => b.jobs.length - a.jobs.length).map(v => ({v, j:{name:v.name, salary:v.jobs.length + ' 個職缺'}, vendorRow:true}))},
+  ];
+  let cur = 0;
+  const p = document.createElement('div'); p.id = 'chart-panel'; p.hidden = true;
+  p.innerHTML = `<div class="ch-bar"></div>
+    <div class="ch-head"><div class="ch-title"><small>KAOHSIUNG MUSIC CENTER</small><b>優職排行榜</b></div>
+      <button class="icon-btn" id="chart-x" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="ch-tabs">${BOARDS.map((b,i) => `<button data-b="${i}">${b.name}</button>`).join('')}</div>
+    <div class="ch-sub"></div><ol class="ch-list"></ol>`;
+  (document.getElementById('ui') || document.body).appendChild(p);
+  const render = () => {
+    const B = BOARDS[cur];
+    p.querySelectorAll('[data-b]').forEach(b => b.classList.toggle('on', +b.dataset.b === cur));
+    p.querySelector('.ch-sub').textContent = B.sub + '．TOP 10';
+    const ol = p.querySelector('.ch-list'); ol.innerHTML = '';
+    B.rows().slice(0, 10).forEach((x, i) => {
+      const li = document.createElement('li'); li.className = i < 3 ? 'top' : '';
+      li.innerHTML = `<span class="rk">${String(i + 1).padStart(2, '0')}</span>
+        <span class="nm"><b>${x.j.name}</b><small><i style="background:${x.v.color}"></i>${x.vendorRow ? x.v.category : x.v.name}．攤位 ${x.v.booth}</small></span>
+        <span class="pay">${x.vendorRow ? x.j.salary : payText(x.j.salary)}</span>`;
+      li.onclick = () => { if(window.spotlightVendor) spotlightVendor(x.v); if(typeof selectVendor === 'function') selectVendor(x.v); p.hidden = true; };
+      ol.appendChild(li);
+    });
+  };
+  p.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { cur = +b.dataset.b; render(); });
+  p.querySelector('#chart-x').onclick = () => { p.hidden = true; };
+  window.openJobChart = () => { ['snd-panel','dn-panel','train-panel'].forEach(id => { const e = document.getElementById(id); if(e) e.hidden = true; });
+    render(); p.hidden = false; if(window.MUSIC_NIGHT) MUSIC_NIGHT.burstAt = performance.now()/1000; };
+  const css = document.createElement('style');
+  /* 樣式比照廠商卡片：米白紙底、上緣色條、宋體標題、灰色小標、虛線分隔 */
+  css.textContent = `#chart-panel{position:fixed;right:20px;top:20px;z-index:80;width:350px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--paper);box-shadow:var(--shadow);border-radius:2px;color:var(--ink);font-size:13px;overflow:hidden;pointer-events:auto}
+#chart-panel[hidden]{display:none}
+#chart-panel .ch-bar{height:5px;background:var(--sea);flex:none}
+#chart-panel .ch-head{display:flex;align-items:flex-start;gap:10px;padding:22px 12px 4px 24px}
+#chart-panel .ch-title{flex:1;display:flex;flex-direction:column;gap:8px}
+#chart-panel .ch-title small{font-size:11.5px;font-weight:700;letter-spacing:.22em;color:var(--muted)}
+#chart-panel .ch-title b{font-family:'Noto Serif TC',serif;font-size:22px;font-weight:900;line-height:1.3}
+#chart-panel .ch-tabs{display:grid;grid-template-columns:repeat(4,1fr);margin:12px 24px 0;border-bottom:1px solid var(--line)}
+#chart-panel .ch-tabs button{font:inherit;font-size:13px;font-weight:700;padding:10px 2px;border:0;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+#chart-panel .ch-tabs button.on{color:var(--ink);border-bottom-color:var(--sun)}
+#chart-panel .ch-sub{display:flex;align-items:center;gap:10px;margin:16px 24px 0;font-size:11.5px;font-weight:700;letter-spacing:.22em;color:var(--muted)}
+#chart-panel .ch-sub::after{content:'';flex:1;height:1px;background:var(--line)}
+#chart-panel .ch-list{list-style:none;margin:0;padding:2px 24px 16px;overflow:auto}
+#chart-panel .ch-list li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+#chart-panel .ch-list li:hover .nm b{color:var(--sea)}
+#chart-panel .rk{font-family:'Noto Serif TC',serif;font-size:18px;font-weight:900;color:var(--muted);text-align:left;font-variant-numeric:tabular-nums}
+#chart-panel li.top .rk{color:var(--sun)}
+#chart-panel .nm{display:flex;flex-direction:column;gap:4px;min-width:0}
+#chart-panel .nm b{font-size:15px;font-weight:700;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s}
+#chart-panel .nm small{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+#chart-panel .nm small i{width:8px;height:8px;border-radius:50%;flex:none}
+#chart-panel .pay{font-size:13px;color:var(--ink-2);white-space:nowrap}
+@media(max-width:720px){#chart-panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:58vh;border-radius:14px 14px 0 0}}`;
+  document.head.appendChild(css);
 })();
 
 /* ================= 燈塔 ================= */
@@ -5163,7 +5279,7 @@ function openVenueFor(v){
     '清晨':'Dawn', '白天':'Day', '傍晚':'Dusk', '夜晚':'Night', '循環':'Cycle',
     '總音量':'Volume', '背景音樂':'Music', '環境音':'Ambience', '互動音效':'Effects', '海風烏克麗麗':'Sea Breeze Ukulele',
     /* 車站、跟隨 */
-    '求職島站':'Job Island Station', '流行音樂中心站':'Music Center Station', '求職島站．列車樣式':'Job Island Station · Train style',
+    '求職島站':'Job Island Station', '優職排行榜':'Top Jobs Chart', '高薪榜':'Top Pay', '新鮮人榜':'Entry Level', '國際人才榜':'Global Talent', '大量徵才榜':'Most Openings', '流行音樂中心站':'Music Center Station', '求職島站．列車樣式':'Job Island Station · Train style',
     '蒸汽小火車':'Steam train', '台灣高鐵':'Taiwan High Speed Rail', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train',
     '跟隨島民中，點擊空白處取消':'Following an islander. Tap anywhere to stop.', '跟隨列車中，點擊空白處取消':'Following the train. Tap anywhere to stop.',
     /* 引導 */
