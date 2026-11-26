@@ -1104,13 +1104,13 @@ function build85Tower(){
   bx.fillStyle = '#fbe79a'; bx.fillRect(0, 0, 64, 64); bx.fillStyle = '#f0a040'; [16, 32, 48].forEach(y => bx.fillRect(0, y - 2, 64, 4));
   const baseMat = new T.MeshLambertMaterial({map:new T.CanvasTexture(bcv)});
   add(new T.BoxGeometry(8.0, 2.0, 5.0), [baseMat, baseMat, lam(C.cream), lam(C.cream), baseMat, baseMat], 0, 1.0, 0);
-  add(new T.BoxGeometry(2.0, 2.0, 0.12), lam(C.yellow), 0, 1.0, 2.52);
-  add(new T.BoxGeometry(2.0, 2.0, 0.12), lam(C.yellow), 0, 1.0, -2.52);
+  add(new T.BoxGeometry(1.5, 2.0, 0.12), lam(C.yellow), 0, 1.0, 2.52);
+  add(new T.BoxGeometry(1.5, 2.0, 0.12), lam(C.yellow), 0, 1.0, -2.52);
 
   /* 2. 下方雙翼量體：外側上緣平、往內斜下接主塔；中央挖空的大開口（可以看穿） */
   const D = 4.4, sh = new T.Shape();
   sh.moveTo(-4, 2); sh.lineTo(-4, 10.1); sh.lineTo(-3.1, 10.1); sh.lineTo(-1.64, 9.4); sh.lineTo(1.64, 9.4); sh.lineTo(3.1, 10.1); sh.lineTo(4, 10.1);
-  sh.lineTo(4, 2); sh.lineTo(1.0, 2); sh.lineTo(1.0, 6.55); sh.lineTo(-1.0, 6.55); sh.lineTo(-1.0, 2); sh.lineTo(-4, 2);
+  sh.lineTo(4, 2); sh.lineTo(0.75, 2); sh.lineTo(0.75, 7.0); sh.lineTo(-0.75, 7.0); sh.lineTo(-0.75, 2); sh.lineTo(-4, 2);
   const wg = new T.ExtrudeGeometry(sh, {depth:D, bevelEnabled:false}); wg.translate(0, 0, -D/2);
   add(wg, lam(C.dark), 0, 0, 0);
   /* 斜肩上的淺色收邊 */
@@ -1125,18 +1125,18 @@ function build85Tower(){
   /* 側面窗格 */
   [1, -1].forEach(s => panel(3.4, 6.2, winTex(5, 10, '#468f80', 21 + s), s*(4 + 0.02), 5.4, 0, s*Math.PI/2));
   /* 開口上方的橫樑（一排小窗） */
-  [1, -1].forEach(f => panel(2.0, 0.65, winTex(3, 1, '#63bdaa', 5), 0, 6.9, f*(D/2 + 0.02), f < 0 ? Math.PI : 0));
+  [1, -1].forEach(f => panel(1.5, 0.55, winTex(2, 1, '#63bdaa', 5), 0, 7.35, f*(D/2 + 0.02), f < 0 ? Math.PI : 0));
 
   /* 3. 主塔：深色方柱（四角看起來像邊柱）＋ 四面淺色中板，中段一條腰帶 */
-  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 15.8;
+  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 19.0, UP = TY1 - 15.8;   /* UP：主塔比原設計拉高的量，上方的頂段、冠部跟著往上移 */
   add(new T.BoxGeometry(TW, TY1 - TY0, TW), lam(C.mid), 0, (TY0 + TY1)/2, 0);
   let sd = 30;
   fourSides(TW, (x, z, ry) => {
-    panel(PW, 2.85, winTex(3, 4, '#63bdaa', sd++), x, 11.1, z, ry);
-    panel(PW, 2.85, winTex(3, 5, '#63bdaa', sd++), x, 14.2, z, ry);
+    panel(PW, 4.45, winTex(3, 6, '#63bdaa', sd++), x, 11.9, z, ry);
+    panel(PW, 4.45, winTex(3, 7, '#63bdaa', sd++), x, 16.6, z, ry);
     /* 腰帶：中間深色、兩側邊柱上是淺色 */
-    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, 12.65, z*1.003); a.rotation.y = ry; g.add(a);
-    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, 12.65, z*1.006); b.rotation.y = ry; g.add(b);
+    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, 14.25, z*1.003); a.rotation.y = ry; g.add(a);
+    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, 14.25, z*1.006); b.rotation.y = ry; g.add(b);
   });
 
   /* 4. 頂段：橫向亮帶 */
@@ -1147,12 +1147,12 @@ function build85Tower(){
   add(new T.BoxGeometry(TW, 2.9, TW), [stripeMat, stripeMat, lam(C.dark), lam(C.dark), stripeMat, stripeMat], 0, TY1 + 1.45, 0);
 
   /* 5. 冠部：四角小尖 + 中央角錐 + 天線座 + 天線 */
-  add(new T.BoxGeometry(TW, 0.25, TW), lam(C.dark), 0, 18.82, 0);
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a, b]) => { const m = add(new T.ConeGeometry(0.34, 0.6, 4), lam(C.light), a*(TW/2 - 0.3), 19.25, b*(TW/2 - 0.3)); m.rotation.y = Math.PI/4; });
-  const pyr = add(new T.ConeGeometry(1.55, 0.9, 4), lam(C.dark), 0, 19.4, 0); pyr.rotation.y = Math.PI/4;
-  add(new T.BoxGeometry(0.55, 1.1, 0.55), lam(C.light), 0, 20.25, 0);
-  add(new T.CylinderGeometry(0.1, 0.13, 2.4, 8), lam(C.pale), 0, 22.0, 0);
-  g.userData.labelY = 24.6;
+  add(new T.BoxGeometry(TW, 0.25, TW), lam(C.dark), 0, 18.82 + UP, 0);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a, b]) => { const m = add(new T.ConeGeometry(0.34, 0.6, 4), lam(C.light), a*(TW/2 - 0.3), 19.25 + UP, b*(TW/2 - 0.3)); m.rotation.y = Math.PI/4; });
+  const pyr = add(new T.ConeGeometry(1.55, 0.9, 4), lam(C.dark), 0, 19.4 + UP, 0); pyr.rotation.y = Math.PI/4;
+  add(new T.BoxGeometry(0.55, 1.1, 0.55), lam(C.light), 0, 20.25 + UP, 0);
+  add(new T.CylinderGeometry(0.1, 0.13, 2.4, 8), lam(C.pale), 0, 22.0 + UP, 0);
+  g.userData.labelY = 24.6 + UP;
   return g;
 }
 
