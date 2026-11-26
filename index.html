@@ -3,11 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>2027屏東地區就業博覽會-求職島</title>
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>116年度高雄市政府 現場徵才活動-求職島</title>
 
 <!-- 清除社群分享時的預設抓取文字 -->
 <meta name="description" content=" ">
@@ -15,15 +11,15 @@
 
 <!-- 社群分享縮圖 -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="2027屏東地區就業博覽會-求職島">
-<meta property="og:title" content="2027屏東地區就業博覽會-求職島">
+<meta property="og:site_name" content="116年度高雄市政府 現場徵才活動-求職島">
+<meta property="og:title" content="116年度高雄市政府 現場徵才活動-求職島">
 <meta property="og:url" content="https://design-your-life-studio.github.io/Job-Island/">
 <meta property="og:image" content="https://design-your-life-studio.github.io/Job-Island/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="2027屏東地區就業博覽會-求職島">
+<meta name="twitter:title" content="116年度高雄市政府 現場徵才活動-求職島">
 <meta name="twitter:image" content="https://design-your-life-studio.github.io/Job-Island/og-image.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -413,8 +409,8 @@ body.clean #cta-tip{display:none}
 
 <div id="ui">
   <header class="brand paper">
-    <div class="brand-kicker">PINGTUNG JOB FAIR</div>
-    <h1>2027屏東地區就業博覽會<span class="dash">-</span><span class="isle">求職島</span></h1>
+    <div class="brand-kicker">KAOHSIUNG JOB FAIR</div>
+    <h1>116年度高雄市政府 現場徵才活動<span class="dash">-</span><span class="isle">求職島</span></h1>
   </header>
 
   <details class="legend paper" id="legend" open hidden>
@@ -494,11 +490,12 @@ const MAP_FALLBACK='data:image/svg+xml;utf8,'+encodeURIComponent((()=>{let b='';
     
     <div class="info-layout">
       <div class="info-layout-left">
-        <p class="modal-sub">歡迎來到 2027 屏東地區就業博覽會！<br>您可以透過右方平面圖熟悉現場動線，或點擊下方按鈕查看本次活動的完整電子書與職缺總表。</p>
+        <p class="modal-sub">歡迎來到 116 年度高雄市政府現場徵才活動！<br>您可以透過右方平面圖熟悉現場動線，或點擊下方按鈕查看本次活動的完整電子書與職缺總表。</p>
         <a href="https://sites.google.com/view/khjovejobs/ebook1107" target="_blank" rel="noopener" class="btn-primary" style="width:100%; height:54px; margin-top: auto; font-size: 16px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           查看大會電子書 (職缺手冊)
         </a>
+        <p class="model-credit" style="margin:10px 0 0;font-size:11px;line-height:1.5;color:#8a8577;">島上「高雄流行音樂中心」造型參考：<a href="https://sketchfab.com/3d-models/7cab885aabf54185837764fcf87a9354" target="_blank" rel="noopener" style="color:inherit;">高雄_海洋文化及流行音樂中心</a> by <a href="https://sketchfab.com/samuel-lin" target="_blank" rel="noopener" style="color:inherit;">samuel-lin</a>，<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener" style="color:inherit;">CC BY 4.0</a>（已重新上色）</p>
       </div>
       <div class="info-layout-right">
         <a href="javascript:void(0)" onclick="openMap();return false" class="map-card" title="查看大會平面圖">
@@ -521,6 +518,7 @@ const MAP_FALLBACK='data:image/svg+xml;utf8,'+encodeURIComponent((()=>{let b='';
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
@@ -550,8 +548,56 @@ const isYes = t => { t = String(t == null ? '' : t).trim(); return !!t && !/^(�
 const INDUSTRY_COLORS = ['#C2523C','#2E6A8E','#3E7C47','#C9952B','#7A4E8F','#17877B','#D9734E','#4B5D6A','#A35C7A','#8A6A3B','#3D5A99','#6E8B2F'];
 
 const DEMO_VENDORS = [
-  {booth:'01',name:'南州精密機械',category:'製造業',desc:'深耕屏東三十年的精密零組件製造廠，供應汽車與半導體設備關鍵零件。',jobs:[{name:'機械工程師',salary:'月薪 35,000~45,000元',edu:'專科',major:'機械、電機'},{name:'品管技術員',salary:'月薪 30,000元',edu:'高中職',major:'工業工程'}],majors:['機械','電機','工業工程'],edu:'高中職',link:''},
-  {booth:'02',name:'墾丁海灣度假飯店',category:'觀光餐旅',desc:'位於恆春半島的海景度假飯店，提供完整的餐旅職涯培訓與住宿福利。',jobs:[{name:'櫃檯接待',salary:'月薪 32,000元起',edu:'專科',major:'餐旅、外語'},{name:'餐飲服務',salary:'月薪 30,000元起',edu:'高中職',major:'不限'}],majors:['餐旅','觀光','外語'],edu:'高中職',link:''}
+  {"booth": "01", "name": "嘉南精密工業", "category": "製造業", "desc": "深耕嘉義民雄工業區的精密零件廠，供應機車與自行車關鍵零組件。", "jobs": [{"name": "CNC 技術員", "salary": "月薪 32,000~38,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": true}, {"name": "品管工程師", "salary": "月薪 36,000~42,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}], "majors": ["品保測試與檢驗", "生產製造與製程技術"], "edu": "高中職", "link": "", "intl": true},
+  {"booth": "02", "name": "阿里山茶業", "category": "批發零售業", "desc": "自有茶園到門市一條龍，主打高山烏龍與冷泡茶飲。", "jobs": [{"name": "門市人員", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": false}, {"name": "電商企劃", "salary": "月薪 34,000~40,000元", "edu": "大學", "major": "業務行銷與設計企劃", "intl": false}], "majors": ["業務行銷與設計企劃", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "03", "name": "諸羅山大飯店", "category": "餐飲旅宿業", "desc": "位於嘉義市區的商務旅館，提供完整的餐旅培訓與員工宿舍。", "jobs": [{"name": "櫃檯接待", "salary": "月薪 31,000元起", "edu": "專科", "major": "餐飲與飯店旅宿服務", "intl": true}, {"name": "廚房助手", "salary": "月薪 30,000元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": true}], "majors": ["餐飲與飯店旅宿服務"], "edu": "專科", "link": "", "intl": true},
+  {"booth": "04", "name": "嘉義縣政府人事處", "category": "公部門", "desc": "招募縣府約用人員，服務縣民、推動地方行政。", "jobs": [{"name": "行政助理", "salary": "月薪 29,500元", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政"], "edu": "大學", "link": "", "intl": false},
+  {"booth": "05", "name": "朴子金屬科技", "category": "製造業", "desc": "專做不鏽鋼與鋁合金加工，產品外銷日本與東南亞。", "jobs": [{"name": "作業員", "salary": "月薪 30,000~34,000元", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "設備保養技術員", "salary": "月薪 33,000~39,000元", "edu": "高中職", "major": "設備維護與廠務工安", "intl": true}], "majors": ["生產製造與製程技術", "設備維護與廠務工安"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "06", "name": "雲嘉物流", "category": "物流運輸業", "desc": "中南部冷鏈與常溫配送中心，服務量販與超商通路。", "jobs": [{"name": "倉儲管理員", "salary": "月薪 31,000~35,000元", "edu": "高中職", "major": "採購生管與物流倉儲", "intl": false}, {"name": "物流司機", "salary": "月薪 38,000~45,000元", "edu": "不限", "major": "採購生管與物流倉儲", "intl": false}], "majors": ["採購生管與物流倉儲"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "07", "name": "嘉基醫療體系", "category": "醫療照護", "desc": "區域教學醫院，提供多元醫療與長照服務職缺。", "jobs": [{"name": "照顧服務員", "salary": "月薪 32,000~36,000元", "edu": "不限", "major": "經營管理與後勤行政", "intl": true}, {"name": "醫務行政", "salary": "月薪 30,000元起", "edu": "大學", "major": "經營管理與後勤行政", "intl": true}], "majors": ["經營管理與後勤行政"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "08", "name": "大林光電", "category": "科技業", "desc": "LED 模組與光學元件研發製造，近年投入車用照明。", "jobs": [{"name": "研發工程師", "salary": "月薪 42,000~55,000元", "edu": "大學", "major": "資訊與研發工程", "intl": true}, {"name": "製程工程師", "salary": "月薪 38,000~46,000元", "edu": "大學", "major": "生產製造與製程技術", "intl": true}], "majors": ["生產製造與製程技術", "資訊與研發工程"], "edu": "大學", "link": "", "intl": true},
+  {"booth": "09", "name": "奮起湖便當", "category": "餐飲旅宿業", "desc": "老字號鐵路便當品牌，在嘉義市與高鐵站設有門市。", "jobs": [{"name": "門市服務員", "salary": "月薪 29,500元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": false}, {"name": "中央廚房廚師", "salary": "月薪 33,000~38,000元", "edu": "高中職", "major": "餐飲與飯店旅宿服務", "intl": false}], "majors": ["餐飲與飯店旅宿服務"], "edu": "不限", "link": "", "intl": false},
+  {"booth": "10", "name": "嘉信銀行", "category": "金融業", "desc": "在地服務超過四十年的區域銀行，分行遍及雲嘉南。", "jobs": [{"name": "理財專員", "salary": "月薪 35,000元＋獎金", "edu": "大學", "major": "業務行銷與設計企劃", "intl": false}, {"name": "櫃員", "salary": "月薪 32,000元", "edu": "專科", "major": "門市商場與客服銷售", "intl": false}], "majors": ["業務行銷與設計企劃", "門市商場與客服銷售"], "edu": "大學", "link": "", "intl": false},
+  {"booth": "11", "name": "水上食品", "category": "製造業", "desc": "冷凍調理食品廠，供應全台連鎖餐飲與超市。", "jobs": [{"name": "包裝作業員", "salary": "月薪 30,000元起", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "食品檢驗員", "salary": "月薪 33,000~37,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}], "majors": ["品保測試與檢驗", "生產製造與製程技術"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "12", "name": "桃城數位", "category": "科技業", "desc": "網站、APP 與系統整合服務，客戶多為公部門與觀光業者。", "jobs": [{"name": "前端工程師", "salary": "月薪 40,000~52,000元", "edu": "大學", "major": "資訊與研發工程", "intl": false}, {"name": "專案助理", "salary": "月薪 32,000~36,000元", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政", "資訊與研發工程"], "edu": "大學", "link": "", "intl": false},
+  {"booth": "13", "name": "蘭潭綠能", "category": "科技業", "desc": "太陽能案場開發與維運，參與多項漁電共生計畫。", "jobs": [{"name": "維運技術員", "salary": "月薪 34,000~40,000元", "edu": "專科", "major": "設備維護與廠務工安", "intl": true}, {"name": "工安管理員", "salary": "月薪 36,000~42,000元", "edu": "大學", "major": "設備維護與廠務工安", "intl": true}], "majors": ["設備維護與廠務工安"], "edu": "專科", "link": "", "intl": true},
+  {"booth": "14", "name": "民雄塑膠工業", "category": "製造業", "desc": "射出成型與模具開發，產品涵蓋家電與醫療耗材。", "jobs": [{"name": "射出技術員", "salary": "月薪 32,000~37,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": true}, {"name": "生管人員", "salary": "月薪 33,000~38,000元", "edu": "專科", "major": "採購生管與物流倉儲", "intl": true}], "majors": ["採購生管與物流倉儲", "生產製造與製程技術"], "edu": "高中職", "link": "", "intl": true},
+  {"booth": "15", "name": "嘉義百貨", "category": "批發零售業", "desc": "嘉義市中心的綜合百貨，週末人潮穩定。", "jobs": [{"name": "專櫃人員", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": false}, {"name": "活動企劃", "salary": "月薪 33,000~38,000元", "edu": "大學", "major": "業務行銷與設計企劃", "intl": false}], "majors": ["業務行銷與設計企劃", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "16", "name": "東石海產", "category": "批發零售業", "desc": "東石漁港直送的海鮮批發商，供應餐廳與市場。", "jobs": [{"name": "理貨人員", "salary": "月薪 30,000元起", "edu": "不限", "major": "採購生管與物流倉儲", "intl": true}, {"name": "業務專員", "salary": "月薪 32,000元＋獎金", "edu": "高中職", "major": "業務行銷與設計企劃", "intl": true}], "majors": ["採購生管與物流倉儲", "業務行銷與設計企劃"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "17", "name": "檜意生活旅店", "category": "餐飲旅宿業", "desc": "鄰近檜意森活村的文創旅店，主打木造建築體驗。", "jobs": [{"name": "房務員", "salary": "月薪 30,000元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": true}, {"name": "行銷企劃", "salary": "月薪 34,000元起", "edu": "大學", "major": "業務行銷與設計企劃", "intl": true}], "majors": ["業務行銷與設計企劃", "餐飲與飯店旅宿服務"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "18", "name": "嘉豐汽車", "category": "服務業", "desc": "汽車銷售與保修廠，代理多個國產與進口品牌。", "jobs": [{"name": "汽車技師", "salary": "月薪 33,000~45,000元", "edu": "高中職", "major": "設備維護與廠務工安", "intl": false}, {"name": "銷售顧問", "salary": "月薪 30,000元＋獎金", "edu": "高中職", "major": "業務行銷與設計企劃", "intl": false}], "majors": ["業務行銷與設計企劃", "設備維護與廠務工安"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "19", "name": "頭橋紙業", "category": "製造業", "desc": "工業用紙與紙箱製造，導入自動化產線。", "jobs": [{"name": "機台操作員", "salary": "月薪 31,000~36,000元", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "採購專員", "salary": "月薪 33,000~38,000元", "edu": "大學", "major": "採購生管與物流倉儲", "intl": true}], "majors": ["採購生管與物流倉儲", "生產製造與製程技術"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "20", "name": "嘉義長照協會", "category": "醫療照護", "desc": "提供居家服務、日間照顧與喘息服務。", "jobs": [{"name": "居家服務員", "salary": "時薪 220元起", "edu": "不限", "major": "經營管理與後勤行政", "intl": false}, {"name": "社工員", "salary": "月薪 36,000元起", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政"], "edu": "不限", "link": "", "intl": false},
+  {"booth": "21", "name": "新港香藝", "category": "批發零售業", "desc": "傳統製香結合文創設計，產品銷往海內外。", "jobs": [{"name": "包裝人員", "salary": "月薪 29,500元", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "網路行銷", "salary": "月薪 32,000~36,000元", "edu": "大學", "major": "業務行銷與設計企劃", "intl": true}], "majors": ["業務行銷與設計企劃", "生產製造與製程技術"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "22", "name": "雲林科大育成企業", "category": "科技業", "desc": "AIoT 智慧農業新創，打造溫室監控與灌溉系統。", "jobs": [{"name": "韌體工程師", "salary": "月薪 42,000~50,000元", "edu": "大學", "major": "資訊與研發工程", "intl": true}, {"name": "現場技術員", "salary": "月薪 32,000~36,000元", "edu": "專科", "major": "設備維護與廠務工安", "intl": true}], "majors": ["設備維護與廠務工安", "資訊與研發工程"], "edu": "大學", "link": "", "intl": true},
+  {"booth": "23", "name": "嘉義客運", "category": "物流運輸業", "desc": "經營嘉義縣市公車與阿里山公路客運路線。", "jobs": [{"name": "客運駕駛", "salary": "月薪 42,000~50,000元", "edu": "不限", "major": "採購生管與物流倉儲", "intl": false}, {"name": "站務人員", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": false}], "majors": ["採購生管與物流倉儲", "門市商場與客服銷售"], "edu": "不限", "link": "", "intl": false},
+  {"booth": "24", "name": "竹崎木業", "category": "製造業", "desc": "實木家具與室內裝修木作，接單生產。", "jobs": [{"name": "木工師傅", "salary": "月薪 35,000~45,000元", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "設計繪圖員", "salary": "月薪 32,000~38,000元", "edu": "專科", "major": "業務行銷與設計企劃", "intl": true}], "majors": ["業務行銷與設計企劃", "生產製造與製程技術"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "25", "name": "嘉保保全", "category": "服務業", "desc": "社區與企業保全服務，提供完整教育訓練。", "jobs": [{"name": "保全員", "salary": "月薪 33,000~38,000元", "edu": "不限", "major": "設備維護與廠務工安", "intl": false}], "majors": ["設備維護與廠務工安"], "edu": "不限", "link": "", "intl": false},
+  {"booth": "26", "name": "布袋鹽業文創", "category": "服務業", "desc": "鹽田體驗與觀光工廠，推廣在地鹽業文化。", "jobs": [{"name": "導覽解說員", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": true}, {"name": "活動企劃", "salary": "月薪 32,000元起", "edu": "大學", "major": "業務行銷與設計企劃", "intl": true}], "majors": ["業務行銷與設計企劃", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": true},
+  {"booth": "27", "name": "嘉實電子", "category": "科技業", "desc": "PCB 組裝與測試代工，客戶包含國際網通品牌。", "jobs": [{"name": "測試工程師", "salary": "月薪 36,000~44,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}, {"name": "SMT 技術員", "salary": "月薪 32,000~36,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": true}], "majors": ["品保測試與檢驗", "生產製造與製程技術"], "edu": "專科", "link": "", "intl": true},
+  {"booth": "28", "name": "福義軒食品", "category": "製造業", "desc": "嘉義知名餅乾老店，擁有自動化烘焙廠。", "jobs": [{"name": "烘焙技術員", "salary": "月薪 30,000~35,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": true}, {"name": "門市人員", "salary": "月薪 29,500元起", "edu": "不限", "major": "門市商場與客服銷售", "intl": true}], "majors": ["生產製造與製程技術", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": true},
+  {"booth": "29", "name": "梅山咖啡莊園", "category": "餐飲旅宿業", "desc": "阿里山咖啡自產自銷，經營莊園咖啡館。", "jobs": [{"name": "咖啡師", "salary": "月薪 30,000元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": false}, {"name": "烘豆師", "salary": "月薪 33,000~38,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": false}], "majors": ["生產製造與製程技術", "餐飲與飯店旅宿服務"], "edu": "不限", "link": "", "intl": false},
+  {"booth": "30", "name": "嘉南會計師事務所", "category": "服務業", "desc": "提供記帳、稅務與企業顧問服務。", "jobs": [{"name": "記帳助理", "salary": "月薪 30,000~34,000元", "edu": "專科", "major": "經營管理與後勤行政", "intl": false}, {"name": "查帳員", "salary": "月薪 35,000~42,000元", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政"], "edu": "專科", "link": "", "intl": false},
+  {"booth": "31", "name": "六腳農產合作社", "category": "批發零售業", "desc": "整合在地農友的農產集貨與加工中心。", "jobs": [{"name": "集貨作業員", "salary": "月薪 29,500元起", "edu": "不限", "major": "採購生管與物流倉儲", "intl": true}, {"name": "品質檢驗員", "salary": "月薪 31,000~35,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}], "majors": ["品保測試與檢驗", "採購生管與物流倉儲"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "32", "name": "嘉義縣消防局", "category": "公部門", "desc": "招募約用救護技術員與行政人員。", "jobs": [{"name": "救護技術員", "salary": "月薪 33,000元起", "edu": "高中職", "major": "設備維護與廠務工安", "intl": false}, {"name": "行政約用人員", "salary": "月薪 29,500元起", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政", "設備維護與廠務工安"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "33", "name": "中埔紡織", "category": "製造業", "desc": "機能性布料研發與織造，供應運動品牌。", "jobs": [{"name": "織布技術員", "salary": "月薪 31,000~36,000元", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "品保專員", "salary": "月薪 33,000~38,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}], "majors": ["品保測試與檢驗", "生產製造與製程技術"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "34", "name": "嘉義國際旅行社", "category": "服務業", "desc": "國內外團體旅遊與企業獎勵旅遊規劃。", "jobs": [{"name": "旅遊業務", "salary": "月薪 30,000元＋獎金", "edu": "專科", "major": "業務行銷與設計企劃", "intl": true}, {"name": "領隊助理", "salary": "月薪 30,000元起", "edu": "大學", "major": "門市商場與客服銷售", "intl": true}], "majors": ["業務行銷與設計企劃", "門市商場與客服銷售"], "edu": "專科", "link": "", "intl": true},
+  {"booth": "35", "name": "鹿草化學", "category": "製造業", "desc": "特用化學品與塗料生產，重視工安與環保。", "jobs": [{"name": "製程技術員", "salary": "月薪 34,000~40,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": false}, {"name": "工安工程師", "salary": "月薪 40,000~48,000元", "edu": "大學", "major": "設備維護與廠務工安", "intl": false}], "majors": ["生產製造與製程技術", "設備維護與廠務工安"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "36", "name": "嘉美連鎖藥局", "category": "醫療照護", "desc": "雲嘉地區連鎖藥局，提供藥師諮詢與保健產品。", "jobs": [{"name": "藥局助理", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": false}, {"name": "藥師", "salary": "月薪 55,000元起", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "37", "name": "太保機械", "category": "製造業", "desc": "農業機械與自動化設備製造，產品外銷東南亞。", "jobs": [{"name": "機械組裝員", "salary": "月薪 32,000~38,000元", "edu": "高中職", "major": "生產製造與製程技術", "intl": true}, {"name": "機構設計工程師", "salary": "月薪 40,000~50,000元", "edu": "大學", "major": "資訊與研發工程", "intl": true}], "majors": ["生產製造與製程技術", "資訊與研發工程"], "edu": "高中職", "link": "", "intl": true},
+  {"booth": "38", "name": "嘉義市立幼兒園", "category": "公部門", "desc": "招募教保員與行政人員，提供穩定工作環境。", "jobs": [{"name": "教保員", "salary": "月薪 31,000元起", "edu": "專科", "major": "經營管理與後勤行政", "intl": false}], "majors": ["經營管理與後勤行政"], "edu": "專科", "link": "", "intl": false},
+  {"booth": "39", "name": "溪口畜產", "category": "製造業", "desc": "雞肉電宰與分切加工廠，供應連鎖餐飲。", "jobs": [{"name": "分切作業員", "salary": "月薪 31,000~36,000元", "edu": "不限", "major": "生產製造與製程技術", "intl": true}, {"name": "衛生管理員", "salary": "月薪 33,000~38,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}], "majors": ["品保測試與檢驗", "生產製造與製程技術"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "40", "name": "嘉雲電信門市", "category": "批發零售業", "desc": "電信與 3C 門市，雲嘉地區十多家分店。", "jobs": [{"name": "門市銷售", "salary": "月薪 30,000元＋獎金", "edu": "高中職", "major": "門市商場與客服銷售", "intl": false}, {"name": "維修技術員", "salary": "月薪 31,000~35,000元", "edu": "專科", "major": "設備維護與廠務工安", "intl": false}], "majors": ["設備維護與廠務工安", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "41", "name": "番路果園休閒農場", "category": "餐飲旅宿業", "desc": "結合果園採摘、露營與餐廳的休閒農場。", "jobs": [{"name": "園區服務員", "salary": "月薪 29,500元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": true}, {"name": "餐廳外場", "salary": "月薪 30,000元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": true}], "majors": ["餐飲與飯店旅宿服務"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "42", "name": "嘉陽建設", "category": "服務業", "desc": "住宅建案開發與營造，深耕嘉義二十年。", "jobs": [{"name": "工地主任", "salary": "月薪 45,000~60,000元", "edu": "專科", "major": "設備維護與廠務工安", "intl": false}, {"name": "建案銷售", "salary": "月薪 30,000元＋獎金", "edu": "高中職", "major": "業務行銷與設計企劃", "intl": false}], "majors": ["業務行銷與設計企劃", "設備維護與廠務工安"], "edu": "專科", "link": "", "intl": false},
+  {"booth": "43", "name": "義竹生技", "category": "科技業", "desc": "益生菌與保健食品研發，擁有 GMP 工廠。", "jobs": [{"name": "研發助理", "salary": "月薪 34,000~40,000元", "edu": "大學", "major": "資訊與研發工程", "intl": true}, {"name": "品管員", "salary": "月薪 32,000~36,000元", "edu": "專科", "major": "品保測試與檢驗", "intl": true}], "majors": ["品保測試與檢驗", "資訊與研發工程"], "edu": "大學", "link": "", "intl": true},
+  {"booth": "44", "name": "嘉義農會超市", "category": "批發零售業", "desc": "在地農會經營的超市，販售嘉義農特產品。", "jobs": [{"name": "收銀員", "salary": "月薪 29,500元起", "edu": "不限", "major": "門市商場與客服銷售", "intl": false}, {"name": "採購專員", "salary": "月薪 32,000元起", "edu": "專科", "major": "採購生管與物流倉儲", "intl": false}], "majors": ["採購生管與物流倉儲", "門市商場與客服銷售"], "edu": "不限", "link": "", "intl": false},
+  {"booth": "45", "name": "高鐵嘉義站商場", "category": "批發零售業", "desc": "高鐵站區商場，進駐多家餐飲與伴手禮品牌。", "jobs": [{"name": "商場服務員", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": true}], "majors": ["門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": true},
+  {"booth": "46", "name": "阿里山森林鐵路", "category": "物流運輸業", "desc": "經營阿里山林業鐵路與車站，招募站務與維修人員。", "jobs": [{"name": "站務員", "salary": "月薪 31,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": false}, {"name": "車輛維修技術員", "salary": "月薪 34,000~40,000元", "edu": "專科", "major": "設備維護與廠務工安", "intl": false}], "majors": ["設備維護與廠務工安", "門市商場與客服銷售"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "47", "name": "嘉義人力資源", "category": "服務業", "desc": "人力派遣與職涯顧問，媒合雲嘉南企業職缺。", "jobs": [{"name": "職涯顧問", "salary": "月薪 32,000元＋獎金", "edu": "大學", "major": "業務行銷與設計企劃", "intl": true}, {"name": "行政專員", "salary": "月薪 30,000元起", "edu": "專科", "major": "經營管理與後勤行政", "intl": true}], "majors": ["業務行銷與設計企劃", "經營管理與後勤行政"], "edu": "大學", "link": "", "intl": true},
+  {"booth": "48", "name": "蒜頭糖廠文化園區", "category": "餐飲旅宿業", "desc": "糖廠觀光園區，經營五分車體驗、冰品與餐飲。", "jobs": [{"name": "冰品店員", "salary": "月薪 29,500元起", "edu": "不限", "major": "餐飲與飯店旅宿服務", "intl": true}, {"name": "園區導覽員", "salary": "月薪 30,000元起", "edu": "高中職", "major": "門市商場與客服銷售", "intl": true}], "majors": ["門市商場與客服銷售", "餐飲與飯店旅宿服務"], "edu": "不限", "link": "", "intl": true},
+  {"booth": "49", "name": "嘉信保險經紀", "category": "金融業", "desc": "提供壽險、產險規劃與理賠服務。", "jobs": [{"name": "保險業務", "salary": "月薪 32,000元＋獎金", "edu": "高中職", "major": "業務行銷與設計企劃", "intl": false}, {"name": "理賠專員", "salary": "月薪 33,000元起", "edu": "大學", "major": "經營管理與後勤行政", "intl": false}], "majors": ["業務行銷與設計企劃", "經營管理與後勤行政"], "edu": "高中職", "link": "", "intl": false},
+  {"booth": "50", "name": "嘉義智慧製造", "category": "科技業", "desc": "工業自動化與機器手臂系統整合商。", "jobs": [{"name": "自動化工程師", "salary": "月薪 42,000~55,000元", "edu": "大學", "major": "資訊與研發工程", "intl": true}, {"name": "電控技術員", "salary": "月薪 34,000~40,000元", "edu": "專科", "major": "設備維護與廠務工安", "intl": true}], "majors": ["設備維護與廠務工安", "資訊與研發工程"], "edu": "大學", "link": "", "intl": true}
 ];
 
 // 履歷：學歷與科系選項
@@ -582,6 +628,9 @@ let isDragging = false, pointerDownPos = {x:0,y:0};
 let currentVendor = null, activeFilter = null, tween = null;
 let idleTimeout = null, isIdleMode = false; // 閒置運鏡狀態追蹤
 let rocketGroup = null; // 火箭本體
+/* 島中央地標：'tower85' = 高雄 85 大樓；'rocket' = 火箭（程式碼保留，改這裡就能換回來） */
+const CENTER_LANDMARK = 'tower85';
+let centerGroup = null; // 中央地標本體（85 大樓或火箭）
 const smokes = []; // （舊）煙霧陣列，保留相容
 const smokePool = []; let smokeAcc = 0;
 const smokeGeo = new THREE.IcosahedronGeometry(0.6, 0); 
@@ -1023,7 +1072,97 @@ function addMesh(parent, geo, mat, x, y, z, shadow=true){
   m.castShadow = shadow; m.receiveShadow = true; parent.add(m); return m;
 }
 
+/* 高雄 85 大樓 v3：依參考圖的結構
+   底座（米黃＋橘線） → 下方寬大的雙翼量體（中央挖空大開口、上緣兩側斜肩） → 細長主塔（深色邊柱＋淺色中板＋中段腰帶）
+   → 頂段橫向亮帶 → 冠部 → 天線。地面 y=0，天線頂約 23。 */
+function build85Tower(){
+  const T = THREE, g = new T.Group();
+  const C = { dark:0x3e6b62, mid:0x468f80, light:0x63bdaa, pale:0xb3e6dc, cream:0xfbe79a, orange:0xf0a040, yellow:0xf9d32a };
+  const lam = c => new T.MeshLambertMaterial({color:c});
+  const add = (geo, mat, x, y, z) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+  /* 窗格貼圖：底色 + 一格一格的淺色／黃色／青色小窗 */
+  const winTex = (cols, rows, bg, seed) => {
+    const cv = document.createElement('canvas'); cv.width = cols*40; cv.height = rows*28; const x = cv.getContext('2d');
+    x.fillStyle = bg; x.fillRect(0, 0, cv.width, cv.height);
+    const pal = ['#d9f3ee', '#ffe89a', '#7fd3c2'];
+    let s = (seed || 1) * 37; const rnd = () => (s = (s*9301 + 49297) % 233280) / 233280;
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ x.fillStyle = pal[Math.floor(rnd()*3)]; x.fillRect(c*40 + 7, r*28 + 8, 26, 12); }
+    return new T.CanvasTexture(cv);
+  };
+  const panel = (w, h, tex, x, y, z, ry) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), tex.isTexture ? new T.MeshLambertMaterial({map:tex}) : tex); m.position.set(x, y, z); m.rotation.y = ry || 0; g.add(m); return m; };
+  /* 對主塔四個面各做一次：x/z 是面的位置、ry 是面的朝向 */
+  const fourSides = (w, fn) => { const o = w/2 + 0.02; fn(0, o, 0); fn(0, -o, Math.PI); fn(o, 0, Math.PI/2); fn(-o, 0, -Math.PI/2); };
+
+  /* 1. 底座：米黃色，三條橘色橫線，正中間黃色入口 */
+  const bcv = document.createElement('canvas'); bcv.width = 64; bcv.height = 64; const bx = bcv.getContext('2d');
+  bx.fillStyle = '#fbe79a'; bx.fillRect(0, 0, 64, 64); bx.fillStyle = '#f0a040'; [16, 32, 48].forEach(y => bx.fillRect(0, y - 2, 64, 4));
+  const baseMat = new T.MeshLambertMaterial({map:new T.CanvasTexture(bcv)});
+  add(new T.BoxGeometry(8.0, 2.0, 5.0), [baseMat, baseMat, lam(C.cream), lam(C.cream), baseMat, baseMat], 0, 1.0, 0);
+  add(new T.BoxGeometry(2.0, 2.0, 0.12), lam(C.yellow), 0, 1.0, 2.52);
+  add(new T.BoxGeometry(2.0, 2.0, 0.12), lam(C.yellow), 0, 1.0, -2.52);
+
+  /* 2. 下方雙翼量體：外側上緣平、往內斜下接主塔；中央挖空的大開口（可以看穿） */
+  const D = 4.4, sh = new T.Shape();
+  sh.moveTo(-4, 2); sh.lineTo(-4, 10.1); sh.lineTo(-3.1, 10.1); sh.lineTo(-1.64, 9.4); sh.lineTo(1.64, 9.4); sh.lineTo(3.1, 10.1); sh.lineTo(4, 10.1);
+  sh.lineTo(4, 2); sh.lineTo(1.0, 2); sh.lineTo(1.0, 6.55); sh.lineTo(-1.0, 6.55); sh.lineTo(-1.0, 2); sh.lineTo(-4, 2);
+  const wg = new T.ExtrudeGeometry(sh, {depth:D, bevelEnabled:false}); wg.translate(0, 0, -D/2);
+  add(wg, lam(C.dark), 0, 0, 0);
+  /* 斜肩上的淺色收邊 */
+  [[-3.55, 10.15, 0.9, 0], [3.55, 10.15, 0.9, 0], [-2.37, 9.75, 1.62, -0.448], [2.37, 9.75, 1.62, 0.448]].forEach(([x, y, w, r]) => {
+    const m = add(new T.BoxGeometry(w + 0.06, 0.2, D + 0.06), lam(C.light), x, y, 0); m.rotation.z = r; });
+  /* 翼面窗格：前後兩面各兩片（下大片＋上小排） */
+  [1, -1].forEach(f => [-1, 1].forEach(s => {
+    const ry = f < 0 ? Math.PI : 0, z = f*(D/2 + 0.02);
+    panel(2.0, 4.3, winTex(3, 8, '#468f80', 3 + s + f*5), s*2.45, 4.6, z, ry);
+    panel(2.1, 0.95, winTex(3, 3, '#3e6b62', 9 + s + f*5), s*2.65, 7.65, z, ry);
+  }));
+  /* 側面窗格 */
+  [1, -1].forEach(s => panel(3.4, 6.2, winTex(5, 10, '#468f80', 21 + s), s*(4 + 0.02), 5.4, 0, s*Math.PI/2));
+  /* 開口上方的橫樑（一排小窗） */
+  [1, -1].forEach(f => panel(2.0, 0.65, winTex(3, 1, '#63bdaa', 5), 0, 6.9, f*(D/2 + 0.02), f < 0 ? Math.PI : 0));
+
+  /* 3. 主塔：深色方柱（四角看起來像邊柱）＋ 四面淺色中板，中段一條腰帶 */
+  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 15.8;
+  add(new T.BoxGeometry(TW, TY1 - TY0, TW), lam(C.mid), 0, (TY0 + TY1)/2, 0);
+  let sd = 30;
+  fourSides(TW, (x, z, ry) => {
+    panel(PW, 2.85, winTex(3, 4, '#63bdaa', sd++), x, 11.1, z, ry);
+    panel(PW, 2.85, winTex(3, 5, '#63bdaa', sd++), x, 14.2, z, ry);
+    /* 腰帶：中間深色、兩側邊柱上是淺色 */
+    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, 12.65, z*1.003); a.rotation.y = ry; g.add(a);
+    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, 12.65, z*1.006); b.rotation.y = ry; g.add(b);
+  });
+
+  /* 4. 頂段：橫向亮帶 */
+  const scv = document.createElement('canvas'); scv.width = 64; scv.height = 128; const sx = scv.getContext('2d');
+  sx.fillStyle = '#468f80'; sx.fillRect(0, 0, 64, 128); sx.fillStyle = '#b3e6dc'; [12, 36, 60, 84].forEach(y => sx.fillRect(0, y, 64, 12));
+  sx.fillStyle = 'rgba(62,107,98,0.5)'; sx.fillRect(0, 0, 12, 110); sx.fillRect(52, 0, 12, 110); sx.fillStyle = '#3e6b62'; sx.fillRect(0, 110, 64, 18);
+  const stripeMat = new T.MeshLambertMaterial({map:new T.CanvasTexture(scv)});
+  add(new T.BoxGeometry(TW, 2.9, TW), [stripeMat, stripeMat, lam(C.dark), lam(C.dark), stripeMat, stripeMat], 0, TY1 + 1.45, 0);
+
+  /* 5. 冠部：四角小尖 + 中央角錐 + 天線座 + 天線 */
+  add(new T.BoxGeometry(TW, 0.25, TW), lam(C.dark), 0, 18.82, 0);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a, b]) => { const m = add(new T.ConeGeometry(0.34, 0.6, 4), lam(C.light), a*(TW/2 - 0.3), 19.25, b*(TW/2 - 0.3)); m.rotation.y = Math.PI/4; });
+  const pyr = add(new T.ConeGeometry(1.55, 0.9, 4), lam(C.dark), 0, 19.4, 0); pyr.rotation.y = Math.PI/4;
+  add(new T.BoxGeometry(0.55, 1.1, 0.55), lam(C.light), 0, 20.25, 0);
+  add(new T.CylinderGeometry(0.1, 0.13, 2.4, 8), lam(C.pale), 0, 22.0, 0);
+  g.userData.labelY = 24.6;
+  return g;
+}
+
 function createCenterBuilding(){
+  /* 85 大樓：不自轉、不噴煙；滑鼠移上去一樣發亮浮起，點擊開大會服務台 */
+  if (CENTER_LANDMARK === 'tower85') {
+    const t = build85Tower();
+    t.traverse(child => { if (child.isMesh) centerMeshes.push(child); });
+    centerGroup = t;
+    islandGroup.add(t);
+    infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, t.userData.labelY, 0), action: openInfo});
+    infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
+    return;
+  }
+
+  /* ===== 以下為火箭（CENTER_LANDMARK = 'rocket' 時使用） ===== */
   const g = new THREE.Group();
   
   const redMat = std(0xEF3A3A); // 亮麗的卡通紅
@@ -1107,6 +1246,7 @@ function createCenterBuilding(){
   });
   
   rocketGroup = g; // 將火箭模型存入全域變數，供動畫與煙霧特效使用
+  centerGroup = g;
   islandGroup.add(g);
   // 標籤高度微調至火箭頭部上方
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 17.5, 0), action: openInfo});
@@ -1382,8 +1522,8 @@ function updateHouses(t){
     G.position.y = G.userData.y0 + 0.35*e; G.scale.setScalar(G.userData.s0*(1 + 0.04*e)); HOVER_FX.skOn = HOVER_FX.sk > 0.002; }
   HOVER_FX.rk += ((HOVER_FX.rocket ? 1 : 0) - HOVER_FX.rk) * 0.18;
   if(HOVER_FX.rk > 0.002 || HOVER_FX.rkOn){ const e = HOVER_FX.rk*HOVER_FX.rk*(3 - 2*HOVER_FX.rk); centerMeshes.forEach(m => hoverBright(m, e)); HOVER_FX.rkOn = HOVER_FX.rk > 0.002;
-    /* 火箭也跟房子一樣輕輕浮起、微微放大 */
-    if(rocketGroup){ const R = rocketGroup; if(R.userData.y0 === undefined){ R.userData.y0 = R.position.y; R.userData.s0 = R.scale.x; }
+    /* 中央地標（85 大樓／火箭）也跟房子一樣輕輕浮起、微微放大 */
+    if(centerGroup){ const R = centerGroup; if(R.userData.y0 === undefined){ R.userData.y0 = R.position.y; R.userData.s0 = R.scale.x; }
       R.position.y = R.userData.y0 + 0.6*e; R.scale.setScalar(R.userData.s0*(1 + 0.04*e)); } }
   vendors.forEach(v => {
     let y = 0, sy = 1;
@@ -1578,6 +1718,7 @@ function buildVegetation(){
 
   for(let i=0;i<15;i++){
     const a = i/15*TAU + R(-.14,.14), r = R(53.6, 56.2);
+    if(Math.abs(Math.atan2(Math.sin(a - Math.PI), Math.cos(a - Math.PI))) < 0.3) continue;   /* 西側海灘留給流行音樂中心 */
     let x = Math.cos(a)*r, z = Math.sin(a)*r, y = islandY(r);
     placed.push({x, z, r:0.9});   /* 椰子樹幹當作障礙物 */
     const lx = Math.cos(a), lz = Math.sin(a), lean = R(.12,.24);
@@ -1591,6 +1732,7 @@ function buildVegetation(){
   }
   for(let i=0;i<20;i++){
     const a = R(0,TAU), r = R(54, 58.6), s = R(.5,1.3);
+    if(Math.abs(Math.atan2(Math.sin(a - Math.PI), Math.cos(a - Math.PI))) < 0.3) continue;   /* 西側海灘留給流行音樂中心 */
     placed.push({x:Math.cos(a)*r, z:Math.sin(a)*r, r:s*0.9});   /* 岩石當作障礙物 */
     B.rock.add(Math.cos(a)*r, islandY(r) + .1, Math.sin(a)*r, s,s*.7,s, R(0,3),R(0,3),0, pick([0x9a958c,0x85817a,0xa8a398]));
   }
@@ -2010,7 +2152,7 @@ function buildResumeForm(){
   availableMajors.forEach(m => { const b = chip(m, () => form.major = m); b.dataset.v = m; majorWrap.appendChild(b); });
   Object.keys(industryColor).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
   try{
-    const saved = JSON.parse(localStorage.getItem('pt-job-isle-resume') || 'null');
+    const saved = JSON.parse(localStorage.getItem('kh-job-isle-resume') || 'null');
     if(saved){
       if(saved.age) $('r-age').value = saved.age;
       if(saved.edu){ form.edu = saved.edu; const b = eduWrap.querySelector(`[data-v="${saved.edu}"]`); b && b.setAttribute('aria-pressed','true'); }
@@ -2070,7 +2212,7 @@ function submitResume(){
   if(!form.major) return showToast('請選擇科系背景');
   const ind = $('r-ind').value, intl = $('r-intl').checked;
   INTL_ON = intl;
-  try{ localStorage.setItem('pt-job-isle-resume', JSON.stringify({age:ageStr, edu:form.edu, major:form.major, ind, intl})); }catch(e){}
+  try{ localStorage.setItem('kh-job-isle-resume', JSON.stringify({age:ageStr, edu:form.edu, major:form.major, ind, intl})); }catch(e){}
   
   const list = [];
   vendors.forEach(v => {
@@ -2887,6 +3029,7 @@ const WORLD={
     for(let a=-0.26;a<=0.261;a+=0.033)list.push({x:Math.cos(-Math.PI/2+a)*46.1,z:Math.sin(-Math.PI/2+a)*46.1,r:1.3});
     for(let a=-0.2;a<=0.201;a+=0.035)list.push({x:Math.cos(Math.PI/2+a)*46.1,z:Math.sin(Math.PI/2+a)*46.1,r:1.3});   /* 南方小月台 */
     list.push({x:Math.cos(Math.PI/2-0.55)*56.5,z:Math.sin(Math.PI/2-0.55)*56.5,r:5.4});   /* 南南東海灘的燈塔 */
+    [-8, -3, 2, 7].forEach(z=>list.push({x:-56.5,z,r:4.2}));   /* 西側海灘的流行音樂中心碼頭 */
     list.forEach(o=>{
       const reach=o.r+0.7,x0=Math.floor((o.x-reach)/this.CS),x1=Math.floor((o.x+reach)/this.CS),z0=Math.floor((o.z-reach)/this.CS),z1=Math.floor((o.z+reach)/this.CS);
       for(let i=x0;i<=x1;i++)for(let j=z0;j<=z1;j++){const k=i+','+j;let a=this.cells.get(k);if(!a)this.cells.set(k,a=[]);a.push(o);}
@@ -3934,28 +4077,103 @@ const DESIGNS = [
       wheels(b, [1.4, -1.4], 0.3, blk, gold);
       return [a, b];
   }},
-  { key:'sugar', name:'糖廠五分車', build(){
-      const yel = L(0xf0b030), grn = L(0x2f6b4f), blk = L(0x2b2b30), wood = L(0xa0683a), woodD = L(0x7a4a26), win = L(0x9fc8de), white = L(0xf5f1e6);
-      const a = new T.Group();                                   /* 黃色柴油小車頭 */
-      box(a, 1.5, 0.35, 4.0, blk, 0, 0.5, 0);
-      box(a, 1.3, 1.05, 2.2, yel, 0, 1.2, 0.8);                  /* 引擎蓋 */
-      box(a, 1.32, 0.2, 2.22, grn, 0, 0.78, 0.8);
-      for(let i=0;i<5;i++) box(a, 1.34, 0.06, 0.06, L(0xc58a1c), 0, 1.25, 0.1 + i*0.35);
-      box(a, 1.7, 1.75, 1.6, yel, 0, 1.55, -1.1); box(a, 1.9, 0.14, 1.9, grn, 0, 2.5, -1.1);
-      windows(a, [-1.1], 1.9, 0.6, 1.0, win, 0.86); box(a, 1.2, 0.55, 0.04, win, 0, 1.9, -0.28);
-      cyl(a, 0.12, 0.12, 0.5, blk, 0.35, 1.95, 1.5, 8);
-      box(a, 1.72, 0.18, 0.12, white, 0, 0.62, 2.0); box(a, 1.72, 0.18, 0.12, white, 0, 0.62, -2.0);
-      wheels(a, [1.2, -1.2], 0.3, blk, yel);
-      const b = new T.Group();                                   /* 木造開放式觀光車廂 */
-      box(b, 1.6, 0.25, 4.4, blk, 0, 0.48, 0);
-      box(b, 1.8, 0.2, 4.4, woodD, 0, 0.7, 0);
-      box(b, 1.8, 0.45, 0.1, wood, 0, 1.02, 2.15); box(b, 1.8, 0.45, 0.1, wood, 0, 1.02, -2.15);
-      [-1, 1].forEach(s => box(b, 0.08, 0.4, 4.3, wood, s*0.86, 1.0, 0));
-      for(let i=0;i<6;i++){ const z = -1.95 + i*0.78; [-0.86, 0.86].forEach(x => box(b, 0.1, 1.3, 0.1, woodD, x, 1.45, z)); }
-      [-1.3, -0.4, 0.5, 1.4].forEach(z => box(b, 1.2, 0.14, 0.4, wood, 0, 0.98, z));
-      box(b, 2.0, 0.12, 4.6, grn, 0, 2.16, 0); box(b, 1.6, 0.1, 4.2, L(0x3f8a63), 0, 2.26, 0);
-      wheels(b, [1.5, -1.5], 0.28, blk, yel);
-      return [a, b];
+  { key:'thsr', name:'台灣高鐵', build(){
+      /* 參考台灣高鐵 700T：白色車身、長鴨嘴型車鼻、黑色駕駛艙窗，橘＋黑兩條飾帶從車鼻往後沿車身延伸 */
+      const W = 0.9, H = 0.84, YC = 1.55, RR = 0.42, N = 72, sec = [];
+      for(let i=0;i<N;i++){
+        const u = i/N*4, side = Math.floor(u), f = u - side, cw = W - RR, ch = H - RR;
+        const per = [[cw, -ch, -Math.PI/2, 0], [cw, ch, 0, Math.PI/2], [-cw, ch, Math.PI/2, Math.PI], [-cw, -ch, Math.PI, Math.PI*1.5]][side];
+        const a = per[2] + (per[3]-per[2])*f; let x = per[0] + Math.cos(a)*RR, y = per[1] + Math.sin(a)*RR;
+        if(y > 0) x *= 1 - 0.1*(y/H);          /* 上半部略為內收，像新幹線的車身斷面 */
+        sec.push([x/W, y/H]);
+      }
+      const GY = L(0x9aa3a8), dark = L(0x2a3036);
+      /* 著色器逐像素畫：車窗、橘帶、黑帶、駕駛艙窗；夜晚車窗會亮 */
+      const mkMat = () => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
+        m.onBeforeCompile = sh => {
+          sh.uniforms.uWin = TWIN;
+          sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\nvarying float vPz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect; vPz = position.z;');
+          sh.fragmentShader = 'varying vec3 vSect;\nvarying float vPz;\nuniform float uWin;\n' + sh.fragmentShader
+            .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n            totalEmissiveRadiance += vec3(1.0, 0.80, 0.45) * uWin * win * 1.05;')
+            .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
+            float x0 = abs(vSect.x), y0 = vSect.y, t = vSect.z;
+            float side = step(0.55, x0);
+            float body = 1.0 - step(0.001, t);
+            /* 車身：一格一格的小車窗 */
+            float win = body * side * step(0.16, y0) * step(y0, 0.46) * step(fract(vPz*1.3 + 0.35), 0.6);
+            /* 飾帶：車身上水平；在車鼻上往前、往上收，交會到駕駛艙窗 */
+            float oc = 0.02 + 0.95*pow(t, 1.25);
+            float lim = 1.0 - step(0.5, t);
+            float org = lim * step(abs(y0 - oc), 0.065) * step(0.25, x0 + t*0.6);
+            float blk = lim * step(abs(y0 - (oc - 0.15)), 0.045) * step(0.25, x0 + t*0.6);
+            /* 駕駛艙窗：車鼻上方的黑色擋風玻璃 */
+            float cab = (1.0 - body) * step(0.2, t) * step(t, 0.5) * step(0.30 + (t - 0.2)*0.4, y0) * step(x0, 0.9);
+            vec3 col = vec3(0.955, 0.96, 0.955);
+            col = mix(col, vec3(0.93, 0.42, 0.10), org);
+            col = mix(col, vec3(0.09, 0.10, 0.11), max(blk, cab));
+            col = mix(col, vec3(0.16, 0.20, 0.24), win);
+            vec4 diffuseColor = vec4(col, opacity);`);
+        }; m.customProgramCacheKey = () => 'thsr'; return m; };
+      const MAT = mkMat();
+      const loft = (slices) => {
+        const pos = [], st = [], idx = [];
+        slices.forEach(s => sec.forEach(([x0, y0]) => { const [x, y] = s.f(x0, y0); pos.push(x, y, s.z); st.push(x0, y0, s.t); }));
+        for(let j=0;j<slices.length-1;j++) for(let i=0;i<N;i++){ const a = j*N + i, b = j*N + (i+1)%N, c = a + N, d = b + N; idx.push(a, c, b, b, c, d); }
+        const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('sect', new T.Float32BufferAttribute(st, 3)); g.setIndex(idx); g.computeVertexNormals();
+        const m = new T.Mesh(g, MAT); m.castShadow = true; return m;
+      };
+      const flat = (x0, y0) => [x0*W, YC + y0*H];
+      const body = (z0, z1) => { const sl = []; for(let k=0;k<=8;k++){ sl.push({z:z0 + (z1 - z0)*k/8, t:0, f:flat}); } return loft(sl); };
+      const cap = (z, dir) => { const s = new T.Shape(); sec.forEach(([x0,y0],i) => { const p = flat(x0,y0); i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]); });
+        const m = new T.Mesh(new T.ShapeGeometry(s), L(0xdfe3e2)); m.position.z = z; if(dir < 0) m.rotation.y = Math.PI; return m; };
+      /* 鴨嘴車鼻：長而扁，頂部先有駕駛艙的隆起再一路壓低，前端是寬扁的嘴 */
+      const nose = () => {
+        const Ln = 2.6, M = 48, sl = [];
+        const sm = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a)/(b - a))); return k*k*(3 - 2*k); };
+        for(let j=0;j<=M;j++){
+          const t = j/M;
+          const topBody = YC + H, tipTop = 1.32;
+          const top = tipTop + (topBody - tipTop)*(1 - sm(0.0, 0.92, t)) + 0.08*Math.exp(-Math.pow((t - 0.28)/0.13, 2));   /* 駕駛艙隆起 */
+          const bot = (YC - H) + 0.2*sm(0.5, 1.0, t);
+          const mid = (top + bot)/2;
+          const sx = 0.55 + 0.45*Math.pow(Math.max(0, 1 - Math.pow(t, 2.2)), 0.5);   /* 前端寬而圓 */
+          /* 最前端 18% 用圓弧收口，讓鼻頭變成圓潤的球面 */
+          const q = Math.max(0, (t - 0.82)/0.18), tip = Math.sqrt(Math.max(0, 1 - q*q));
+          sl.push({z: t*Ln, t, f:(x0, y0) => [x0*W*sx*tip, mid + (y0 >= 0 ? (top - mid) : (mid - bot))*y0*tip]});
+        }
+        return loft(sl);
+      };
+      const car = (front) => {
+        const g = new T.Group();
+        const z0 = -2.4, z1 = front ? 0.0 : 2.4;
+        g.add(body(z0, z1));
+        g.add(cap(z0, -1)); if(!front) g.add(cap(z1, 1));
+        box(g, 1.55, 0.26, z1 - z0 - 0.3, GY, 0, 0.62, (z0 + z1)/2);       /* 車底裙板 */
+        if(front){
+          const n = nose(); g.add(n);
+          const ug = new T.BoxGeometry(1.55, 0.26, 2.4, 1, 1, 1), up = ug.attributes.position;
+          for(let i=0;i<up.count;i++){ if(up.getZ(i) > 0) up.setX(i, up.getX(i)*0.45); }
+          ug.computeVertexNormals(); const uf = new T.Mesh(ug, GY); uf.position.set(0, 0.62, 1.0); uf.castShadow = true; g.add(uf);
+          /* 頭燈：車鼻兩側下緣 */
+          n.updateMatrixWorld(); const rc = new T.Raycaster();
+          [-0.36, 0.36].forEach(x => { rc.set(new T.Vector3(x, 1.12, 8), new T.Vector3(0, 0, -1)); const h = rc.intersectObject(n)[0];
+            if(h){ const l = new T.Mesh(new T.SphereGeometry(0.11, 10, 8), new T.MeshLambertMaterial({color:0xfff6d0, emissive:0x8a7a40})); l.scale.set(1.6, 0.6, 0.5); l.position.copy(h.point); l.position.z -= 0.02; g.add(l); } });
+          wheels(g, [-0.5, -1.9], 0.28, dark, GY);
+        }else{
+          wheels(g, [1.7, -1.7], 0.28, dark, GY);
+          /* 集電弓 */
+          box(g, 0.9, 0.08, 0.5, GY, 0, 2.43, 0.6);
+          const arm1 = box(g, 0.06, 0.06, 1.0, dark, 0, 2.7, 0.35); arm1.rotation.x = 0.55;
+          const arm2 = box(g, 0.06, 0.06, 0.9, dark, 0, 2.95, 0.55); arm2.rotation.x = -0.6;
+          box(g, 1.1, 0.05, 0.12, dark, 0, 3.12, 0.3);
+        }
+        return g;
+      };
+      const mid = car(false);
+      [-2.5, 2.5].forEach(z => box(mid, 1.3, 1.45, 0.24, dark, 0, 1.5, z));   /* 車廂連接處的黑色風擋 */
+      /* 最後一節也是車頭（反向），像真的高鐵一樣兩端都有車鼻 */
+      const tail = new T.Group(), tc = car(true); tc.rotation.y = Math.PI; tail.add(tc);
+      return [car(true), mid, tail];
   }},
   { key:'bullet', name:'流線子彈列車', build(){
       /* 參考台鐵新自強號（EMU3000）：白色車身、黑色流線車鼻，用自訂曲面一體成形 */
@@ -4418,6 +4636,76 @@ function openVenueMap(){
 })();
 </script>
 <script>
+/* ================= 高雄流行音樂中心 =================
+   模型輪廓來自 Sketchfab「高雄_海洋文化及流行音樂中心」by samuel-lin（CC BY 4.0），
+   已重新上色成求職島風格（白色鋼構、藍色玻璃），檔案 music-center.glb 需與 index.html 放在同一資料夾。 */
+function placeMusicCenter(opts){
+  const A = opts.angle, R = opts.radius, S = opts.scale;
+  const root = new THREE.Group();
+  root.position.set(Math.cos(A)*R, -1.6, Math.sin(A)*R);
+  root.rotation.y = Math.atan2(-Math.cos(A), -Math.sin(A));
+  scene.add(root);
+  new THREE.GLTFLoader().load(opts.url, gltf => {
+    const m = gltf.scene;
+    m.traverse(o => { if(!o.isMesh) return;
+      const src = o.material;
+      /* 換成跟島上其他建築一樣的 Lambert 材質（不反光、平塗） */
+      o.material = new THREE.MeshLambertMaterial({color:src.color.clone(), side:THREE.DoubleSide});
+      if(/Glass/.test(src.name)) o.material.emissive = new THREE.Color(0x10202a);
+      o.castShadow = true; o.receiveShadow = true; });
+    const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3());
+    const pivot = new THREE.Group(); m.position.set(-c.x, -box.min.y, -c.z); pivot.add(m);
+    pivot.scale.setScalar(S); pivot.rotation.y = opts.rot || 0; pivot.position.y = 0.25;
+    root.add(pivot);
+    /* 在 root 的本地座標量模型範圍（暫時把 root 歸位再量） */
+    const p0 = root.position.clone(), r0 = root.rotation.y; root.position.set(0, 0, 0); root.rotation.y = 0; root.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(pivot), sz = b2.getSize(new THREE.Vector3());
+    root.position.copy(p0); root.rotation.y = r0; root.updateMatrixWorld(true);
+    /* 碼頭廣場：沿海岸方向加寬，往海裡多伸出一大塊（像實景建築前的大廣場） */
+    const IN = 1.2, OUT = 5.0, SIDE = 2.5;                       /* 往島內、往海、左右各多出的距離 */
+    const cx = (b2.min.x + b2.max.x)/2, z0 = b2.min.z - OUT, z1 = b2.max.z + IN;
+    const wx = sz.x + SIDE*2, wz = z1 - z0, cz = (z0 + z1)/2;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(wx, 3.2, wz), new THREE.MeshLambertMaterial({color:0xbdb5a3})); base.position.set(cx, -1.35, cz); base.receiveShadow = true; root.add(base);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(wx + 0.2, 0.25, wz + 0.2), new THREE.MeshLambertMaterial({color:0xe4e1da})); top.position.set(cx, 0.12, cz); top.receiveShadow = true; root.add(top);
+    /* 廣場上的六角形植栽池：白色矮邊框＋草地＋小樹（樹的造型、顏色和島上的樹一樣） */
+    const rim = new THREE.MeshLambertMaterial({color:0xf3f1ec}), soil = new THREE.MeshLambertMaterial({color:0x8cbf5a});
+    const trunkM = new THREE.MeshLambertMaterial({color:0x7a5032}), crownGeo = new THREE.IcosahedronGeometry(1, 0), trunkGeo = new THREE.CylinderGeometry(0.16, 0.24, 1, 6).translate(0, 0.5, 0);
+    const tuftGeo = new THREE.ConeGeometry(1, 1, 3).translate(0, 0.5, 0), GREENS = [0x5aa646, 0x4c963f, 0x6db654], GRASS = [0x6fb24e, 0x86c35c, 0x5a9e44];
+    let sd = 27; const rr = () => (sd = (sd*9301 + 49297) % 233280)/233280;
+    const PR = 1.15, keep = b2.clone().expandByScalar(0.9);
+    for(let i = -12; i <= 12; i++) for(let j = -12; j <= 12; j++){
+      const x = cx + i*PR*2.9 + (j & 1 ? PR*1.45 : 0), z = cz + j*PR*2.5;
+      if(Math.abs(x - cx) > wx/2 - PR*1.3 || Math.abs(z - cz) > wz/2 - PR*1.3) continue;
+      if(x > keep.min.x && x < keep.max.x && z > keep.min.z && z < keep.max.z) continue;
+      if(z > b2.min.z + 3) continue;                                   /* 建築兩側（斜坡旁、海音館旁）不種，只種在建築前方的廣場 */
+      if(rr() < 0.25) continue;                                        /* 留一些空地，排列比較自然 */
+      const ry = rr()*Math.PI;
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(PR, PR, 0.22, 6), rim); ring.position.set(x, 0.36, z); ring.rotation.y = ry; ring.receiveShadow = true; root.add(ring);
+      const gr = new THREE.Mesh(new THREE.CylinderGeometry(PR*0.82, PR*0.82, 0.24, 6), soil); gr.position.set(x, 0.38, z); gr.rotation.y = ry; root.add(gr);
+      for(let k = 0; k < 5; k++){ const a = rr()*Math.PI*2, d = rr()*PR*0.6;
+        const t = new THREE.Mesh(tuftGeo, new THREE.MeshLambertMaterial({color:GRASS[k % 3]})); t.scale.set(0.12, 0.35 + rr()*0.25, 0.12); t.position.set(x + Math.cos(a)*d, 0.5, z + Math.sin(a)*d); root.add(t); }
+      const n = rr() < 0.4 ? 2 : 1;
+      for(let k = 0; k < n; k++){ const a = rr()*Math.PI*2, d = n > 1 ? PR*0.38 : 0, s = 0.42 + rr()*0.12, tx = x + Math.cos(a)*d, tz = z + Math.sin(a)*d;
+        const tr = new THREE.Mesh(trunkGeo, trunkM); tr.scale.set(s, 1.9*s, s); tr.position.set(tx, 0.5, tz); tr.castShadow = true; root.add(tr);
+        const c1 = new THREE.Mesh(crownGeo, new THREE.MeshLambertMaterial({color:GREENS[k % 3], flatShading:true})); c1.scale.set(1.2*s, 1.1*s, 1.2*s); c1.position.set(tx, 0.5 + 2.4*s, tz); c1.rotation.set(rr()*3, rr()*3, 0); c1.castShadow = true; root.add(c1);
+        const c2 = new THREE.Mesh(crownGeo, new THREE.MeshLambertMaterial({color:0x6db654, flatShading:true})); c2.scale.set(0.8*s, 0.7*s, 0.8*s); c2.position.set(tx, 0.5 + 3.2*s, tz); c2.rotation.set(rr()*3, rr()*3, 0); root.add(c2); }
+    }
+    /* 海側三邊的白色欄杆 */
+    const rail = new THREE.MeshLambertMaterial({color:0xf6f8f9});
+    [[cx, z0 - 0.05, wx, 0.12], [cx - wx/2 - 0.05, cz, 0.12, wz], [cx + wx/2 + 0.05, cz, 0.12, wz]].forEach(([x, z, w, d]) => {
+      const r = new THREE.Mesh(new THREE.BoxGeometry(w, 0.4, d), rail); r.position.set(x, 0.45, z); root.add(r); });
+  });
+  return root;
+}
+
+/* 放在西側海灘，等場景建好再載入 */
+(function(){
+  const w = setInterval(() => {
+    if(typeof scene === 'undefined' || !scene || typeof THREE === 'undefined' || !THREE.GLTFLoader) return; clearInterval(w);
+    placeMusicCenter({url:'music-center.glb', angle:Math.PI, radius:57.0, scale:0.088, rot:Math.PI/2});
+  }, 150);
+})();
+
 /* ================= 燈塔 ================= */
 /* ================= 燈塔（參考鵝鑾鼻燈塔：白色圓塔＋黑色燈籠＋砲台圍牆） ================= */
 function buildLighthouse(){
@@ -4596,8 +4884,8 @@ function openVenueFor(v){
   setTimeout(go, 60); setTimeout(go, 400);
 }
 (function(){
-  const KEY = 'pt-job-isle-tip';
-  let seen = false; try{ seen = !!localStorage.getItem(KEY) || !!localStorage.getItem('pt-job-isle-resume'); }catch(e){}
+  const KEY = 'kh-job-isle-tip';
+  let seen = false; try{ seen = !!localStorage.getItem(KEY) || !!localStorage.getItem('kh-job-isle-resume'); }catch(e){}
   if(seen) return;   /* 只在第一次進站、還沒配對過時出現 */
   const btn = document.querySelector('.dock .btn-primary'); if(!btn) return;
   const tip = document.createElement('div'); tip.id = 'cta-tip'; tip.setAttribute('role', 'status');
@@ -4625,7 +4913,7 @@ function openVenueFor(v){
   const EDU = {'高中職':'High school', '專科':'Junior college', '大學':"Bachelor's", '碩士':"Master's"};
   const EN = new Map(Object.entries({
     /* 標題、載入 */
-    '2027屏東地區就業博覽會':'2027 Pingtung Job Fair', '2027屏東地區就業博覽會-求職島':'2027 Pingtung Job Fair - Job Island',
+    '116年度高雄市政府 現場徵才活動':'2027 Kaohsiung City Government Job Fair', '116年度高雄市政府 現場徵才活動-求職島':'2027 Kaohsiung City Government Job Fair - Job Island',
     '求職島':'Job Island', '求職島建造中':'Building Job Island…',
     /* 下方按鈕列 */
     '啟動職缺配對':'Find My Match', '重置視角':'Reset view', '隱藏介面':'Hide interface', '顯示介面':'Show interface',
@@ -4658,7 +4946,7 @@ function openVenueFor(v){
     '縮小':'Zoom out', '放大':'Zoom in', '縮放':'Zoom',
     '你的推薦攤位在會場的這些位置，點一下看職缺':'Your recommended booths are here. Tap one to see its jobs.',
     /* 大會服務台 */
-    '大會服務台':'Info Desk', '活動資訊':'Event info', '歡迎來到 2027 屏東地區就業博覽會！':'Welcome to the 2027 Pingtung Job Fair!',
+    '大會服務台':'Info Desk', '活動資訊':'Event info', '歡迎來到 116 年度高雄市政府現場徵才活動！':'Welcome to the 2027 Kaohsiung City Government Job Fair!',
     '您可以透過右方平面圖熟悉現場動線，或點擊下方按鈕查看本次活動的完整電子書與職缺總表。':'Use the floor plan to find your way around the venue, or tap the button below to open the event e-book with the full job list.',
     '歡迎活動當天攜帶履歷，':'Bring your résumé on the day', '直接到攤位現場投遞與面談。':'and apply or interview right at the booths.',
     '查看大會電子書 (職缺手冊)':'Open the event e-book (job list)',
@@ -4667,7 +4955,7 @@ function openVenueFor(v){
     '總音量':'Volume', '背景音樂':'Music', '環境音':'Ambience', '互動音效':'Effects', '海風烏克麗麗':'Sea Breeze Ukulele',
     /* 車站、跟隨 */
     '求職島站':'Job Island Station', '求職島站．列車樣式':'Job Island Station · Train style',
-    '蒸汽小火車':'Steam train', '糖廠五分車':'Sugar cane train', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train',
+    '蒸汽小火車':'Steam train', '台灣高鐵':'Taiwan High Speed Rail', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train',
     '跟隨島民中，點擊空白處取消':'Following an islander. Tap anywhere to stop.', '跟隨列車中，點擊空白處取消':'Following the train. Tap anywhere to stop.',
     /* 引導 */
     '從這裡開始！填':'Start here! Fill in', '個條件，找到適合你的攤位':'details to find booths that fit you',
@@ -4722,9 +5010,9 @@ function openVenueFor(v){
   function setLang(l, save){
     LANG = l === 'en' ? 'en' : 'zh';
     document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-Hant';
-    if(LANG === 'en'){ walk(document.body); document.title = '2027 Pingtung Job Fair - Job Island'; } else { restore(); document.title = zhTitle; }
+    if(LANG === 'en'){ walk(document.body); document.title = '2027 Kaohsiung City Government Job Fair - Job Island'; } else { restore(); document.title = zhTitle; }
     document.querySelectorAll('#lang-sw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === LANG)));
-    if(save){ try{ localStorage.setItem('pt-job-isle-lang', LANG); }catch(e){} }
+    if(save){ try{ localStorage.setItem('kh-job-isle-lang', LANG); }catch(e){} }
   }
   window.setLang = setLang; window.getLang = () => LANG;
   /* 廠商資料的英文對照（由 Excel 的英文欄位提供） */
@@ -4736,7 +5024,7 @@ function openVenueFor(v){
   sw.addEventListener('click', e => { const b = e.target.closest('button'); if(b) setLang(b.dataset.l, true); });
   ['pointerdown', 'pointerup', 'touchstart'].forEach(ev => sw.addEventListener(ev, e => e.stopPropagation()));
   const brand = document.querySelector('.brand'); (brand || document.body).appendChild(sw);
-  let saved = null; try{ saved = localStorage.getItem('pt-job-isle-lang'); }catch(e){}
+  let saved = null; try{ saved = localStorage.getItem('kh-job-isle-lang'); }catch(e){}
   /* 預設中文；使用者切換過語言才會記住並沿用 */
   const first = saved === 'en' ? 'en' : 'zh';
   setLang(first, false);
