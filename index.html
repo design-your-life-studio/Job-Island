@@ -1092,10 +1092,17 @@ function build85Tower(){
     x.fillStyle = bg; x.fillRect(0, 0, cv.width, cv.height);
     const pal = ['#d9f3ee', '#ffe89a', '#7fd3c2'];
     let s = (seed || 1) * 37; const rnd = () => (s = (s*9301 + 49297) % 233280) / 233280;
-    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ x.fillStyle = pal[Math.floor(rnd()*3)]; x.fillRect(c*40 + 7, r*28 + 8, 26, 12); }
-    return new T.CanvasTexture(cv);
+    /* 夜間發光貼圖：黑底，約七成的窗戶亮暖黃燈 */
+    const gv = document.createElement('canvas'); gv.width = cv.width; gv.height = cv.height; const gx = gv.getContext('2d');
+    gx.fillStyle = '#000'; gx.fillRect(0, 0, gv.width, gv.height);
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ x.fillStyle = pal[Math.floor(rnd()*3)]; x.fillRect(c*40 + 7, r*28 + 8, 26, 12);
+      if(rnd() < 0.7){ gx.fillStyle = rnd() < 0.3 ? '#bfe9ff' : '#ffd88a'; gx.fillRect(c*40 + 7, r*28 + 8, 26, 12); } }
+    const t = new T.CanvasTexture(cv); t.__glow = new T.CanvasTexture(gv); return t;
   };
-  const panel = (w, h, tex, x, y, z, ry) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), tex.isTexture ? new T.MeshLambertMaterial({map:tex}) : tex); m.position.set(x, y, z); m.rotation.y = ry || 0; g.add(m); return m; };
+  const glowMats = [];   /* 夜晚會亮的材質，由 updateLandmarkNight() 依晝夜調整亮度 */
+  const panel = (w, h, tex, x, y, z, ry) => { let mat = tex;
+    if(tex.isTexture){ mat = new T.MeshLambertMaterial({map:tex}); if(tex.__glow){ mat.emissive = new T.Color(0xffffff); mat.emissiveMap = tex.__glow; mat.emissiveIntensity = 0; glowMats.push(mat); } }
+    const m = new T.Mesh(new T.PlaneGeometry(w, h), mat); m.position.set(x, y, z); m.rotation.y = ry || 0; g.add(m); return m; };
   /* 對主塔四個面各做一次：x/z 是面的位置、ry 是面的朝向 */
   const fourSides = (w, fn) => { const o = w/2 + 0.02; fn(0, o, 0); fn(0, -o, Math.PI); fn(o, 0, Math.PI/2); fn(-o, 0, -Math.PI/2); };
 
@@ -1128,15 +1135,15 @@ function build85Tower(){
   [1, -1].forEach(f => panel(1.5, 0.55, winTex(2, 1, '#63bdaa', 5), 0, 7.35, f*(D/2 + 0.02), f < 0 ? Math.PI : 0));
 
   /* 3. 主塔：深色方柱（四角看起來像邊柱）＋ 四面淺色中板，中段一條腰帶 */
-  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 19.0, UP = TY1 - 15.8;   /* UP：主塔比原設計拉高的量，上方的頂段、冠部跟著往上移 */
+  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 17.6, UP = TY1 - 15.8;   /* UP：主塔比原設計拉高的量，上方的頂段、冠部跟著往上移 */
   add(new T.BoxGeometry(TW, TY1 - TY0, TW), lam(C.mid), 0, (TY0 + TY1)/2, 0);
   let sd = 30;
   fourSides(TW, (x, z, ry) => {
-    panel(PW, 4.45, winTex(3, 6, '#63bdaa', sd++), x, 11.9, z, ry);
-    panel(PW, 4.45, winTex(3, 7, '#63bdaa', sd++), x, 16.6, z, ry);
+    panel(PW, 3.75, winTex(3, 5, '#63bdaa', sd++), x, 11.43, z, ry);
+    panel(PW, 3.75, winTex(3, 6, '#63bdaa', sd++), x, 15.38, z, ry);
     /* 腰帶：中間深色、兩側邊柱上是淺色 */
-    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, 14.25, z*1.003); a.rotation.y = ry; g.add(a);
-    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, 14.25, z*1.006); b.rotation.y = ry; g.add(b);
+    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, 13.4, z*1.003); a.rotation.y = ry; g.add(a);
+    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, 13.4, z*1.006); b.rotation.y = ry; g.add(b);
   });
 
   /* 4. 頂段：橫向亮帶 */
@@ -1144,6 +1151,10 @@ function build85Tower(){
   sx.fillStyle = '#468f80'; sx.fillRect(0, 0, 64, 128); sx.fillStyle = '#b3e6dc'; [12, 36, 60, 84].forEach(y => sx.fillRect(0, y, 64, 12));
   sx.fillStyle = 'rgba(62,107,98,0.5)'; sx.fillRect(0, 0, 12, 110); sx.fillRect(52, 0, 12, 110); sx.fillStyle = '#3e6b62'; sx.fillRect(0, 110, 64, 18);
   const stripeMat = new T.MeshLambertMaterial({map:new T.CanvasTexture(scv)});
+  /* 頂段亮帶：夜晚亮成青白色的光環 */
+  const sgv = document.createElement('canvas'); sgv.width = 64; sgv.height = 128; const sgx = sgv.getContext('2d');
+  sgx.fillStyle = '#000'; sgx.fillRect(0, 0, 64, 128); sgx.fillStyle = '#9ff0e2'; [12, 36, 60, 84].forEach(y => sgx.fillRect(0, y, 64, 12));
+  stripeMat.emissive = new T.Color(0xffffff); stripeMat.emissiveMap = new T.CanvasTexture(sgv); stripeMat.emissiveIntensity = 0; glowMats.push(stripeMat);
   add(new T.BoxGeometry(TW, 2.9, TW), [stripeMat, stripeMat, lam(C.dark), lam(C.dark), stripeMat, stripeMat], 0, TY1 + 1.45, 0);
 
   /* 5. 冠部：四角小尖 + 中央角錐 + 天線座 + 天線 */
@@ -1152,6 +1163,10 @@ function build85Tower(){
   const pyr = add(new T.ConeGeometry(1.55, 0.9, 4), lam(C.dark), 0, 19.4 + UP, 0); pyr.rotation.y = Math.PI/4;
   add(new T.BoxGeometry(0.55, 1.1, 0.55), lam(C.light), 0, 20.25 + UP, 0);
   add(new T.CylinderGeometry(0.1, 0.13, 2.4, 8), lam(C.pale), 0, 22.0 + UP, 0);
+  /* 天線頂的紅色航空警示燈（夜晚會閃） */
+  const beacon = new T.MeshLambertMaterial({color:0xff4b3a, emissive:0xff2a1a, emissiveIntensity:0.2});
+  add(new T.SphereGeometry(0.16, 10, 8), beacon, 0, 23.3 + UP, 0);
+  g.userData.glowMats = glowMats; g.userData.beacon = beacon;
   g.userData.labelY = 24.6 + UP;
   return g;
 }
@@ -1165,6 +1180,7 @@ function createCenterBuilding(){
     islandGroup.add(t);
     infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, t.userData.labelY, 0), action: openInfo});
     infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
+  infoLabels.push({text:'流行音樂中心站', kind:'station', pos:new THREE.Vector3(-45.4, 5.0, 0), action: () => window.openTrainPanel && openTrainPanel()});
     return;
   }
 
@@ -1257,6 +1273,7 @@ function createCenterBuilding(){
   // 標籤高度微調至火箭頭部上方
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 17.5, 0), action: openInfo});
   infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
+  infoLabels.push({text:'流行音樂中心站', kind:'station', pos:new THREE.Vector3(-45.4, 5.0, 0), action: () => window.openTrainPanel && openTrainPanel()});
 }
 
 function updateRocketAndSmoke(t, dt) {
@@ -1607,7 +1624,8 @@ function buildVegetation(){
     if(r > RIM - rad || r < PLAZA + rad) return false;
     if(r > 35 - rad && Math.abs(Math.atan2(x, -z)) < 0.31) return false;
     if(r > 39 - rad && Math.abs(Math.atan2(x, -z)) < 0.42) return false;   /* 北站斜坡下方的走道淨空 */   /* 北方車站預留空地 */
-    if(r > 39 - rad && Math.abs(Math.atan2(x, z)) < 0.36) return false;   /* 南方小月台與斜坡下方淨空 */    /* 南方小月台預留空地（農作物避開） */
+    if(r > 39 - rad && Math.abs(Math.atan2(x, z)) < 0.36) return false;   /* 南方小月台與斜坡下方淨空 */
+    if(r > 39 - rad && Math.abs(Math.atan2(z, -x)) < 0.36) return false;   /* 西側「流行音樂中心站」月台與斜坡下方淨空 */    /* 南方小月台預留空地（農作物避開） */
     for(const P of pathRings) if(Math.abs(r - P) < 1.3 + rad) return false;
     for(const o of houseSpots) if((x-o.x)**2 + (z-o.z)**2 < (o.r + rad)**2) return false;
     if(strict) for(const o of placed) if((x-o.x)**2 + (z-o.z)**2 < (o.r + rad)**2) return false;
@@ -3034,6 +3052,7 @@ const WORLD={
     list.push({x:0,z:-41.4,r:4.8});
     for(let a=-0.26;a<=0.261;a+=0.033)list.push({x:Math.cos(-Math.PI/2+a)*46.1,z:Math.sin(-Math.PI/2+a)*46.1,r:1.3});
     for(let a=-0.2;a<=0.201;a+=0.035)list.push({x:Math.cos(Math.PI/2+a)*46.1,z:Math.sin(Math.PI/2+a)*46.1,r:1.3});   /* 南方小月台 */
+    for(let a=-0.2;a<=0.201;a+=0.035)list.push({x:Math.cos(Math.PI+a)*46.1,z:Math.sin(Math.PI+a)*46.1,r:1.3});   /* 西側流行音樂中心站 */
     list.push({x:Math.cos(Math.PI/2-0.55)*56.5,z:Math.sin(Math.PI/2-0.55)*56.5,r:5.4});   /* 南南東海灘的燈塔 */
     /* 西側海灘的流行音樂中心碼頭廣場（世界座標 x -66.8 ~ -51、z -11 ~ 11）：用一格格小圓把整塊長方形填滿，島民不會走上去 */
     for(let x=-66.4;x<=-50.6;x+=1.6)for(let z=-10.6;z<=10.61;z+=1.6)list.push({x,z,r:1.25});
@@ -4348,20 +4367,38 @@ function buildStation(){
   scene.add(g);
   /* 南方小月台（列車也會停靠） */
   const sp = buildPlatform(ST_A + Math.PI, 0.2);
-  g.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); pg.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); sp.traverse(o => { if(o.isMesh) stationMeshes.push(o); });
-  window.stationMeshes = stationMeshes; window.stationGroup = g; window.platformGroups = [pg, sp];
+  /* 西側月台：高雄流行音樂中心站（就在流行音樂中心廣場前） */
+  const mp = buildPlatform(Math.PI, 0.2);
+  { const mcv = document.createElement('canvas'); mcv.width = 512; mcv.height = 160; const mx = mcv.getContext('2d');
+    mx.fillStyle = '#1f4f8a'; mx.fillRect(0, 0, 512, 160); mx.fillStyle = '#ffffff'; mx.textAlign = 'center'; mx.textBaseline = 'middle';
+    mx.font = 'bold 52px "Noto Serif TC","Noto Serif CJK TC",serif'; mx.fillText('流行音樂中心站', 256, 64);
+    mx.font = 'bold 26px sans-serif'; mx.fillStyle = '#bfe0ff'; mx.fillText('Kaohsiung Music Center', 256, 122);
+    const smat = new T.MeshLambertMaterial({map:new T.CanvasTexture(mcv), emissive:0xffffff, emissiveIntensity:0.15});
+    smat.emissiveMap = smat.map; mp.userData.signMat = smat;
+    const sx = -45.35, H = 0.55;
+    [-1.3, 1.3].forEach(dz => box(mp, 0.1, 2.3, 0.1, L(0x34424c), sx, H + 1.15, dz));
+    box(mp, 0.08, 0.98, 2.95, L(0x1f4f8a), sx, H + 2.45, 0);
+    [-1, 1].forEach(f => { const pl = new T.Mesh(new T.PlaneGeometry(2.85, 0.9), smat); pl.position.set(sx + f*0.045, H + 2.45, 0); pl.rotation.y = f*Math.PI/2; mp.add(pl); });
+    [-1, 1].forEach(dz => { const bench = box(mp, 0.45, 0.12, 1.4, L(0x9a6a40), -46.6, H + 0.45, dz*2.6); [-0.5, 0.5].forEach(o => box(mp, 0.4, 0.4, 0.08, L(0x34424c), -46.6, H + 0.2, dz*2.6 + o)); }); }
+  g.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); [pg, sp, mp].forEach(P => P.traverse(o => { if(o.isMesh) stationMeshes.push(o); }));
+  window.stationMeshes = stationMeshes; window.stationGroup = g; window.platformGroups = [pg, sp, mp]; window.musicPlatform = mp;
 }
 
 /* ---------- 列車：停靠車站 → 發車繞島一圈 → 回站停靠 ---------- */
-const DWELL = 20, DWELL_S = 8, SPEED = 0.16, GAP = 5.0/RC;   /* 北站停 20 秒、南方小月台停 8 秒；約 40 秒繞一圈 */
-const OFF = GAP*1.05;   /* 三節列車停靠時讓整列置中在月台上 */
+const DWELL = 20, DWELL_S = 8, SPEED = 0.16, GAP = 5.0/RC;   /* 北站停 20 秒、南方小月台與流行音樂中心站各停 8 秒 */
+/* 停靠順序（以從北站出發後走過的角度計）：南方小月台 π → 流行音樂中心站 1.5π → 回北站 2π */
+const STOPS = [{at:Math.PI, st:1}, {at:Math.PI*1.5, st:2}, {at:TAU, st:0}];
+const stopIdx = tr => { for(const s of STOPS) if(Math.abs(tr - s.at) < 0.1) return s.st; return 0; };
+const CARS = 5;   /* 列車節數：車頭＋四節車廂 */
+const OFF = GAP*((CARS - 1)/2 + 0.05);   /* 停靠時讓整列置中在月台上（月台尺寸不變，較長的列車頭尾會略超出月台） */
 let train = null, design = 0, theta = ST_A + OFF, state = 'stop', stT = 8, traveled = 0;
 const puffs = [];
-window.TRAIN_STATE = { R:RC, theta:ST_A + OFF, lenA:GAP*2.6, moving:false };
+window.TRAIN_STATE = { R:RC, theta:ST_A + OFF, lenA:GAP*(CARS - 0.4), moving:false };
 function setTrain(i){
   if(train) train.forEach(c => scene.remove(c));
   design = i; train = DESIGNS[i].build();
-  if(train.length === 2) train.push(train[1].clone(true));   /* 全部改成三節：車頭＋兩節車廂 */
+  /* 全部改成 CARS 節：兩節式的款式複製後車廂；有車尾的款式（如高鐵）在車頭與車尾之間插入中間車廂 */
+  while(train.length < CARS){ if(train.length >= 3) train.splice(train.length - 1, 0, train[1].clone(true)); else train.push(train[train.length - 1].clone(true)); }
   glowWindows(train); syncTrainWin(); prepWheels(train);
   train.forEach(c => { c.traverse(o => { if(o.isMesh) o.castShadow = true; }); scene.add(c); });
   placeTrain(); syncTrainPanel();
@@ -4389,17 +4426,17 @@ function tick(){
   const now = performance.now(), dt = Math.min(0.1, (now - last)/1000); last = now;
   if(!train) return;
   stT += dt;
-  const dw = traveled > 0.1 && traveled < TAU - 0.1 ? DWELL_S : DWELL;
+  const dw = stopIdx(traveled) === 0 ? DWELL : DWELL_S;
   if(state === 'stop' && stT > dw){ state = 'run'; stT = 0; if(traveled >= TAU - 1e-4) traveled = 0; }
   if(state === 'run'){
-    const goal = traveled < Math.PI - 1e-4 ? Math.PI : TAU, remain = goal - traveled;   /* 下一站：南方小月台 → 北站 */
+    const goal = STOPS.find(s => traveled < s.at - 1e-4).at, remain = goal - traveled;   /* 下一站：南方小月台 → 流行音樂中心站 → 北站 */
     const k = Math.min(1, stT/3, Math.max(0.12, remain/0.35));      /* 出站加速、進站減速 */
     const step = Math.min(remain, SPEED*dt*k);
     theta += step; traveled += step;
-    if(traveled >= goal - 1e-4){ traveled = goal; theta = ST_A + OFF + goal; state = 'stop'; stT = 0; railArrival(goal >= TAU - 1e-4 ? 0 : 1); }
+    if(traveled >= goal - 1e-4){ traveled = goal; theta = ST_A + OFF + goal; state = 'stop'; stT = 0; railArrival(stopIdx(goal)); }
   }
   placeTrain(); trainSmoke(dt); curDw = dw; updateRail(dt); syncTrainWin(); spinWheels();
-  if(train){ trainProxy.position.copy(train[1].position); }
+  if(train){ trainProxy.position.copy(train[Math.floor(train.length/2)].position); }
   const TS = window.TRAIN_STATE; TS.theta = theta; TS.moving = state === 'run' || (state === 'stop' && stT > dw - 3);
 }
 
@@ -4432,7 +4469,7 @@ function buildTrainPanel(){
 
 
 /* ---------- 島民搭火車：同一批 24 位島民上下車（不換人） ---------- */
-const STN = [{A:ST_A, span:0.26}, {A:ST_A + Math.PI, span:0.2}];   /* 0＝北站、1＝南方小月台 */
+const STN = [{A:ST_A, span:0.26}, {A:ST_A + Math.PI, span:0.2}, {A:Math.PI, span:0.2}];   /* 0＝北站、1＝南方小月台、2＝流行音樂中心站 */
 const PR0 = RC - 3.6, PR1 = RC - 1.45, PH = 0.55, RMID = 46.1, RAMP = 2.6/46.1, DOOR_R = 46.85;
 const rnd = (a, b) => a + Math.random()*(b - a);
 const angD = (a, b) => { let d = b - a; d = ((d + Math.PI) % TAU + TAU) % TAU - Math.PI; return d; };
@@ -4485,7 +4522,7 @@ function railArrive(v){
     else{ v.setState('idle', {timer:1e9}); v.yaw = v.heading = v.railWaitYaw; }
   }else if(R.phase === 'door'){
     if(stopAt === R.st && state === 'stop' && stT < curDw - 0.6){   /* 上車：島民進入車廂（之後跟著列車移動） */
-      R.phase = 'ride'; R.stops = 0; R.alightAt = Math.random() < 0.5 ? 1 - R.st : R.st; R.need = R.alightAt === R.st ? 2 : 1;
+      R.phase = 'ride'; R.stops = 0; R.alightAt = Math.floor(Math.random()*STN.length); R.need = ((R.alightAt - R.st + STN.length) % STN.length) || STN.length;
       v.setState('ride', {timer:1e9}); v.root.visible = false;
     }else{ const p = v.root.position; goWait(v, R.st, Math.atan2(p.z, p.x)); }   /* 沒趕上，回去等下一班 */
   }else if(R.phase === 'leave') finishRail(v);
@@ -4503,13 +4540,13 @@ let recruitT = 0;
 function updateRail(dt){
   const C = window.__crowd; if(!C || !C.length || !seats.length && window.stationGroup) initSeats();
   if(!C) return;
-  stopAt = state === 'stop' ? (traveled > 0.1 && traveled < TAU - 0.1 ? 1 : 0) : -1;
+  stopAt = state === 'stop' ? stopIdx(traveled) : -1;
   C.forEach(v => { if(v.railCool > 0) v.railCool -= dt; });
   /* 招募乘客：每個月台最多 2～3 人候車，車上＋候車總共最多 6 人 */
   recruitT -= dt;
   if(recruitT <= 0){ recruitT = 1;
     const plans = C.filter(v => v.railPlan);
-    if(plans.length < 6) STN.forEach((s, S) => {
+    if(plans.length < 7) STN.forEach((s, S) => {
       const waiting = plans.filter(v => v.railPlan.st === S && v.railPlan.phase !== 'ride' && v.railPlan.phase !== 'leave').length;
       if(waiting >= (S === 0 ? 3 : 2) || Math.random() > 0.3) return;
       const c = P2(s.A, 44);
@@ -4535,7 +4572,8 @@ function updateRail(dt){
       R.waitT += dt;
       if(stopAt === R.st && stT > 2 && stT < curDw - 2.5){   /* 列車停妥：走到最近的車門上車 */
         const a = Math.atan2(p.z, p.x); let best = 0, bd = 9;
-        [0, 1, 2].forEach(i => { const d = Math.abs(angD(carAng(i), a)); if(d < bd){ bd = d; best = i; } });
+        for(let i = 0; i < CARS; i++){ if(Math.abs(angD(carAng(i), s.A)) > s.span) continue;   /* 只走到停在月台範圍內的車門 */
+          const d = Math.abs(angD(carAng(i), a)); if(d < bd){ bd = d; best = i; } }
         if(v.railSeat){ v.railSeat.by = null; v.railSeat = null; } v.benchSit = false;
         R.car = best; const da = carAng(best) + rnd(-0.015, 0.015); v.railPts = [P2(da, DOOR_R)]; R.phase = 'door'; v.setState('rail', {timer:1e9});
       }else if(R.waitT > 150){ if(v.railSeat){ v.railSeat.by = null; v.railSeat = null; } exitVia(v, R.st, Math.atan2(p.z, p.x)); }
@@ -4552,7 +4590,7 @@ window.RAIL = { get stopAt(){ return stopAt; }, seats };
 /* 跟隨列車：鏡頭鎖定在中間那節車廂 */
 const trainProxy = new T.Object3D(); trainProxy.isTrain = true;
 window.trainCars = () => train || [];
-window.followTrain = () => { if(!trainProxy.parent) scene.add(trainProxy); if(train) trainProxy.position.copy(train[1].position); followVillager({root:trainProxy, isTrain:true}); };
+window.followTrain = () => { if(!trainProxy.parent) scene.add(trainProxy); if(train) trainProxy.position.copy(train[Math.floor(train.length/2)].position); followVillager({root:trainProxy, isTrain:true}); };
 
 const wait = setInterval(() => {
   if(typeof renderer === 'undefined' || !renderer || !scene || !window.__crowd || !vendors.length) return;
@@ -4659,6 +4697,9 @@ function placeMusicCenter(opts){
       /* 換成跟島上其他建築一樣的 Lambert 材質（不反光、平塗） */
       o.material = new THREE.MeshLambertMaterial({color:src.color.clone(), side:THREE.DoubleSide});
       if(/Glass/.test(src.name)) o.material.emissive = new THREE.Color(0x10202a);
+      /* 夜晚發光：海音館玻璃牆、塔內藍色核心、六角屋頂 */
+      const kind = /Glass/.test(src.name) ? 'glass' : src.name === 'black' ? 'core' : /Ceiling/.test(src.name) ? 'roof' : null;
+      if(kind){ o.material.userData.base = o.material.emissive.clone(); (MUSIC_NIGHT[kind] = MUSIC_NIGHT[kind] || []).push(o.material); }
       o.castShadow = true; o.receiveShadow = true; });
     const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3());
     const pivot = new THREE.Group(); m.position.set(-c.x, -box.min.y, -c.z); pivot.add(m);
@@ -4701,6 +4742,24 @@ function placeMusicCenter(opts){
   });
   return root;
 }
+
+/* ===== 夜晚：85 大樓與流行音樂中心亮燈（跟著房子窗戶同一個晝夜亮度 __winGlow） ===== */
+const MUSIC_NIGHT = {};
+(function updateLandmarkNight(){
+  requestAnimationFrame(updateLandmarkNight);
+  const k = Math.min(1, (window.__winGlow || 0)), t = performance.now()/1000;
+  if(typeof centerGroup !== 'undefined' && centerGroup && centerGroup.userData.glowMats){
+    centerGroup.userData.glowMats.forEach(m => m.emissiveIntensity = k*1.15);
+    centerGroup.userData.beacon.emissiveIntensity = 0.2 + k*(Math.sin(t*3) > 0.2 ? 2.2 : 0.3);
+  }
+  if(window.musicPlatform) window.musicPlatform.userData.signMat.emissiveIntensity = 0.15 + k*0.85;   /* 站牌夜間燈箱 */
+  const C = THREE.Color, mix = (base, col, a) => base.clone().lerp(col, a);
+  (MUSIC_NIGHT.glass || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C(0x7fd0ff), k*0.85)));
+  (MUSIC_NIGHT.core  || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C(0x3f8cff), k*0.95)));
+  /* 六角屋頂：夜晚緩慢變換顏色（藍 → 紫 → 粉），像實景的燈光秀 */
+  const hue = 0.58 + 0.17*(0.5 + 0.5*Math.sin(t*0.35));
+  (MUSIC_NIGHT.roof  || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C().setHSL(hue, 0.75, 0.55), k*0.55)));
+})();
 
 /* 放在西側海灘，等場景建好再載入 */
 (function(){
@@ -4958,7 +5017,7 @@ function openVenueFor(v){
     '清晨':'Dawn', '白天':'Day', '傍晚':'Dusk', '夜晚':'Night', '循環':'Cycle',
     '總音量':'Volume', '背景音樂':'Music', '環境音':'Ambience', '互動音效':'Effects', '海風烏克麗麗':'Sea Breeze Ukulele',
     /* 車站、跟隨 */
-    '求職島站':'Job Island Station', '求職島站．列車樣式':'Job Island Station · Train style',
+    '求職島站':'Job Island Station', '流行音樂中心站':'Music Center Station', '求職島站．列車樣式':'Job Island Station · Train style',
     '蒸汽小火車':'Steam train', '台灣高鐵':'Taiwan High Speed Rail', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train',
     '跟隨島民中，點擊空白處取消':'Following an islander. Tap anywhere to stop.', '跟隨列車中，點擊空白處取消':'Following the train. Tap anywhere to stop.',
     /* 引導 */
