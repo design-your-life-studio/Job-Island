@@ -1168,6 +1168,29 @@ function build85Tower(){
   /* 天線頂的紅色航空警示燈（夜晚會閃） */
   const beacon = new T.MeshLambertMaterial({color:0xff4b3a, emissive:0xff2a1a, emissiveIntensity:0.2});
   add(new T.SphereGeometry(0.16, 10, 8), beacon, 0, 23.3 + UP, 0);
+
+  /* 主塔正面／背面：夜晚亮起 LED 字幕牆（參考實景 85 大樓的燈光文字），白天不顯示 */
+  const ledTex = (text) => {
+    const COLS = 20, rows = text.length*19 + 6, sc = document.createElement('canvas'); sc.width = COLS; sc.height = rows; const sx2 = sc.getContext('2d');
+    sx2.fillStyle = '#000'; sx2.fillRect(0, 0, COLS, rows); sx2.fillStyle = '#fff'; sx2.textAlign = 'center'; sx2.textBaseline = 'middle';
+    sx2.font = '900 18px "Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",sans-serif';
+    [...text].forEach((ch, i) => sx2.fillText(ch, COLS/2, 3 + i*19 + 10));
+    const px = sx2.getImageData(0, 0, COLS, rows).data, D = 12, out = document.createElement('canvas'); out.width = COLS*D; out.height = rows*D; const o = out.getContext('2d');
+    o.fillStyle = '#2a0f63'; o.fillRect(0, 0, out.width, out.height);
+    for(let y = 0; y < rows; y++) for(let x = 0; x < COLS; x++){
+      const on = px[(y*COLS + x)*4] > 110; o.fillStyle = on ? '#ffffff' : '#7b3df2';
+      o.beginPath(); o.arc(x*D + D/2, y*D + D/2, on ? D*0.42 : D*0.36, 0, Math.PI*2); o.fill(); }
+    const tx = new T.CanvasTexture(out); tx.wrapT = T.RepeatWrapping; tx.userData = {rows}; return tx;
+  };
+  const LED_H = TY1 - TY0 - 1.3, LED_Y = TY0 + 0.955 + LED_H/2, ledMats = [];
+  /* 跑馬燈：文字由下往上捲動（一格一格跳，像真的 LED），頭尾相接不停循環 */
+  const VIS = Math.round(20*LED_H/(PW + 0.1));   /* 面板上一次看得到幾排點（讓點維持正圓） */
+  [['116高雄徵才★求職島★', 1], ['JOB★FAIR★2027★', -1]].forEach(([text, f]) => {
+    const tex = ledTex(text); tex.repeat.y = VIS/tex.userData.rows;
+    const m = new T.MeshBasicMaterial({map:tex, transparent:true, opacity:0, depthWrite:false});
+    const pl = new T.Mesh(new T.PlaneGeometry(PW + 0.1, LED_H), m); pl.position.set(0, LED_Y, f*(TW/2 + 0.05)); pl.rotation.y = f > 0 ? 0 : Math.PI; pl.visible = false; g.add(pl);
+    ledMats.push(pl); });
+  g.userData.ledPanels = ledMats;
   g.userData.glowMats = glowMats; g.userData.beacon = beacon;
   g.userData.labelY = 24.6 + UP;
   return g;
@@ -1182,7 +1205,6 @@ function createCenterBuilding(){
     islandGroup.add(t);
     infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, t.userData.labelY, 0), action: openInfo});
     infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
-  infoLabels.push({text:'流行音樂中心站', kind:'station', pos:new THREE.Vector3(-45.4, 5.0, 0), action: () => window.openTrainPanel && openTrainPanel()});
     return;
   }
 
@@ -1275,7 +1297,6 @@ function createCenterBuilding(){
   // 標籤高度微調至火箭頭部上方
   infoLabels.push({text:'大會服務台', pos:new THREE.Vector3(0, 17.5, 0), action: openInfo});
   infoLabels.push({text:'求職島站', kind:'station', pos:new THREE.Vector3(0, 10.2, -41.4), action: () => window.openTrainPanel && openTrainPanel()});
-  infoLabels.push({text:'流行音樂中心站', kind:'station', pos:new THREE.Vector3(-45.4, 5.0, 0), action: () => window.openTrainPanel && openTrainPanel()});
 }
 
 function updateRocketAndSmoke(t, dt) {
@@ -4116,59 +4137,71 @@ const DESIGNS = [
         if(y > 0) x *= 1 - 0.1*(y/H);          /* 上半部略為內收，像新幹線的車身斷面 */
         sec.push([x/W, y/H]);
       }
-      const GY = L(0x9aa3a8), dark = L(0x2a3036);
+      const GY = L(0x9aa3a8), dark = L(0x2a3036), SK = L(0x26292d);
       /* 著色器逐像素畫：車窗、橘帶、黑帶、駕駛艙窗；夜晚車窗會亮 */
-      const mkMat = () => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
+      const mkMat = (za, zb) => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
         m.onBeforeCompile = sh => {
-          sh.uniforms.uWin = TWIN;
+          sh.uniforms.uWin = TWIN; sh.uniforms.uZ0 = {value:za || 0}; sh.uniforms.uZ1 = {value:zb || 0};
           sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\nvarying float vPz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect; vPz = position.z;');
-          sh.fragmentShader = 'varying vec3 vSect;\nvarying float vPz;\nuniform float uWin;\n' + sh.fragmentShader
+          sh.fragmentShader = 'varying vec3 vSect;\nvarying float vPz;\nuniform float uWin, uZ0, uZ1;\n' + sh.fragmentShader
             .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n            totalEmissiveRadiance += vec3(1.0, 0.80, 0.45) * uWin * win * 1.05;')
             .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
             float x0 = abs(vSect.x), y0 = vSect.y, t = vSect.z;
             float side = step(0.55, x0);
             float body = 1.0 - step(0.001, t);
-            /* 車身：一格一格的小車窗 */
-            float win = body * side * step(0.16, y0) * step(y0, 0.46) * step(fract(vPz*1.3 + 0.35), 0.6);
-            /* 飾帶：車身上水平；在車鼻上往前、往上收，交會到駕駛艙窗 */
-            float oc = 0.02 + 0.95*pow(t, 1.25);
-            float lim = 1.0 - step(0.5, t);
-            float org = lim * step(abs(y0 - oc), 0.065) * step(0.25, x0 + t*0.6);
-            float blk = lim * step(abs(y0 - (oc - 0.15)), 0.045) * step(0.25, x0 + t*0.6);
-            /* 駕駛艙窗：車鼻上方的黑色擋風玻璃 */
-            float cab = (1.0 - body) * step(0.2, t) * step(t, 0.5) * step(0.30 + (t - 0.2)*0.4, y0) * step(x0, 0.9);
+            /* 車身：一格一格的圓角小車窗；每節車廂扣掉兩端 0.35 後放整數扇窗並置中，不會被車廂接縫切成半扇 */
+            float wL = uZ1 - uZ0 - 0.7, wN = max(1.0, floor(wL/0.77)), wP = wL/wN, wU = (vPz - uZ0 - 0.35)/wP;
+            vec2 wq = abs(vec2((fract(wU) - 0.5)*wP, (y0 - 0.31)*0.84)) - vec2(wP*0.3 - 0.06, 0.126 - 0.06);
+            float win = body * side * step(length(max(wq, 0.0)) + min(max(wq.x, wq.y), 0.0) - 0.06, 0.0)
+                      * step(0.0, wU) * step(wU, wN) * step(0.5, wL);
+            /* 700T 塗裝（依側面照片）：
+               ・最底下一整條深灰裙板，延伸到鼻尖下緣
+               ・橘帶：中間車廂是一條粗橘帶，下方留一條白帶；車頭那節從一道往前傾的深藍斜帶開始，往前橘色填滿到裙板、一路包到鼻尖
+               ・橘帶上緣的細深藍線只出現在車頭後段與中間車廂（靠車鼻那段沒有） */
+            float skirt = step(y0, -0.6);
+            float frontCar = body * step(abs(uZ1), 0.01);
+            float yb = clamp((y0 + 0.6)/0.22, 0.0, 1.0);
+            float fEdge = -0.6 - yb*0.35, rEdge = -1.2 - yb*0.35;
+            float fullOrg = min(1.0, (1.0 - body) + frontCar*step(fEdge, vPz));
+            float orgBot = mix(-0.38, -0.6, fullOrg);
+            float org = step(orgBot, y0) * step(y0, -0.02);
+            float wedge = frontCar * step(-0.6, y0) * step(y0, -0.38) * step(rEdge, vPz) * step(vPz, fEdge);
+            float navyLine = body * step(-0.02, y0) * step(y0, 0.035) * (1.0 - frontCar*step(-1.3, vPz));
+            /* 駕駛艙窗：車鼻上方一長條深色擋風玻璃，往前漸漸收窄 */
+            float cab = (1.0 - body) * step(0.2, t) * step(t, 0.6) * step(0.62 + max(0.0, t - 0.45)*2.2, y0) * step(x0, 0.7);
             vec3 col = vec3(0.955, 0.96, 0.955);
-            col = mix(col, vec3(0.93, 0.42, 0.10), org);
-            col = mix(col, vec3(0.09, 0.10, 0.11), max(blk, cab));
+            col = mix(col, vec3(0.96, 0.47, 0.13), org);
+            col = mix(col, vec3(0.10, 0.13, 0.21), max(max(navyLine, wedge), cab));
+            col = mix(col, vec3(0.15, 0.16, 0.18), skirt);
             col = mix(col, vec3(0.16, 0.20, 0.24), win);
             vec4 diffuseColor = vec4(col, opacity);`);
         }; m.customProgramCacheKey = () => 'thsr'; return m; };
-      const MAT = mkMat();
-      const loft = (slices) => {
+      const loft = (slices, za, zb) => {
         const pos = [], st = [], idx = [];
         slices.forEach(s => sec.forEach(([x0, y0]) => { const [x, y] = s.f(x0, y0); pos.push(x, y, s.z); st.push(x0, y0, s.t); }));
         for(let j=0;j<slices.length-1;j++) for(let i=0;i<N;i++){ const a = j*N + i, b = j*N + (i+1)%N, c = a + N, d = b + N; idx.push(a, c, b, b, c, d); }
         const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('sect', new T.Float32BufferAttribute(st, 3)); g.setIndex(idx); g.computeVertexNormals();
-        const m = new T.Mesh(g, MAT); m.castShadow = true; return m;
+        const m = new T.Mesh(g, mkMat(za, zb)); m.castShadow = true; return m;   /* 每段車身各自記住自己的前後範圍，用來排車窗 */
       };
       const flat = (x0, y0) => [x0*W, YC + y0*H];
-      const body = (z0, z1) => { const sl = []; for(let k=0;k<=8;k++){ sl.push({z:z0 + (z1 - z0)*k/8, t:0, f:flat}); } return loft(sl); };
+      const body = (z0, z1) => { const sl = []; for(let k=0;k<=8;k++){ sl.push({z:z0 + (z1 - z0)*k/8, t:0, f:flat}); } return loft(sl, z0, z1); };
       const cap = (z, dir) => { const s = new T.Shape(); sec.forEach(([x0,y0],i) => { const p = flat(x0,y0); i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]); });
         const m = new T.Mesh(new T.ShapeGeometry(s), L(0xdfe3e2)); m.position.z = z; if(dir < 0) m.rotation.y = Math.PI; return m; };
-      /* 鴨嘴車鼻：長而扁，頂部先有駕駛艙的隆起再一路壓低，前端是寬扁的嘴 */
+      /* 700T 車鼻（依側面照片量出的比例）：
+         車頂從駕駛艙開始，沿一道先緩後急的弧線（約 t^1.9）一路壓到幾乎貼近車底的鼻尖（車身高度約 12%）；
+         車底保持平直，只在最前端圓弧收口；鼻長約為車身高的 2.2 倍，俯視時前端寬扁 */
       const nose = () => {
-        const Ln = 2.6, M = 48, sl = [];
-        const sm = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a)/(b - a))); return k*k*(3 - 2*k); };
+        const Ln = 3.7, M = 64, sl = [];
+        const topBody = YC + H, botBody = YC - H, tipTop = botBody + 0.42;
         for(let j=0;j<=M;j++){
           const t = j/M;
-          const topBody = YC + H, tipTop = 1.32;
-          const top = tipTop + (topBody - tipTop)*(1 - sm(0.0, 0.92, t)) + 0.08*Math.exp(-Math.pow((t - 0.28)/0.13, 2));   /* 駕駛艙隆起 */
-          const bot = (YC - H) + 0.2*sm(0.5, 1.0, t);
+          const top = topBody - (topBody - tipTop)*Math.pow(t, 1.9);
+          const bot = botBody;
           const mid = (top + bot)/2;
-          const sx = 0.55 + 0.45*Math.pow(Math.max(0, 1 - Math.pow(t, 2.2)), 0.5);   /* 前端寬而圓 */
-          /* 最前端 18% 用圓弧收口，讓鼻頭變成圓潤的球面 */
-          const q = Math.max(0, (t - 0.82)/0.18), tip = Math.sqrt(Math.max(0, 1 - q*q));
-          sl.push({z: t*Ln, t, f:(x0, y0) => [x0*W*sx*tip, mid + (y0 >= 0 ? (top - mid) : (mid - bot))*y0*tip]});
+          const sx = 0.58 + 0.42*Math.pow(Math.max(0, 1 - Math.pow(t, 2.4)), 0.5);
+          /* 最前端 10% 用圓弧收口（鴨嘴圓鼻） */
+          const q = Math.max(0, (t - 0.9)/0.1), tip = Math.sqrt(Math.max(0, 1 - q*q));
+          sl.push({z: t*Ln, t, f:(x0, y0) => [x0*W*sx*(0.35 + 0.65*tip), mid + (y0 >= 0 ? (top - mid) : (mid - bot))*y0*tip]});
         }
         return loft(sl);
       };
@@ -4177,15 +4210,15 @@ const DESIGNS = [
         const z0 = -2.4, z1 = front ? 0.0 : 2.4;
         g.add(body(z0, z1));
         g.add(cap(z0, -1)); if(!front) g.add(cap(z1, 1));
-        box(g, 1.55, 0.26, z1 - z0 - 0.3, GY, 0, 0.62, (z0 + z1)/2);       /* 車底裙板 */
+        box(g, 1.55, 0.26, z1 - z0 - 0.3, SK, 0, 0.62, (z0 + z1)/2);       /* 車底裙板（深灰，接車身下緣的深灰帶） */
         if(front){
           const n = nose(); g.add(n);
-          const ug = new T.BoxGeometry(1.55, 0.26, 2.4, 1, 1, 1), up = ug.attributes.position;
+          const ug = new T.BoxGeometry(1.55, 0.26, 3.4, 1, 1, 1), up = ug.attributes.position;
           for(let i=0;i<up.count;i++){ if(up.getZ(i) > 0) up.setX(i, up.getX(i)*0.45); }
-          ug.computeVertexNormals(); const uf = new T.Mesh(ug, GY); uf.position.set(0, 0.62, 1.0); uf.castShadow = true; g.add(uf);
+          ug.computeVertexNormals(); const uf = new T.Mesh(ug, SK); uf.position.set(0, 0.62, 1.5); uf.castShadow = true; g.add(uf);
           /* 頭燈：車鼻兩側下緣 */
           n.updateMatrixWorld(); const rc = new T.Raycaster();
-          [-0.36, 0.36].forEach(x => { rc.set(new T.Vector3(x, 1.12, 8), new T.Vector3(0, 0, -1)); const h = rc.intersectObject(n)[0];
+          [-0.36, 0.36].forEach(x => { rc.set(new T.Vector3(x, 0.98, 9), new T.Vector3(0, 0, -1)); const h = rc.intersectObject(n)[0];
             if(h){ const l = new T.Mesh(new T.SphereGeometry(0.11, 10, 8), new T.MeshLambertMaterial({color:0xfff6d0, emissive:0x8a7a40})); l.scale.set(1.6, 0.6, 0.5); l.position.copy(h.point); l.position.z -= 0.02; g.add(l); } });
           wheels(g, [-0.5, -1.9], 0.28, dark, GY);
         }else{
@@ -4219,13 +4252,17 @@ const DESIGNS = [
         sec.push([x/W, y/H]);
       }
       /* 曲面：每個頂點記住它在斷面上的位置 (x0,y0) 與車鼻進度 t，由著色器逐像素決定黑白，分色線才會俐落 */
-      const mkMat = (mode) => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
+      const mkMat = (mode, za, zb) => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
         m.onBeforeCompile = sh => {
-          sh.uniforms.uWin = TWIN;
-          sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect;');
-          sh.fragmentShader = 'varying vec3 vSect;\nuniform float uWin;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n            totalEmissiveRadiance += vec3(1.0, 0.80, 0.45) * uWin * win * 1.05;').replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
+          sh.uniforms.uWin = TWIN; sh.uniforms.uZ0 = {value:za || 0}; sh.uniforms.uZ1 = {value:zb || 0};
+          sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\nvarying float vZ;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect; vZ = position.z;');
+          sh.fragmentShader = 'varying vec3 vSect;\nvarying float vZ;\nuniform float uWin, uZ0, uZ1;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n            totalEmissiveRadiance += vec3(1.0, 0.80, 0.45) * uWin * win * 1.05;').replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
             float x0 = abs(vSect.x), y0 = vSect.y, t = vSect.z;
-            float win = step(0.14, y0) * step(y0, 0.6) * step(0.62, x0);
+            /* 車窗一格一格、四角圓角：每節車廂扣掉兩端 0.35 後，放整數扇窗並置中，不會被車廂接縫切成半扇 */
+            float wL = uZ1 - uZ0 - 0.7, wN = max(1.0, floor(wL/0.556)), wP = wL/wN, wU = (vZ - uZ0 - 0.35)/wP;
+            vec2 wq = abs(vec2((fract(wU) - 0.5)*wP, (y0 - 0.37)*0.82)) - vec2(wP*0.42 - 0.075, 0.189 - 0.075);
+            float win = step(length(max(wq, 0.0)) + min(max(wq.x, wq.y), 0.0) - 0.075, 0.0) * step(0.62, x0)
+                      * step(0.0, wU) * step(wU, wN) * step(0.556, wL);
             float line = 0.32 - 0.5*pow(t, 0.85) + 0.16*x0*(1.0 - t);
             float blk = ${mode === 1 ? 'mix(win, step(line, y0), step(0.015, t))' : 'win'};
             vec4 diffuseColor = vec4(mix(vec3(0.945,0.953,0.949), vec3(0.11,0.13,0.15), blk), opacity);`);
@@ -4235,7 +4272,7 @@ const DESIGNS = [
         slices.forEach(s => sec.forEach(([x0, y0]) => { const [x, y] = s.f(x0, y0); pos.push(x, y, s.z); st.push(x0, y0, s.t); }));
         for(let j=0;j<slices.length-1;j++) for(let i=0;i<N;i++){ const a = j*N + i, b = j*N + (i+1)%N, c = a + N, d = b + N; idx.push(a, c, b, b, c, d); }
         const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('sect', new T.Float32BufferAttribute(st, 3)); g.setIndex(idx); g.computeVertexNormals();
-        const m = new T.Mesh(g, mkMat(mode)); m.castShadow = true; return m;
+        const zs = slices.map(q => q.z), m = new T.Mesh(g, mode === 0 ? mkMat(0, Math.min(...zs), Math.max(...zs)) : mkMat(mode)); m.castShadow = true; return m;
       };
       const flat = (x0, y0) => [x0*W, YC + y0*H];
       const body = (z0, z1) => loft([{z:z0, t:0, f:flat}, {z:z1, t:0, f:flat}], 0);
@@ -4383,8 +4420,9 @@ function buildStation(){
     box(mp, 0.08, 0.98, 2.95, L(0x1f4f8a), sx, H + 2.45, 0);
     [-1, 1].forEach(f => { const pl = new T.Mesh(new T.PlaneGeometry(2.85, 0.9), smat); pl.position.set(sx + f*0.045, H + 2.45, 0); pl.rotation.y = f*Math.PI/2; mp.add(pl); });
     [-1, 1].forEach(dz => { const bench = box(mp, 0.45, 0.12, 1.4, L(0x9a6a40), -46.6, H + 0.45, dz*2.6); [-0.5, 0.5].forEach(o => box(mp, 0.4, 0.4, 0.08, L(0x34424c), -46.6, H + 0.2, dz*2.6 + o)); }); }
-  g.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); [pg, sp, mp].forEach(P => P.traverse(o => { if(o.isMesh) stationMeshes.push(o); }));
-  window.stationMeshes = stationMeshes; window.stationGroup = g; window.platformGroups = [pg, sp, mp]; window.musicPlatform = mp;
+  /* 只有求職島站（站房＋北站月台）可以懸浮、點擊開列車面板；南方小月台與流行音樂中心站只是停靠站，沒有互動 */
+  g.traverse(o => { if(o.isMesh) stationMeshes.push(o); }); pg.traverse(o => { if(o.isMesh) stationMeshes.push(o); });
+  window.stationMeshes = stationMeshes; window.stationGroup = g; window.platformGroups = [pg]; window.musicPlatform = mp;
 }
 
 /* ---------- 列車：停靠車站 → 發車繞島一圈 → 回站停靠 ---------- */
@@ -4776,8 +4814,13 @@ function placeMusicCenter(opts){
     /* 量出建築的世界高度範圍，給彩燈漸層用 */
     const wb = new THREE.Box3().setFromObject(pivot); MC_U.uY0.value = wb.min.y + 0.3; MC_U.uY1.value = wb.max.y;
     /* 探照燈：建築前緣（靠海那側）一排光束，往天空呈扇形打出、夜晚緩慢擺動 */
-    const beamGeo = new THREE.CylinderGeometry(0.75, 0.05, 34, 10, 1, true).translate(0, 17, 0);
+    const beamGeo = new THREE.CylinderGeometry(1.0, 0.06, 46, 12, 1, true).translate(0, 23, 0);
     const N_BEAM = 11;
+    /* 彩色光束（參考實景：藍、青、綠、黃、粉、白交錯） */
+    const BEAM_COLS = [0x7fb2ff, 0x62f0ff, 0xa4ff8c, 0xffe066, 0xff7ad9, 0xeaf0ff];
+    const FLARE_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+      const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
     const LAMP_M = { dark:new THREE.MeshLambertMaterial({color:0x2e3238}), mid:new THREE.MeshLambertMaterial({color:0x6b717a}), lens:new THREE.MeshBasicMaterial({color:0x9aa3ad}) };
     MUSIC_NIGHT.lens = LAMP_M.lens;
     for(let i = 0; i < N_BEAM; i++){
@@ -4787,11 +4830,15 @@ function placeMusicCenter(opts){
         vertexShader:`varying float vY; varying float vF; void main(){ vY = uv.y; vec4 mv = modelViewMatrix*vec4(position,1.0);
           vec3 n = normalize(normalMatrix*normal); vF = abs(dot(n, normalize(-mv.xyz))); gl_Position = projectionMatrix*mv; }`,
         fragmentShader:`uniform float uOp; uniform vec3 uCol; varying float vY; varying float vF;
-          void main(){ float a = pow(1.0 - vY, 1.6)*pow(vF, 1.4)*uOp; gl_FragColor = vec4(uCol*a, a); }` });
+          void main(){ float core = pow(vF, 6.0); float a = pow(1.0 - vY, 1.15)*(0.35*pow(vF, 1.2) + 0.9*core)*uOp;
+            gl_FragColor = vec4(mix(uCol, vec3(1.0), core*0.3)*a, a); }` });   /* 光束中心有一條較亮的芯 */
       const b = new THREE.Mesh(beamGeo, mat); b.frustumCulled = false; b.visible = false;
       const LS = 0.6;   /* 燈具大小 */
       b.position.set(cx + f*(sz.x*0.95), 0.25 + 0.47*LS, b2.min.z - 0.6);   /* 光束從燈頭中心打出 */
-      b.userData = {fan: f*1.1, tilt: -0.32 - Math.abs(f)*0.15, ph: i*0.9};
+      b.userData = {fan: -f*1.1, tilt: -0.32 - Math.abs(f)*0.15, ph: i*0.9, i, f, col: new THREE.Color(BEAM_COLS[i % BEAM_COLS.length])};
+      /* 燈口光暈：從正面看也看得到燈在亮 */
+      const flare = new THREE.Sprite(new THREE.SpriteMaterial({map:FLARE_TEX, color:b.userData.col, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
+      flare.scale.setScalar(1.6); flare.position.copy(b.position); flare.visible = false; root.add(flare); b.userData.flare = flare;
       root.add(b); (MUSIC_NIGHT.beams = MUSIC_NIGHT.beams || []).push(b);
       /* 探照燈燈具：深灰底座＋U 形支架＋圓筒燈頭（燈頭跟著光束擺動，夜晚燈面亮起） */
       const lamp = new THREE.Group(); lamp.position.set(b.position.x, 0.25, b.position.z); lamp.scale.setScalar(LS); root.add(lamp);
@@ -4816,15 +4863,6 @@ function placeMusicCenter(opts){
     const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 6, 5), new THREE.MeshBasicMaterial({color:0xffcf7a}), 26), d0 = new THREE.Object3D();
     for(let i = 0; i < 26; i++){ d0.position.set(cx - wx/2 + 0.4 + (wx - 0.8)*i/25, 0.75, z0 - 0.05); d0.updateMatrix(); bulbs.setMatrixAt(i, d0.matrix); }
     bulbs.visible = false; root.add(bulbs); MUSIC_NIGHT.bulbs = bulbs;
-    /* 海面倒影：建築前方水面上一條條主色光帶，被浪蓋住的地方自然斷開，像實景的水面倒影 */
-    const refTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 256; const x = c.getContext('2d');
-      let sd = 11; const rnd = () => (sd = (sd*9301 + 49297) % 233280)/233280;
-      for(let i = 0; i < 60; i++){ const px = rnd()*256, w = 2 + rnd()*7, a = 0.25 + rnd()*0.6;
-        const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(0.55 + rnd()*0.3, `rgba(255,255,255,${a*0.35})`); g.addColorStop(1, 'rgba(255,255,255,0)');
-        x.fillStyle = g; for(let y = 0; y < 256; y += 6 + rnd()*10){ const h = 3 + rnd()*9; x.fillRect(px + (rnd() - 0.5)*4, y, w, h); } }
-      const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.flipY = false; return t; })();   /* 畫布上緣（最亮）對到靠岸那側 */
-    const refl = new THREE.Mesh(new THREE.PlaneGeometry(wx*0.95, 16).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({map:refTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
-    refl.position.set(cx, -0.75, z0 - 8.2);   /* 世界高度約 -2.35：浪高的地方會蓋過光帶 */ refl.visible = false; root.add(refl); MUSIC_NIGHT.refl = refl;
   });
   return root;
 }
@@ -4837,6 +4875,8 @@ const MUSIC_NIGHT = {};
   if(typeof centerGroup !== 'undefined' && centerGroup && centerGroup.userData.glowMats){
     centerGroup.userData.glowMats.forEach(m => m.emissiveIntensity = k*1.15);
     centerGroup.userData.beacon.emissiveIntensity = 0.2 + k*(Math.sin(t*3) > 0.2 ? 2.2 : 0.3);
+    (centerGroup.userData.ledPanels || []).forEach(p => { p.visible = k > 0.03; p.material.opacity = Math.min(1, k*1.1);
+      const M = p.material.map, rows = M.userData.rows; M.offset.y = 1 - (Math.floor(t*9) % rows)/rows - M.repeat.y; });   /* 每秒往上捲 9 排點 */   /* LED 字幕牆：入夜才亮 */
   }
   if(window.musicPlatform) window.musicPlatform.userData.signMat.emissiveIntensity = 0.15 + k*0.85;   /* 站牌夜間燈箱 */
   const C = THREE.Color, mix = (base, col, a) => base.clone().lerp(col, a);
@@ -4852,12 +4892,19 @@ const MUSIC_NIGHT = {};
   if(MUSIC_NIGHT.lens) MUSIC_NIGHT.lens.color.copy(new C(0x9aa3ad).lerp(new C(0xf4f6ff), k));   /* 燈面：白天灰色玻璃、夜晚亮白 */
   if(MUSIC_NIGHT.pool){ const P = MUSIC_NIGHT.pool; P.visible = k > 0.02; P.material.opacity = k*0.45; P.material.color.copy(theme); }
   if(MUSIC_NIGHT.bulbs) MUSIC_NIGHT.bulbs.visible = k > 0.3;
-  if(MUSIC_NIGHT.refl){ const F = MUSIC_NIGHT.refl; F.visible = k > 0.02; F.material.opacity = k*0.75; F.material.color.copy(theme);
-    F.material.map.offset.x = Math.sin(t*0.6)*0.01; F.material.map.offset.y = (t*0.03) % 1; }
+  /* 探照燈燈光秀：三種動態輪流（每段約 9 秒，交界處平滑過渡）
+     0 扇形左右大擺動　1 單雙號交叉掃射　2 由左到右的波浪起伏；另外每隔一段時間全體閃爍一次 */
+  const SEG = 9, ph = t/SEG, m0 = Math.floor(ph) % 3, m1 = (m0 + 1) % 3, fr = ph % 1, bl = fr < 0.82 ? 0 : (fr - 0.82)/0.18, w = bl*bl*(3 - 2*bl);
+  const flash = (fr > 0.45 && fr < 0.55) ? 0.65 + 0.35*Math.sign(Math.sin(t*28)) : 1;
+  const pose = (m, u) => m === 0 ? [u.tilt + 0.06*Math.sin(t*0.6 + u.ph), u.fan*1.15 + 0.32*Math.sin(t*0.75)]
+                      : m === 1 ? [u.tilt - 0.05, u.fan*0.5 + (u.i % 2 ? 1 : -1)*0.55*Math.sin(t*0.9)]
+                      :           [u.tilt + 0.22*Math.sin(t*1.6 - u.i*0.55) - 0.05, u.fan*1.25];
   (MUSIC_NIGHT.beams || []).forEach(b => { const u = b.userData; b.visible = k > 0.02;
-    b.material.uniforms.uOp.value = k*0.55; b.material.uniforms.uCol.value.copy(new C(0xb9c6ff).lerp(theme, 0.2));
-    b.rotation.set(u.tilt + 0.08*Math.sin(t*0.5 + u.ph), 0, u.fan + 0.12*Math.sin(t*0.37 + u.ph*1.3));
-    if(u.head) u.head.rotation.copy(b.rotation); });
+    b.material.uniforms.uOp.value = k*0.95*flash; b.material.uniforms.uCol.value.copy(u.col);
+    const a = pose(m0, u), c = pose(m1, u);
+    b.rotation.set(a[0] + (c[0] - a[0])*w, 0, a[1] + (c[1] - a[1])*w);
+    if(u.head) u.head.rotation.copy(b.rotation);
+    if(u.flare){ u.flare.visible = k > 0.02; u.flare.material.opacity = k*0.9*flash; } });
 })();
 
 /* 放在西側海灘，等場景建好再載入 */
