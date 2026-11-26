@@ -1135,15 +1135,17 @@ function build85Tower(){
   [1, -1].forEach(f => panel(1.5, 0.55, winTex(2, 1, '#63bdaa', 5), 0, 7.35, f*(D/2 + 0.02), f < 0 ? Math.PI : 0));
 
   /* 3. 主塔：深色方柱（四角看起來像邊柱）＋ 四面淺色中板，中段一條腰帶 */
-  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 17.6, UP = TY1 - 15.8;   /* UP：主塔比原設計拉高的量，上方的頂段、冠部跟著往上移 */
+  const TW = 3.3, PW = 2.0, TY0 = 8.6, TY1 = 16.85, UP = TY1 - 15.8;   /* UP：主塔比原設計拉高的量，上方的頂段、冠部跟著往上移 */
   add(new T.BoxGeometry(TW, TY1 - TY0, TW), lam(C.mid), 0, (TY0 + TY1)/2, 0);
   let sd = 30;
+  /* 主塔上下兩片窗格與中間腰帶，依主塔高度自動分配 */
+  const PH = (TY1 - TY0 - 1.5)/2, P1 = TY0 + 0.955 + PH/2, BELT = TY0 + 0.955 + PH + 0.095, P2 = BELT + 0.105 + PH/2;
   fourSides(TW, (x, z, ry) => {
-    panel(PW, 3.75, winTex(3, 5, '#63bdaa', sd++), x, 11.43, z, ry);
-    panel(PW, 3.75, winTex(3, 6, '#63bdaa', sd++), x, 15.38, z, ry);
+    panel(PW, PH, winTex(3, 5, '#63bdaa', sd++), x, P1, z, ry);
+    panel(PW, PH, winTex(3, 6, '#63bdaa', sd++), x, P2, z, ry);
     /* 腰帶：中間深色、兩側邊柱上是淺色 */
-    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, 13.4, z*1.003); a.rotation.y = ry; g.add(a);
-    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, 13.4, z*1.006); b.rotation.y = ry; g.add(b);
+    const a = new T.Mesh(new T.PlaneGeometry(TW, 0.22), lam(C.pale)); a.position.set(x*1.003, BELT, z*1.003); a.rotation.y = ry; g.add(a);
+    const b = new T.Mesh(new T.PlaneGeometry(PW, 0.22), lam(C.dark)); b.position.set(x*1.006, BELT, z*1.006); b.rotation.y = ry; g.add(b);
   });
 
   /* 4. 頂段：橫向亮帶 */
@@ -1153,7 +1155,7 @@ function build85Tower(){
   const stripeMat = new T.MeshLambertMaterial({map:new T.CanvasTexture(scv)});
   /* 頂段亮帶：夜晚亮成青白色的光環 */
   const sgv = document.createElement('canvas'); sgv.width = 64; sgv.height = 128; const sgx = sgv.getContext('2d');
-  sgx.fillStyle = '#000'; sgx.fillRect(0, 0, 64, 128); sgx.fillStyle = '#9ff0e2'; [12, 36, 60, 84].forEach(y => sgx.fillRect(0, y, 64, 12));
+  sgx.fillStyle = '#000'; sgx.fillRect(0, 0, 64, 128); sgx.fillStyle = '#9ff0e2'; [12, 36, 60, 84].forEach(y => sgx.fillRect(12, y, 40, 12));   /* 只亮每一面的中段，兩側邊柱不亮 */
   stripeMat.emissive = new T.Color(0xffffff); stripeMat.emissiveMap = new T.CanvasTexture(sgv); stripeMat.emissiveIntensity = 0; glowMats.push(stripeMat);
   add(new T.BoxGeometry(TW, 2.9, TW), [stripeMat, stripeMat, lam(C.dark), lam(C.dark), stripeMat, stripeMat], 0, TY1 + 1.45, 0);
 
@@ -1816,7 +1818,7 @@ function makeWakeTexture(){
 function createBoats(){
   const wakeTex = makeWakeTexture();
   const defs = [
-    {make:() => createSailboat(0x2e6a8e, 0xffffff), R:72, w:0.05, a0:0.9},
+    {make:() => createSailboat(0x2e6a8e, 0xffffff), R:75, w:0.05, a0:0.9},   /* 避開西側流行音樂中心廣場 */
     {make:() => createFishingBoat(0xb8412f), R:86, w:-0.035, a0:2.6},
     {make:() => createSailboat(0xC2523C, 0xfff3d6), R:102, w:0.03, a0:4.3},
     {make:() => createFishingBoat(0x17877b), R:118, w:-0.022, a0:5.6}
@@ -1901,7 +1903,8 @@ function createDolphin(){
   return {g, fluke};
 }
 function createDolphins(){
-  const defs = [{R:76,w:0.11,a0:0.6,P:6.5,off:0},{R:92,w:-0.09,a0:3.0,P:7.5,off:2.1},{R:69,w:0.13,a0:4.6,P:5.8,off:4.0}];
+  /* 環島半徑都要避開西側流行音樂中心的碼頭廣場（最外角離島中心約 67.7），內圈海豚群至少留 4 的距離 */
+  const defs = [{R:79,w:0.11,a0:0.6,P:6.5,off:0},{R:92,w:-0.09,a0:3.0,P:7.5,off:2.1},{R:74,w:0.13,a0:4.6,P:5.8,off:4.0}];
   const mates = [{lat:0,delay:0},{lat:2.3,delay:0.35},{lat:-2.1,delay:0.7}];
   defs.forEach((p,pi) => {
     p.members = mates.slice(0, pi === 1 ? 2 : 3).map((m,mi) => ({...m, ...createDolphin(), ph:mi*1.7 + pi, above:false}));
@@ -4684,6 +4687,31 @@ function openVenueMap(){
 /* ================= 高雄流行音樂中心 =================
    模型輪廓來自 Sketchfab「高雄_海洋文化及流行音樂中心」by samuel-lin（CC BY 4.0），
    已重新上色成求職島風格（白色鋼構、藍色玻璃），檔案 music-center.glb 需與 index.html 放在同一資料夾。 */
+const MC_U = { uNight:{value:0}, uTime:{value:0}, uY0:{value:0}, uY1:{value:12}, uTheme:{value:new THREE.Color(0xa45cff)} };
+/* 鋼構夜間打燈：參考實景，整棟用同一個主色（紫 ↔ 粉，緩慢變換）從下往上洗亮白色鋼構；越靠近地面越亮 */
+function mcFrameShader(mat, cells){
+  mat.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, MC_U);
+    sh.vertexShader = 'varying vec3 vMcW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vMcW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'uniform float uNight, uTime, uY0, uY1;\nuniform vec3 uTheme;\nvarying vec3 vMcW;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      float mcH = clamp((vMcW.y - uY0)/(uY1 - uY0), 0.0, 1.0);
+      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb*uTheme, 0.55*uNight);
+      vec3 mcG = uTheme*(0.30 + 0.40*(1.0 - mcH));
+      ${cells ? `vec3 mcQ = floor(vMcW*0.7); float mcR = fract(sin(dot(mcQ, vec3(12.9898, 78.233, 37.719)))*43758.5453);
+      if(mcR > 0.82) mcG += mix(uTheme, vec3(1.0, 0.9, 0.95), 0.55)*(0.35 + 0.25*sin(uTime*0.8 + mcR*40.0));` : ''}
+      totalEmissiveRadiance += mcG*uNight;`);
+  };
+  mat.customProgramCacheKey = () => 'mcFrame2' + (cells ? 1 : 0);
+}
+/* 沿模型的稜線做發光燈條（模型座標是壓縮過的整數，先還原成小數再找邊） */
+function mcEdges(o, color, thresh){
+  const pa = o.geometry.attributes.position, div = !pa.normalized ? 1 : pa.array instanceof Int16Array ? 32767 : pa.array instanceof Uint16Array ? 65535 : pa.array instanceof Int8Array ? 127 : pa.array instanceof Uint8Array ? 255 : 1;
+  const fg = new THREE.BufferGeometry(), fa = new Float32Array(pa.count*3);
+  for(let i = 0; i < pa.count; i++){ fa[3*i] = Math.max(pa.getX(i)/div, -1); fa[3*i+1] = Math.max(pa.getY(i)/div, -1); fa[3*i+2] = Math.max(pa.getZ(i)/div, -1); }
+  fg.setAttribute('position', new THREE.BufferAttribute(fa, 3)); if(o.geometry.index) fg.setIndex(o.geometry.index);
+  const ln = new THREE.LineSegments(new THREE.EdgesGeometry(fg, thresh), new THREE.LineBasicMaterial({color, transparent:true, opacity:0, depthWrite:false}));
+  ln.visible = false; o.add(ln); (MUSIC_NIGHT.lines = MUSIC_NIGHT.lines || []).push(ln); return ln;
+}
 function placeMusicCenter(opts){
   const A = opts.angle, R = opts.radius, S = opts.scale;
   const root = new THREE.Group();
@@ -4699,7 +4727,13 @@ function placeMusicCenter(opts){
       if(/Glass/.test(src.name)) o.material.emissive = new THREE.Color(0x10202a);
       /* 夜晚發光：海音館玻璃牆、塔內藍色核心、六角屋頂 */
       const kind = /Glass/.test(src.name) ? 'glass' : src.name === 'black' ? 'core' : /Ceiling/.test(src.name) ? 'roof' : null;
-      if(kind){ o.material.userData.base = o.material.emissive.clone(); (MUSIC_NIGHT[kind] = MUSIC_NIGHT[kind] || []).push(o.material); }
+      if(kind){ o.material.userData.base = o.material.emissive.clone(); o.material.userData.baseCol = o.material.color.clone(); (MUSIC_NIGHT[kind] = MUSIC_NIGHT[kind] || []).push(o.material); }
+      /* 白色鋼構：夜晚打上漸層彩燈（底部綠 → 中段粉紅 → 上方紫），六角面板另外有隨機亮起的白／藍／橘色格子 */
+      if(/Frame|Metal|NGon|Build/.test(src.name)) mcFrameShader(o.material, /NGon/.test(src.name));
+      /* 屋頂與海音館：夜晚沿著稜線亮起白色燈條（實景大廳的三角框線） */
+      if(kind === 'roof' || kind === 'glass'){
+        o.material.polygonOffset = true; o.material.polygonOffsetFactor = 1; o.material.polygonOffsetUnits = 1;
+        mcEdges(o, kind === 'roof' ? 0xe9e2ff : 0xffffff, kind === 'roof' ? 25 : 12); }
       o.castShadow = true; o.receiveShadow = true; });
     const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3());
     const pivot = new THREE.Group(); m.position.set(-c.x, -box.min.y, -c.z); pivot.add(m);
@@ -4739,6 +4773,58 @@ function placeMusicCenter(opts){
     const rail = new THREE.MeshLambertMaterial({color:0xf6f8f9});
     [[cx, z0 - 0.05, wx, 0.12], [cx - wx/2 - 0.05, cz, 0.12, wz], [cx + wx/2 + 0.05, cz, 0.12, wz]].forEach(([x, z, w, d]) => {
       const r = new THREE.Mesh(new THREE.BoxGeometry(w, 0.4, d), rail); r.position.set(x, 0.45, z); root.add(r); });
+    /* 量出建築的世界高度範圍，給彩燈漸層用 */
+    const wb = new THREE.Box3().setFromObject(pivot); MC_U.uY0.value = wb.min.y + 0.3; MC_U.uY1.value = wb.max.y;
+    /* 探照燈：建築前緣（靠海那側）一排光束，往天空呈扇形打出、夜晚緩慢擺動 */
+    const beamGeo = new THREE.CylinderGeometry(0.75, 0.05, 34, 10, 1, true).translate(0, 17, 0);
+    const N_BEAM = 11;
+    const LAMP_M = { dark:new THREE.MeshLambertMaterial({color:0x2e3238}), mid:new THREE.MeshLambertMaterial({color:0x6b717a}), lens:new THREE.MeshBasicMaterial({color:0x9aa3ad}) };
+    MUSIC_NIGHT.lens = LAMP_M.lens;
+    for(let i = 0; i < N_BEAM; i++){
+      const f = i/(N_BEAM - 1) - 0.5;
+      const mat = new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide,
+        uniforms:{ uOp:{value:0}, uCol:{value:new THREE.Color(0xa9b8ff)} },
+        vertexShader:`varying float vY; varying float vF; void main(){ vY = uv.y; vec4 mv = modelViewMatrix*vec4(position,1.0);
+          vec3 n = normalize(normalMatrix*normal); vF = abs(dot(n, normalize(-mv.xyz))); gl_Position = projectionMatrix*mv; }`,
+        fragmentShader:`uniform float uOp; uniform vec3 uCol; varying float vY; varying float vF;
+          void main(){ float a = pow(1.0 - vY, 1.6)*pow(vF, 1.4)*uOp; gl_FragColor = vec4(uCol*a, a); }` });
+      const b = new THREE.Mesh(beamGeo, mat); b.frustumCulled = false; b.visible = false;
+      const LS = 0.6;   /* 燈具大小 */
+      b.position.set(cx + f*(sz.x*0.95), 0.25 + 0.47*LS, b2.min.z - 0.6);   /* 光束從燈頭中心打出 */
+      b.userData = {fan: f*1.1, tilt: -0.32 - Math.abs(f)*0.15, ph: i*0.9};
+      root.add(b); (MUSIC_NIGHT.beams = MUSIC_NIGHT.beams || []).push(b);
+      /* 探照燈燈具：深灰底座＋U 形支架＋圓筒燈頭（燈頭跟著光束擺動，夜晚燈面亮起） */
+      const lamp = new THREE.Group(); lamp.position.set(b.position.x, 0.25, b.position.z); lamp.scale.setScalar(LS); root.add(lamp);
+      const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; lamp.add(o); return o; };
+      add(new THREE.BoxGeometry(0.62, 0.1, 0.62), LAMP_M.dark, 0, 0.05, 0);
+      add(new THREE.CylinderGeometry(0.16, 0.2, 0.12, 10), LAMP_M.mid, 0, 0.16, 0);
+      [-1, 1].forEach(sx => add(new THREE.BoxGeometry(0.05, 0.42, 0.14), LAMP_M.mid, sx*0.27, 0.4, 0));
+      const head = new THREE.Group(); head.position.set(0, 0.47, 0); lamp.add(head);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.5, 14), LAMP_M.dark); body.castShadow = true; head.add(body);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 6, 16), LAMP_M.mid); rim.rotation.x = Math.PI/2; rim.position.y = 0.25; head.add(rim);
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.2, 16), LAMP_M.lens); lens.rotation.x = -Math.PI/2; lens.position.y = 0.255; head.add(lens);
+      [0.05, -0.1].forEach(y => { const fin = new THREE.Mesh(new THREE.TorusGeometry(0.205, 0.015, 4, 14), LAMP_M.mid); fin.rotation.x = Math.PI/2; fin.position.y = y; head.add(fin); });
+      b.userData.head = head;
+    }
+    /* 廣場地面被建築的燈染色（建築腳下最亮、往外淡出） */
+    const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+      const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.5, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(sz.x*1.5, sz.z*1.9).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({map:glowTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
+    pool.position.set(cx, 0.27, (b2.min.z + b2.max.z)/2); pool.visible = false; root.add(pool); MUSIC_NIGHT.pool = pool;
+    /* 岸邊一排暖黃小燈（沿著靠海的欄杆） */
+    const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 6, 5), new THREE.MeshBasicMaterial({color:0xffcf7a}), 26), d0 = new THREE.Object3D();
+    for(let i = 0; i < 26; i++){ d0.position.set(cx - wx/2 + 0.4 + (wx - 0.8)*i/25, 0.75, z0 - 0.05); d0.updateMatrix(); bulbs.setMatrixAt(i, d0.matrix); }
+    bulbs.visible = false; root.add(bulbs); MUSIC_NIGHT.bulbs = bulbs;
+    /* 海面倒影：建築前方水面上一條條主色光帶，被浪蓋住的地方自然斷開，像實景的水面倒影 */
+    const refTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 256; const x = c.getContext('2d');
+      let sd = 11; const rnd = () => (sd = (sd*9301 + 49297) % 233280)/233280;
+      for(let i = 0; i < 60; i++){ const px = rnd()*256, w = 2 + rnd()*7, a = 0.25 + rnd()*0.6;
+        const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(0.55 + rnd()*0.3, `rgba(255,255,255,${a*0.35})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = g; for(let y = 0; y < 256; y += 6 + rnd()*10){ const h = 3 + rnd()*9; x.fillRect(px + (rnd() - 0.5)*4, y, w, h); } }
+      const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.flipY = false; return t; })();   /* 畫布上緣（最亮）對到靠岸那側 */
+    const refl = new THREE.Mesh(new THREE.PlaneGeometry(wx*0.95, 16).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({map:refTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
+    refl.position.set(cx, -0.75, z0 - 8.2);   /* 世界高度約 -2.35：浪高的地方會蓋過光帶 */ refl.visible = false; root.add(refl); MUSIC_NIGHT.refl = refl;
   });
   return root;
 }
@@ -4754,11 +4840,24 @@ const MUSIC_NIGHT = {};
   }
   if(window.musicPlatform) window.musicPlatform.userData.signMat.emissiveIntensity = 0.15 + k*0.85;   /* 站牌夜間燈箱 */
   const C = THREE.Color, mix = (base, col, a) => base.clone().lerp(col, a);
-  (MUSIC_NIGHT.glass || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C(0x7fd0ff), k*0.85)));
-  (MUSIC_NIGHT.core  || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C(0x3f8cff), k*0.95)));
-  /* 六角屋頂：夜晚緩慢變換顏色（藍 → 紫 → 粉），像實景的燈光秀 */
-  const hue = 0.58 + 0.17*(0.5 + 0.5*Math.sin(t*0.35));
-  (MUSIC_NIGHT.roof  || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C().setHSL(hue, 0.75, 0.55), k*0.55)));
+  /* 主色：紫 ↔ 粉紅緩慢變換（約一分鐘一輪），整棟建築、地面染色和水面倒影都用同一個顏色 */
+  const theme = new C().setHSL(0.80 + 0.07*Math.sin(t*0.1), 0.85, 0.62); MC_U.uTheme.value.copy(theme);
+  MC_U.uNight.value = k; MC_U.uTime.value = t;
+  /* 海音館玻璃：夜晚變成深色玻璃，透出一點主色與暖光 */
+  (MUSIC_NIGHT.glass || []).forEach(m => { m.color.copy(mix(m.userData.baseCol, new C(0x1c2238), k*0.85)); m.emissive.copy(mix(m.userData.base, theme.clone().multiplyScalar(0.25).add(new C(0x2a1e10)), k)); });
+  (MUSIC_NIGHT.core  || []).forEach(m => m.emissive.copy(mix(m.userData.base, new C(0x3a5a9a), k*0.7)));
+  /* 屋頂：夜晚壓暗成深藍灰，白色稜線燈條浮出來 */
+  (MUSIC_NIGHT.roof  || []).forEach(m => { m.color.copy(mix(m.userData.baseCol, new C(0x2c3a52), k*0.8)); m.emissive.copy(mix(m.userData.base, theme.clone().multiplyScalar(0.12), k)); });
+  (MUSIC_NIGHT.lines || []).forEach(l => { l.visible = k > 0.02; l.material.opacity = k*0.9; l.material.color.copy(new C(0xffffff).lerp(theme, 0.25)); });
+  if(MUSIC_NIGHT.lens) MUSIC_NIGHT.lens.color.copy(new C(0x9aa3ad).lerp(new C(0xf4f6ff), k));   /* 燈面：白天灰色玻璃、夜晚亮白 */
+  if(MUSIC_NIGHT.pool){ const P = MUSIC_NIGHT.pool; P.visible = k > 0.02; P.material.opacity = k*0.45; P.material.color.copy(theme); }
+  if(MUSIC_NIGHT.bulbs) MUSIC_NIGHT.bulbs.visible = k > 0.3;
+  if(MUSIC_NIGHT.refl){ const F = MUSIC_NIGHT.refl; F.visible = k > 0.02; F.material.opacity = k*0.75; F.material.color.copy(theme);
+    F.material.map.offset.x = Math.sin(t*0.6)*0.01; F.material.map.offset.y = (t*0.03) % 1; }
+  (MUSIC_NIGHT.beams || []).forEach(b => { const u = b.userData; b.visible = k > 0.02;
+    b.material.uniforms.uOp.value = k*0.55; b.material.uniforms.uCol.value.copy(new C(0xb9c6ff).lerp(theme, 0.2));
+    b.rotation.set(u.tilt + 0.08*Math.sin(t*0.5 + u.ph), 0, u.fan + 0.12*Math.sin(t*0.37 + u.ph*1.3));
+    if(u.head) u.head.rotation.copy(b.rotation); });
 })();
 
 /* 放在西側海灘，等場景建好再載入 */
