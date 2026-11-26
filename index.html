@@ -92,7 +92,7 @@ button{font:inherit;color:inherit}
 .r-chip .no{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* 廠商卡 */
-.card{position:absolute;top:20px;right:20px;width:350px;max-height:calc(100vh - 40px);overflow:auto;padding:28px 24px 22px;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s;z-index:20}
+.card{position:absolute;top:20px;right:20px;width:420px;max-height:calc(100vh - 40px);overflow:auto;padding:28px 24px 22px;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s;z-index:20}
 .card.show{opacity:1;transform:none}
 .card-bar{position:absolute;left:0;top:0;right:0;height:5px}
 .card-close{position:absolute;top:14px;right:12px}
@@ -4654,8 +4654,9 @@ const wait = setInterval(() => {
   if(typeof renderer === 'undefined' || !renderer || !scene || !window.__crowd || !vendors.length) return;
   clearInterval(wait);
   buildTrack(); buildStation(); buildTrainPanel();
-  let saved = 0;   /* 每次打開都是蒸汽小火車（不沿用上次的選擇） */
-  setTrain(saved >= 0 && saved < DESIGNS.length ? saved : 0);
+  /* 每次打開都是台灣高鐵（不沿用上次的選擇）；找不到高鐵時退回第一款 */
+  const saved = Math.max(0, DESIGNS.findIndex(d => d.key === 'thsr'));
+  setTrain(saved);
   const r0 = renderer.render.bind(renderer);
   renderer.render = (s, c) => { tick(); r0(s, c); };
 }, 100);
@@ -5005,7 +5006,7 @@ window.spotlightVendor = v => { const x = v.group.position.x, z = v.group.positi
     render(); p.hidden = false; if(window.MUSIC_NIGHT) MUSIC_NIGHT.burstAt = performance.now()/1000; };
   const css = document.createElement('style');
   /* 樣式比照廠商卡片：米白紙底、上緣色條、宋體標題、灰色小標、虛線分隔 */
-  css.textContent = `#chart-panel{position:fixed;right:20px;top:20px;z-index:80;width:350px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--paper);box-shadow:var(--shadow);border-radius:2px;color:var(--ink);font-size:13px;overflow:hidden;pointer-events:auto}
+  css.textContent = `#chart-panel{position:fixed;right:20px;top:20px;z-index:80;width:420px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--paper);box-shadow:var(--shadow);border-radius:2px;color:var(--ink);font-size:13px;overflow:hidden;pointer-events:auto}
 #chart-panel[hidden]{display:none}
 #chart-panel .ch-bar{height:5px;background:var(--sea);flex:none}
 #chart-panel .ch-head{display:flex;align-items:flex-start;gap:10px;padding:22px 12px 4px 24px}
