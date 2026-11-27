@@ -1482,6 +1482,7 @@ function setupVendors(list){
 }
 
 function createHouse(v, p, s, rng){
+  if(HOUSE_STYLE === 'industry') return createIndustryBuilding(v, p, s, rng);   /* 新版：依產業的建築；以下為原本的小房子（保留） */
   const g = new THREE.Group();
   g.position.set(p.x, 0, p.z);
   g.lookAt(0, 0, 0);
@@ -1509,6 +1510,188 @@ function createHouse(v, p, s, rng){
   islandGroup.add(g);
   v.group = g;
   v.labelY = 7.0;
+  houseSpots.push({x:p.x, z:p.z, r:3.4*s});
+  v.hand = createWavingHand(v, s);
+}
+
+/* ================= 攤位建築：依產業／廠商名稱自動選造型（HOUSE_STYLE = 'classic' 可切回原本的小房子） ================= */
+const HOUSE_STYLE = 'industry';
+const BLD = (() => {
+  const T = THREE; let RNG = Math.random;
+  const L = c => std(c);
+  const M = { wall:L(0xf2ede4), wall2:L(0xe4dccd), dark:L(0x34424c), red:L(0xc8553d), org:L(0xe07a3a), yel:L(0xf2c14e), blue:L(0x3f6fa8), navy:L(0x2c3e66),
+    green:L(0x5a9a5a), brown:L(0x8a5a3c), grey:L(0x9aa3a8), grey2:L(0x6b737a), white:L(0xffffff), tile:L(0xd9c7a8), teal:L(0x2f8a87), pink:L(0xd96a8a),
+    wood:L(0x6b4a33), pave:L(0xd6cdb8), pave2:L(0xc8c4b4), pinkW:L(0xe9d3c3), hut:L(0x5a8fbf), doorDark:L(0x2a211c) };
+  /* 夜晚會亮的窗：一組「亮／不亮」，建造時隨機約八成亮燈 */
+  const lit = (c, e) => { const m = std(c, {emissive:e || 0xffb347, emissiveIntensity:0}); m.userData.nightWin = true; return m; };
+  const WIN = [lit(0x46606b), L(0x3a4850)], WINT = [lit(0x3d7f90), L(0x2f5f6c)];
+  const GLASS = lit(0x5fa8b8), TGLASS = lit(0x5fa8b8, 0x2a2416);   /* 店面玻璃（全亮）、大片帷幕玻璃（微亮） */
+  const WIN_SET = new Set([...WIN, ...WINT, GLASS]);
+  const pickWin = f => Array.isArray(f) ? f[RNG() < 0.8 ? 0 : 1] : f;
+  function box(g, w, h, d, m, x, y, z){ const o = new T.Mesh(new T.BoxGeometry(w, h, d), pickWin(m)); o.position.set(x, y, z); g.add(o); return o; }
+  function cyl(g, rt, rb, h, m, x, y, z, s){ const o = new T.Mesh(new T.CylinderGeometry(rt, rb, h, s || 12), m); o.position.set(x, y, z); g.add(o); return o; }
+  function wins(g, fam, x0, y0, z, cols, rows, cw, ch, gx, gy){ for(let r = 0; r < rows; r++) for(let c = 0; c < cols; c++) box(g, cw, ch, 0.05, fam, x0 + c*gx, y0 + r*gy, z); }
+  function base(g, m){ box(g, 4.6, 0.2, 4.6, m || M.pave, 0, 0.1, 0); }
+  function extrude(g, pts, depth, m, x, y, z){ const s = new T.Shape(); s.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(p => s.lineTo(p[0], p[1]));
+    const o = new T.Mesh(new T.ExtrudeGeometry(s, {depth, bevelEnabled:false}), m); o.position.set(x, y, z); g.add(o); return o; }
+
+  /* 正面朝 +z（朝島中央）。門由程式自動加在正面中央，所以正面中央不放東西 */
+  const D = {
+    tower(g){ base(g); box(g, 3.4, 0.25, 3.2, M.wall2, 0, 0.32, 0); box(g, 2.6, 6.4, 2.4, TGLASS, 0, 3.4, 0);
+      for(let i = 0; i < 8; i++) box(g, 2.64, 0.06, 2.44, M.white, 0, 0.8 + i*0.75, 0);
+      [-0.87, 0.87].forEach(x => box(g, 0.06, 6.4, 2.44, M.white, x, 3.4, 0));
+      box(g, 1.6, 0.6, 1.4, M.dark, 0, 6.9, 0); box(g, 1.2, 0.5, 0.06, M.org, 0, 6.9, 0.72); },
+    rd(g){ base(g); box(g, 3.6, 2.0, 2.6, M.wall, 0, 1.2, 0); box(g, 3.7, 0.15, 2.7, M.grey, 0, 2.27, 0);
+      [-1.4, -0.7, 0.7, 1.4].forEach(x => box(g, 0.55, 0.9, 0.05, WINT, x, 1.3, 1.31));
+      box(g, 1.0, 1.4, 1.6, TGLASS, -1.0, 2.95, -0.2); box(g, 1.2, 0.5, 0.08, M.blue, 0.9, 2.6, 1.25); box(g, 0.6, 0.4, 0.6, M.grey2, 0.6, 2.55, -0.6); },
+    fab(g){ base(g); box(g, 4, 1.8, 3, M.wall2, 0, 1.1, 0);
+      for(let i = 0; i < 3; i++){ extrude(g, [[0,0],[1.33,0],[1.33,0.9],[0,0]], 3, M.blue, -2 + i*1.33, 2, -1.5); box(g, 0.05, 0.75, 2.9, GLASS, -2 + i*1.33 + 1.3, 2.42, 0); }
+      box(g, 1.2, 1.2, 0.06, M.grey2, -1.1, 0.8, 1.52); for(let i = 0; i < 6; i++) box(g, 1.2, 0.03, 0.07, M.grey, -1.1, 0.3 + i*0.2, 1.53);
+      [0.8, 1.4].forEach(x => box(g, 0.45, 0.35, 0.05, WIN, x, 1.4, 1.52));
+      cyl(g, 0.22, 0.3, 4, M.red, 1.5, 2.2, -0.9); cyl(g, 0.23, 0.23, 0.25, M.white, 1.5, 3.6, -0.9); },
+    petro(g){ base(g, M.pave2); box(g, 1.6, 1.2, 1.0, M.wall2, 0, 0.8, 1.2); box(g, 1.7, 0.1, 1.1, M.grey, 0, 1.45, 1.2);
+      [-0.6, 0.6].forEach(x => box(g, 0.3, 0.35, 0.05, WIN, x, 1.0, 1.71));
+      cyl(g, 1, 1, 1.6, M.white, -1.15, 1.0, -0.8, 20); cyl(g, 1.02, 1.02, 0.08, M.grey, -1.15, 1.82, -0.8, 20);
+      cyl(g, 0.75, 0.75, 1.2, M.white, 1.3, 0.8, -0.3, 18); cyl(g, 0.77, 0.77, 0.06, M.grey, 1.3, 1.42, -0.3, 18);
+      cyl(g, 0.32, 0.38, 4.8, M.grey, 0.35, 2.6, -1.55); for(let i = 0; i < 4; i++) cyl(g, 0.4, 0.4, 0.06, M.org, 0.35, 1 + i, -1.55);
+      cyl(g, 0.07, 0.07, 1.6, M.yel, -0.2, 1.5, -1.2).rotation.z = Math.PI/2; cyl(g, 0.07, 0.07, 1.3, M.yel, 0.35, 1.4, -0.9).rotation.x = Math.PI/2; },
+    shop(g){ base(g); box(g, 2.2, 4.2, 2.6, M.tile, 0, 2.3, -0.2); box(g, 2.2, 0.15, 0.6, M.wall, 0, 1.68, 1.4); [-1, 1].forEach(x => box(g, 0.2, 1.5, 0.2, M.wall, x, 0.95, 1.6));
+      box(g, 1.8, 0.4, 0.08, M.red, 0, 1.95, 1.72); [-0.6, 0.6].forEach(x => box(g, 0.4, 0.9, 0.05, GLASS, x, 0.75, 1.13));
+      [2.7, 3.9].forEach(y => { box(g, 1.5, 0.8, 0.05, WIN, 0, y, 1.13); for(let i = 0; i < 6; i++) box(g, 0.03, 0.8, 0.06, M.grey2, -0.65 + i*0.26, y, 1.18); box(g, 1.8, 0.08, 0.4, M.wall, 0, y - 0.45, 1.3); });
+      box(g, 2.3, 0.15, 2.7, M.wall, 0, 4.45, -0.2); cyl(g, 0.35, 0.35, 0.7, M.white, -0.5, 4.9, -0.9, 14); cyl(g, 0.36, 0.36, 0.08, M.blue, -0.5, 5.25, -0.9, 14); box(g, 0.7, 0.6, 0.7, M.wall2, 0.5, 4.82, -1.0); },
+    boutique(g){ base(g); box(g, 2.2, 3, 3, M.pinkW, 0, 1.7, 0); box(g, 2.2, 0.12, 0.8, M.dark, 0, 1.62, 1.8);
+      [-0.6, 0.6].forEach(x => box(g, 0.45, 1.0, 0.05, GLASS, x, 0.75, 1.51)); box(g, 2.0, 0.45, 0.08, M.navy, 0, 2.05, 1.52); box(g, 1.5, 0.8, 0.05, WIN, 0, 2.75, 1.51);
+      box(g, 2.3, 0.15, 3.1, M.wall, 0, 3.25, 0); cyl(g, 0.3, 0.3, 0.6, M.white, -0.5, 3.65, -0.6, 14); },
+    conv(g){ base(g); box(g, 3.4, 2, 2.6, M.wall, 0, 1.2, -0.1); box(g, 3.42, 0.45, 2.62, M.white, 0, 2.3, -0.1);
+      [M.green, M.org, M.red].forEach((m, i) => box(g, 3.44, 0.12, 2.64, m, 0, 2.15 + i*0.13, -0.1));
+      [-1.0, 1.0].forEach(x => box(g, 1.1, 1.2, 0.05, GLASS, x, 0.85, 1.2)); box(g, 1.0, 0.5, 0.4, M.grey2, 1.1, 2.8, -0.6);
+      cyl(g, 0.25, 0.25, 0.06, M.wall, -1.4, 0.62, 1.8, 10); cyl(g, 0.04, 0.04, 0.42, M.dark, -1.4, 0.42, 1.8); },
+    mall(g){ base(g); box(g, 4, 2.6, 3, M.wall, 0, 1.5, -0.3); box(g, 4.1, 0.2, 3.1, M.pink, 0, 2.9, -0.3); box(g, 1.6, 3.4, 1.4, TGLASS, 0, 1.9, 0.9);
+      for(let i = 1; i < 5; i++) box(g, 1.62, 0.05, 1.42, M.white, 0, 0.6 + i*0.65, 0.9); box(g, 2.4, 0.5, 0.1, M.navy, 0, 3.25, 1.62);
+      [-1.5, 1.5].forEach(x => { box(g, 0.8, 0.9, 0.05, GLASS, x, 1.2, 1.21); box(g, 0.9, 0.15, 0.4, M.yel, x, 1.8, 1.35); }); },
+    hyper(g){ base(g, M.pave2); box(g, 4.2, 1.8, 3.2, M.wall2, 0, 1.1, -0.4); box(g, 4.3, 0.15, 3.3, M.grey, 0, 2.07, -0.4);
+      box(g, 3.2, 0.35, 0.1, M.org, 0, 1.82, 1.21); [-1.2, 1.2].forEach(x => box(g, 1.2, 0.9, 0.05, GLASS, x, 0.75, 1.21));
+      for(let i = 0; i < 4; i++) box(g, 0.25, 0.3, 0.5, M.red, 1.0 + i*0.3, 0.35, 1.9); },
+    logi(g){ base(g, M.pave2); box(g, 4, 2, 2.4, M.grey, 0, 1.2, -0.6); box(g, 4.1, 0.2, 2.6, M.blue, 0, 2.3, -0.6);
+      [-1.3, 1.3].forEach(x => { box(g, 0.9, 1.3, 0.05, M.grey2, x, 0.85, 0.61); for(let k = 0; k < 5; k++) box(g, 0.9, 0.02, 0.07, M.grey, x, 0.3 + k*0.25, 0.62); });
+      box(g, 4, 0.4, 0.5, M.wall2, 0, 0.4, 0.85);
+      box(g, 0.8, 0.85, 1.1, M.white, 1.75, 0.75, 1.35); box(g, 0.78, 0.7, 0.5, M.org, 1.75, 0.65, 2.15); box(g, 0.66, 0.28, 0.05, GLASS, 1.75, 0.82, 2.41);
+      [1.0, 1.7, 2.15].forEach(z => [-0.42, 0.42].forEach(dx => { const w = cyl(g, 0.17, 0.17, 0.1, M.dark, 1.75 + dx, 0.32, z, 10); w.rotation.z = Math.PI/2; })); },
+    office(g){ base(g); box(g, 2.6, 3.6, 2.4, M.wall2, 0, 1.9, 0); wins(g, WINT, -0.8, 1.9, 1.21, 3, 2, 0.5, 0.6, 0.8, 1.0);
+      box(g, 2.7, 0.2, 2.5, M.teal, 0, 3.8, 0); [-0.85, 0.85].forEach(x => box(g, 0.45, 0.9, 0.05, GLASS, x, 0.75, 1.21)); },
+    rest(g){ base(g); box(g, 3, 2.4, 2.4, M.wall, 0, 1.4, -0.2);
+      for(let i = 0; i < 6; i++){ const a = box(g, 0.5, 0.06, 0.9, i % 2 ? M.white : M.red, -1.25 + i*0.5, 2.0, 1.35); a.rotation.x = 0.35; }
+      [-0.95, 0.95].forEach(x => box(g, 0.8, 1.0, 0.05, GLASS, x, 0.8, 1.01)); box(g, 3.2, 0.6, 2.6, M.brown, 0, 2.9, -0.2); box(g, 2.2, 0.45, 0.08, M.org, 0, 2.9, 1.12);
+      [-1.4, 1.4].forEach(x => { cyl(g, 0.35, 0.35, 0.06, M.wall, x, 0.75, 1.95, 10); cyl(g, 0.05, 0.05, 0.55, M.dark, x, 0.48, 1.95); cyl(g, 0.03, 0.03, 1.1, M.grey2, x, 1.1, 1.95); cyl(g, 0.05, 0.6, 0.3, M.yel, x, 1.7, 1.95, 10); }); },
+    cafe(g){ base(g); box(g, 2.4, 1.8, 2.2, M.wall, 0, 1.1, -0.3);
+      const r = new T.Mesh(new T.ConeGeometry(2.0, 1.0, 4), M.brown); r.position.set(0, 2.5, -0.3); r.rotation.y = Math.PI/4; g.add(r);
+      [-0.75, 0.75].forEach(x => box(g, 0.5, 0.9, 0.05, GLASS, x, 0.8, 0.81));
+      for(let i = 0; i < 4; i++){ const a = box(g, 0.5, 0.06, 0.6, i % 2 ? M.white : M.green, -0.75 + i*0.5, 1.75, 1.05); a.rotation.x = 0.4; }
+      box(g, 0.5, 0.5, 0.06, M.org, 0.95, 2.3, 0.82); cyl(g, 0.3, 0.3, 0.05, M.wall, 1.5, 0.7, 1.7, 10); cyl(g, 0.04, 0.04, 0.5, M.dark, 1.5, 0.45, 1.7); },
+    hotel(g){ base(g); box(g, 3, 5.4, 2, M.tile, 0, 2.9, -0.5);
+      for(let f = 0; f < 5; f++){ for(let c = 0; c < 4; c++) box(g, 0.45, 0.45, 0.05, WINT, -1.05 + c*0.7, 2.0 + f*0.75, 0.51); box(g, 2.8, 0.06, 0.3, M.wall, 0, 1.75 + f*0.75, 0.6); }
+      box(g, 3.6, 1.5, 1.4, M.wall, 0, 0.95, 0.9); [-1.1, 1.1].forEach(x => box(g, 0.8, 0.8, 0.05, GLASS, x, 0.8, 1.61));
+      box(g, 2.0, 0.12, 0.9, M.navy, 0, 1.78, 1.9); box(g, 3.1, 0.25, 2.1, M.navy, 0, 5.7, -0.5); box(g, 1.5, 0.35, 0.06, M.yel, 0, 5.25, 0.52); },
+    clinic(g){ base(g); box(g, 3.2, 2.6, 2.6, M.white, 0, 1.5, 0); box(g, 3.3, 0.2, 2.7, M.wall2, 0, 2.85, 0);
+      wins(g, WINT, -1.0, 2.1, 1.31, 3, 1, 0.6, 0.5, 1.0, 0); [-1.05, 1.05].forEach(x => box(g, 0.6, 0.9, 0.05, GLASS, x, 0.8, 1.31));
+      box(g, 1.6, 0.12, 0.8, M.wall2, 0, 1.6, 1.6); box(g, 0.9, 0.9, 0.12, M.white, 0, 3.5, 0); box(g, 0.6, 0.18, 0.14, M.red, 0, 3.5, 0.01); box(g, 0.18, 0.6, 0.14, M.red, 0, 3.5, 0.01); cyl(g, 0.04, 0.04, 0.6, M.grey2, 0, 3.0, 0); },
+    bank(g){ base(g); box(g, 2.4, 5, 2.2, M.wall2, 0, 2.7, -0.4); wins(g, WIN, -0.75, 2.6, 0.71, 4, 4, 0.35, 0.5, 0.5, 0.75);
+      box(g, 3.4, 0.25, 1.4, M.wall, 0, 0.32, 1.2); [-1.3, -0.75, 0.75, 1.3].forEach(x => cyl(g, 0.12, 0.12, 1.6, M.white, x, 1.25, 1.4, 8));
+      box(g, 3.4, 0.3, 1.4, M.wall, 0, 2.2, 1.2); extrude(g, [[-1.7,0],[1.7,0],[0,0.6],[-1.7,0]], 0.3, M.wall, 0, 2.35, 1.6); box(g, 2.5, 0.3, 2.3, M.navy, 0, 5.3, -0.4); },
+    const(g){ base(g, L(0xc9b99a));
+      for(let f = 0; f < 4; f++){ box(g, 2.4, 0.12, 2.2, M.grey, -0.4, 0.4 + f, -0.4); [-1, 1].forEach(sx => [-1, 1].forEach(sz => box(g, 0.15, 1, 0.15, M.grey2, -0.4 + sx*1.05, 0.9 + f, -0.4 + sz*0.95))); }
+      box(g, 2.4, 0.08, 0.05, M.org, -0.4, 1.1, 0.72); box(g, 2.4, 0.08, 0.05, M.org, -0.4, 2.1, 0.72);
+      for(let i = 0; i < 14; i++) box(g, 0.28, 0.4, 0.28, i % 2 ? M.yel : M.dark, 1.6, 0.4 + i*0.4, -1.4);
+      box(g, 4.2, 0.22, 0.22, M.yel, 0.8, 6.1, -1.4); box(g, 0.5, 0.5, 0.6, M.yel, 1.6, 5.75, -1.1); cyl(g, 0.015, 0.015, 2.2, M.dark, -0.6, 4.95, -1.4); box(g, 0.5, 0.3, 0.5, M.blue, -0.6, 3.75, -1.4);
+      box(g, 1.6, 1.1, 0.8, M.hut, 0, 0.75, 1.5); box(g, 1.7, 0.08, 0.9, M.white, 0, 1.34, 1.5); [-0.55, 0.55].forEach(x => box(g, 0.3, 0.3, 0.05, WIN, x, 1.0, 1.91)); },
+    school(g){ base(g); box(g, 3.8, 2, 1.8, M.red, 0, 1.2, -0.6); wins(g, WIN, -1.5, 0.8, 0.31, 5, 2, 0.45, 0.45, 0.75, 0.8); box(g, 3.9, 0.15, 1.9, M.wall, 0, 2.25, -0.6);
+      box(g, 1, 3.4, 1, M.wall, 0, 1.9, 0.5); box(g, 1.1, 0.15, 1.1, M.red, 0, 3.65, 0.5); cyl(g, 0.32, 0.32, 0.06, M.white, 0, 2.9, 1.02, 16).rotation.x = Math.PI/2; box(g, 0.04, 0.22, 0.04, M.dark, 0, 2.95, 1.06);
+      const rf = new T.Mesh(new T.ConeGeometry(0.85, 0.9, 4), M.navy); rf.position.set(0, 4.15, 0.5); rf.rotation.y = Math.PI/4; g.add(rf);
+      cyl(g, 0.03, 0.03, 2.6, M.grey2, 1.7, 1.5, 1.4); box(g, 0.6, 0.35, 0.02, M.blue, 1.98, 2.6, 1.4); },
+    gov(g){ base(g); box(g, 3.8, 2.8, 2.2, M.wall, 0, 1.6, -0.3); [-1.45, -0.87, 0.87, 1.45].forEach(x => [1.0, 2.0].forEach(y => box(g, 0.32, 0.55, 0.05, WINT, x, y, 0.81)));
+      box(g, 1.2, 3.6, 2.4, M.tile, 0, 2.0, -0.2); box(g, 1.6, 0.15, 1.0, M.wall2, 0, 1.65, 1.4); box(g, 3.9, 0.15, 2.3, M.tile, 0, 3.05, -0.3); [2.3, 3.1].forEach(y => box(g, 0.6, 0.5, 0.05, WINT, 0, y, 1.01));
+      cyl(g, 0.03, 0.03, 2.0, M.grey2, -1.6, 1.2, 1.5); box(g, 0.55, 0.35, 0.02, M.red, -1.32, 2.0, 1.5); }
+  };
+
+  /* 依產業類別＋廠商名稱關鍵字＋職缺數挑造型；對不到的依類別輪流分配，避免同款連在一起 */
+  const rot = {};
+  const cycle = (key, list) => { rot[key] = (rot[key] || 0) + 1; return list[rot[key] % list.length]; };
+  function pick(v){
+    const n = v.name || '', c = v.category || '', k = (v.jobs || []).length;
+    if(/製造/.test(c)) return 'fab'; if(/石化|重工/.test(c)) return 'petro'; if(/醫療|照護/.test(c)) return 'clinic'; if(/金融|保險/.test(c)) return 'bank';
+    if(/運輸|物流/.test(c)) return 'logi'; if(/營建|營造|工程/.test(c)) return 'const'; if(/教育|訓練/.test(c)) return 'school'; if(/公部門|國營|政府/.test(c)) return 'gov';
+    if(/科技/.test(c)){ if(/化學|石化|塑膠/.test(n) || (/材料工業/.test(n) && k >= 9)) return 'petro'; if(/鋼鐵|材料|精密|工業|機械|金屬/.test(n)) return 'fab'; if(k >= 10) return 'tower'; return 'rd'; }
+    if(/批發|零售/.test(c)){ if(/超商|便利|家購|美廉社|全聯/.test(n)) return 'conv'; if(/購物|廣場|百貨|商場/.test(n)) return 'mall'; if(/特力屋|量販|家樂福|大潤發|好市多/.test(n)) return 'hyper';
+      if(/速達|物流|運輸|貨運/.test(n)) return 'logi'; if(/保全|客服|人力|顧問/.test(n)) return 'office'; if(/GAP|蓋璞|貝爾|服飾|精品/.test(n)) return 'boutique'; return cycle('retail', ['shop', 'boutique', 'shop', 'conv']); }
+    if(/餐飲|旅宿|觀光/.test(c)){ if(/酒店|驛館|飯店|旅館|民宿|旅店/.test(n)) return 'hotel'; if(/漢堡|咖啡|早餐|烘焙|麵包|茶|香繼光|東利多/.test(n)) return 'cafe'; return 'rest'; }
+    if(/服務/.test(c)) return cycle('svc', ['conv', 'office', 'shop']);
+    if(/酒店|飯店/.test(n)) return 'hotel'; if(/醫院|診所/.test(n)) return 'clinic'; if(/銀行|保險|證券/.test(n)) return 'bank';
+    return cycle('other', ['office', 'shop', 'rd']);
+  }
+
+  const V = new T.Vector3();
+  function build(type, rng, accent){
+    RNG = rng || Math.random;
+    const g = new T.Group(); (D[type] || D.shop)(g); g.updateMatrixWorld(true);
+    const info = g.children.filter(o => o.isMesh).map(o => ({o, b:new T.Box3().setFromObject(o)}));
+    const solids = info.filter(i => { const s = i.b.getSize(V); return s.x > 0.3 && s.y > 0.3 && s.z > 0.3 && !WIN_SET.has(i.o.material) && i.b.max.y > 0.35; });
+    /* 背面也要有窗：把正面的窗戶／玻璃鏡射到同一個量體的背面 */
+    info.forEach(i => {
+      if(!WIN_SET.has(i.o.material) || i.o.rotation.x || i.o.rotation.y || i.o.rotation.z) return;
+      const sz = i.b.getSize(V); if(sz.z > 0.13 || sz.x < 0.15 || sz.y < 0.15) return;
+      const c = i.b.getCenter(new T.Vector3());
+      const s = solids.find(q => c.x > q.b.min.x - 0.01 && c.x < q.b.max.x + 0.01 && c.y > q.b.min.y && c.y < q.b.max.y && Math.abs(i.b.min.z - q.b.max.z) < 0.1);
+      if(!s) return;
+      const fam = WIN.includes(i.o.material) ? WIN : WINT.includes(i.o.material) ? WINT : WINT;
+      const cl = new T.Mesh(i.o.geometry, pickWin(fam)); cl.position.set(i.o.position.x, i.o.position.y, s.b.min.z - (c.z - s.b.max.z)); g.add(cl);
+    });
+    /* 找正面中央的牆面位置放門 */
+    const rc = new T.Raycaster(new T.Vector3(0, 0.85, 9), new T.Vector3(0, 0, -1));
+    const hit = rc.intersectObjects(info.filter(i => i.b.max.y > 0.35).map(i => i.o), false)[0];
+    const fz = hit ? hit.point.z : 1.2;
+    let y0 = 0.2; solids.forEach(s => { if(s.b.max.y < 1.0 && s.b.min.x < 0 && s.b.max.x > 0 && s.b.min.z < fz + 0.2 && s.b.max.z > fz + 0.2) y0 = Math.max(y0, s.b.max.y); });
+    /* 底座前緣一條產業色線，延續原本用顏色分產業的設計 */
+    if(accent) box(g, 4.6, 0.06, 0.1, accent, 0, 0.2, 2.27);
+    /* 合併同材質的零件，減少繪製次數（手機比較順） */
+    const groups = new Map();
+    g.children.slice().forEach(o => { if(!o.isMesh) return; o.updateMatrix();
+      const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); geo.applyMatrix4(o.matrix);
+      if(!groups.has(o.material)) groups.set(o.material, []); groups.get(o.material).push(geo); g.remove(o); });
+    const meshes = [];
+    groups.forEach((geos, mat) => {
+      let n = 0; geos.forEach(q => n += q.attributes.position.count);
+      const P = new Float32Array(n*3), N = new Float32Array(n*3); let off = 0;
+      geos.forEach(q => { P.set(q.attributes.position.array, off*3); N.set(q.attributes.normal.array, off*3); off += q.attributes.position.count; q.dispose(); });
+      const G = new T.BufferGeometry(); G.setAttribute('position', new T.BufferAttribute(P, 3)); G.setAttribute('normal', new T.BufferAttribute(N, 3)); G.computeBoundingSphere();
+      const m = new T.Mesh(G, mat); m.castShadow = !WIN_SET.has(mat); m.receiveShadow = true; g.add(m); meshes.push(m);
+    });
+    /* 可開關的門（島民進出用） */
+    const DW = 0.8, DH = 1.25;
+    const fr = new T.Mesh(new T.BoxGeometry(DW, DH, 0.05), M.doorDark); fr.position.set(0, y0 + DH/2, fz + 0.025); g.add(fr);
+    const door = new T.Mesh(new T.BoxGeometry(DW, DH, 0.08).translate(DW/2, 0, 0), M.wood); door.position.set(-DW/2, y0 + DH/2, fz + 0.06); door.castShadow = true; g.add(door);
+    meshes.push(fr, door);
+    const top = new T.Box3().setFromObject(g).max.y;
+    return {group:g, meshes, door, top, frontZ:fz, doorTop:y0 + DH};
+  }
+  const accents = {};
+  return { pick, build, accent: hex => accents[hex] || (accents[hex] = std(hex)) };
+})();
+
+function createIndustryBuilding(v, p, s, rng){
+  const g = new THREE.Group();
+  g.position.set(p.x, 0, p.z);
+  g.lookAt(0, 0, 0);
+  g.scale.setScalar(s);
+  const type = BLD.pick(v), r = BLD.build(type, rng, BLD.accent(new THREE.Color(v.color).getHex()));
+  const K = 0.95; r.group.scale.setScalar(K); g.add(r.group);
+  r.meshes.forEach(m => { m.userData.vendor = v; houseMeshes.push(m); });
+  v.bldType = type;
+  v.doorMesh = r.door; v.doorK = 0; v.doorWant = 0; v.doorClose = 0;
+  islandGroup.add(g);
+  v.group = g;
+  v.labelY = r.top*K + 1.1;                       /* 標籤高度跟著建築高度走（高樓的標籤在樓頂上） */
+  v.handY = Math.max(9.4, r.top*K + 3.4);         /* 職缺配對的揮手也在樓頂上方 */
+  v.porchPos = new THREE.Vector3(0, (r.doorTop + 0.5)*K, (r.frontZ + 0.45)*K);
   houseSpots.push({x:p.x, z:p.z, r:3.4*s});
   v.hand = createWavingHand(v, s);
 }
@@ -1546,7 +1729,7 @@ function hoverBright(root, k){
       m.material.forEach((x, i) => x.emissive.copy(m.userData.e0s[i]).lerp(m.userData.e0s[i].clone().add(_hb), k)); return;
     }
     if(!m.isMesh || !m.material || !m.material.emissive) return;
-    if(m.material.emissive.getHex() === 0xffb347 && !m.userData.hvOwn) return;   /* 窗戶（夜晚會亮燈）不動，避免影響日夜效果 */
+    if((m.material.emissive.getHex() === 0xffb347 || (m.material.userData && m.material.userData.nightWin)) && !m.userData.hvOwn) return;   /* 窗戶（夜晚會亮燈）不動，避免影響日夜效果 */
     if(!m.userData.hvOwn){ m.material = m.material.clone(); m.userData.hvOwn = true; m.userData.e0 = m.material.emissive.clone(); }
     m.material.emissive.copy(m.userData.e0).lerp(m.userData.e0.clone().add(_hb), k);
   });
@@ -1600,7 +1783,7 @@ function updateHouses(t){
     const h = v.hand;
     h.outer.visible = v.matched;
     if(v.matched){
-      h.outer.position.set(v.group.position.x, y + 9.4*v.s, v.group.position.z);
+      h.outer.position.set(v.group.position.x, y + (v.handY || 9.4)*v.s, v.group.position.z);
       h.outer.lookAt(camera.position.x, h.outer.position.y, camera.position.z);
       h.wave.rotation.z = Math.sin(t*7 + v.phase)*0.45;
       const pulse = 0.5 + 0.5*Math.sin(t*4 + v.phase);   /* 光暈隨揮手呼吸閃動 */
@@ -3684,6 +3867,7 @@ function scanHouses(){
   vendors.forEach(v => {
     if(!v.group) return;
     v.group.traverse(m => {
+      if(m.isMesh && m.material && m.material.userData && m.material.userData.nightWin){ if(!winMats.includes(m.material)) winMats.push(m.material); return; }   /* 新版建築的窗（多棟共用材質） */
       if(m.isMesh && m.material && m.material.color && m.material.color.getHex() === 0xbfe0ee){
         m.material = m.material.clone(); m.material.emissive = new T.Color(0xffb347); m.material.emissiveIntensity = 0;
         winMats.push(m.material);
@@ -3691,7 +3875,7 @@ function scanHouses(){
     });
     if(!glowTex) glowTex = makeGlow();
     const sp = new T.Sprite(new T.SpriteMaterial({map:glowTex, color:0xffc56a, transparent:true, opacity:0, depthWrite:false, blending:T.AdditiveBlending}));
-    sp.position.set(0, 2.9, 2.45); sp.scale.set(5, 5, 1);
+    if(v.porchPos) sp.position.copy(v.porchPos); else sp.position.set(0, 2.9, 2.45); sp.scale.set(5, 5, 1);
     v.group.add(sp); porch.push(sp.material);
   });
 
