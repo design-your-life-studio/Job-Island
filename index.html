@@ -1877,12 +1877,73 @@ function buildVegetation(){
     B.tuft.add(x,.62,z, .08,.25,.08, 0,0,0, 0x5a8f4f);
   };
   const bush = (x,z,s,col) => B.crown.add(x,.45*s,z, .8*s,.65*s,.8*s, R(0,3),R(0,3),0, col);
+  /* ---- 台灣在地植物（demo） ---- */
+  const brAdd = (x,y,z,L,th,up,w,col) => { B.trunk.add(x,y,z, w,L,w, 0,th,-(Math.PI/2-up), col, 'YXZ'); return [x+L*Math.cos(up)*Math.cos(th), y+L*Math.sin(up), z-L*Math.cos(up)*Math.sin(th)]; };
+  const kapok = (x,z,s) => {   /* 木棉：高直樹幹、一層層水平枝，枝頭開滿橘紅花 */
+    B.trunk.add(x,0,z, 1.15*s,5.6*s,1.15*s, 0,0,0, 0x8f8272);
+    [2.3,3.3,4.2,5.0].forEach((h,t) => { const n = t < 2 ? 4 : 3, L = (1.9 - t*0.35)*s, o = R(0,TAU);
+      for(let k=0;k<n;k++){ const e = brAdd(x,h*s,z, L, o + k/n*TAU, 0.22, 0.5*s, 0x8f8272);
+        for(let f=0;f<4;f++){ const q = 0.45 + f*0.18; B.bloom.add(x+(e[0]-x)*q+R(-.15,.15)*s, h*s+(e[1]-h*s)*q+0.18*s, z+(e[2]-z)*q+R(-.15,.15)*s, .24*s,.2*s,.24*s, R(0,3),R(0,3),0, pick([0xe8502a,0xd9381e,0xf2702a])); } } });
+    B.crown.add(x,5.9*s,z, .45*s,.4*s,.45*s, 0,R(0,3),0, 0x8fb05a);
+  };
+  const golden = (x,z,s) => {   /* 阿勃勒：中等樹幹、圓而疏的淺綠樹冠，垂下一串串金黃花（黃金雨） */
+    B.trunk.add(x,0,z, 1.15*s,2.2*s,1.15*s, 0,0,0, 0x7d6448);
+    const o = R(0,TAU);
+    for(let k=0;k<4;k++) brAdd(x,1.9*s,z, 1.1*s, o + k/4*TAU, 0.75, .5*s, 0x7d6448);
+    B.round.add(x,3.2*s,z, 1.55*s,.9*s,1.55*s, 0,R(0,3),0, 0x7fb24a);
+    for(let k=0;k<4;k++){ const a = o + k/4*TAU + .4; B.crown.add(x+Math.cos(a)*1.15*s, 3.0*s, z+Math.sin(a)*1.15*s, .85*s,.6*s,.85*s, R(0,3),R(0,3),0, pick([0x8cbf55,0x74a845])); }
+    /* 垂下的花串：每串 3～4 朵由上往下越來越小 */
+    for(let k=0;k<26;k++){ const a = k/26*TAU + R(-.1,.1), d = R(1.7,2.25)*s, top = 2.75*s;
+      const hx = x+Math.cos(a)*d, hz = z+Math.sin(a)*d, n = 4 + (k%2);
+      for(let j=0;j<n;j++){ const f = 1 - j*0.15; B.bloom.add(hx, top - j*.26*s, hz, .2*f*s,.17*s,.2*f*s, R(0,3),R(0,3),0, pick([0xf7d23a,0xf2c12e,0xffe06a])); } }
+    for(let k=0;k<10;k++){ const a = R(0,TAU), d = R(.3,1.6)*s; B.bloom.add(x+Math.cos(a)*d, 3.75*s + R(-.2,.2)*s, z+Math.sin(a)*d, .22*s,.16*s,.22*s, 0,R(0,3),0, 0xf7d23a); }
+  };
+  const banyan = (x,z,s) => {   /* 榕樹：粗樹幹、寬大深綠樹冠、垂下氣根 */
+    B.trunk.add(x,0,z, 1.9*s,2.4*s,1.9*s, 0,0,0, 0x6e5a44);
+    B.round.add(x,3.4*s,z, 2.3*s,1.4*s,2.3*s, 0,R(0,3),0, 0x2f7a3a);
+    const o = R(0,TAU);
+    for(let k=0;k<3;k++){ const a = o + k/3*TAU; B.round.add(x+Math.cos(a)*1.5*s, 3.0*s, z+Math.sin(a)*1.5*s, 1.5*s,1.0*s,1.5*s, 0,R(0,3),0, pick([0x3a8a3f,0x2f7a3a])); }
+    for(let k=0;k<7;k++){ const a = R(0,TAU), d = R(.9,2.2)*s; B.trunk.add(x+Math.cos(a)*d, 0, z+Math.sin(a)*d, .22*s,R(2.2,2.8)*s,.22*s, 0,0,0, 0x7d6a52); }
+  };
+  const betel = (x,z,s) => {   /* 檳榔／大王椰子：細高直幹，頂端一束羽葉 */
+    const H = R(5.6,6.6)*s;
+    B.trunk.add(x,0,z, .75*s,H,.75*s, 0,0,0, 0xb3a68f);
+    B.trunk.add(x,H-.2*s,z, .85*s,1.0*s,.85*s, 0,0,0, 0x6f9e4a);
+    for(let k=0;k<8;k++) B.frond.add(x,H+.75*s,z, R(1.5,1.9)*s,1,1.2, 0, k/8*TAU+R(-.1,.1), -R(.15,.55), pick([0x3f8a3a,0x56a046]));
+  };
+  const banana = (x,z,s) => {   /* 香蕉樹：粗短假莖、寬大的長葉、一串青香蕉 */
+    B.trunk.add(x,0,z, 1.5*s,1.9*s,1.5*s, 0,0,0, 0x7c9a4c);
+    for(let k=0;k<7;k++) B.frond.add(x,1.85*s,z, R(1.5,1.9)*s,1.4,2.4*s, 0, k/7*TAU+R(-.15,.15), R(.05,.45), pick([0x5fae4a,0x6cba52,0x4f9e40]));
+    B.fruit.add(x+.3*s,1.5*s,z, .24*s,.38*s,.24*s, 0,0,0, 0x9cc43a);
+    B.bloom.add(x+.35*s,1.0*s,z, .16*s,.22*s,.16*s, 0,0,0, 0x7a2f4a);
+  };
+  const BEDCOL = [[0xe85d75,0xffffff],[0xf2c14e,0xd64545],[0x9b6ad6,0xf7a8c4],[0xf08a3c,0xf2c14e],[0xffffff,0x9b6ad6],[0xd64545,0xf7a8c4]];
+  const bedRect = (x,z,ry,w,d,cols) => {   /* 長方形花圃：兩種顏色交錯，中間一排比較高 */
+    B.box.add(x,0,z, w,.32,d, 0,ry,0, 0x8b5e3c); B.box.add(x,0,z, w-.25,.36,d-.25, 0,ry,0, 0x5c4230);
+    const nx = Math.max(2, Math.round((w-.5)/.48)), nz = Math.max(2, Math.round((d-.5)/.42));
+    for(let p=0;p<nx;p++) for(let q=0;q<nz;q++){
+      const lx = -(nx-1)*.24 + p*.48, lz = -(nz-1)*.21 + q*.42, mid = q === Math.floor(nz/2) && nz > 2;
+      const wx = x + lx*Math.cos(ry) + lz*Math.sin(ry), wz = z - lx*Math.sin(ry) + lz*Math.cos(ry), hh = mid ? .45 : .25;
+      B.tuft.add(wx,.36,wz, .1,hh,.1, 0,R(0,3),0, 0x4f9a3f);
+      B.bloom.add(wx,.36+hh+.02,wz, mid?.2:.16,.15,mid?.2:.16, R(0,3),R(0,3),0, cols[(p+q)%2]);
+    }
+  };
+  const bedRound = (x,z,r,cols) => {   /* 圓形花圃：外圈一色、內圈一色，中間一株高花 */
+    B.trunk.add(x,0,z, r*6.2,.32,r*6.2, 0,0,0, 0x8b5e3c); B.trunk.add(x,0,z, r*5.6,.36,r*5.6, 0,0,0, 0x5c4230);
+    [[r*.72,10,0],[r*.38,6,1]].forEach(([rad,n,ci]) => { for(let k=0;k<n;k++){ const a = k/n*TAU, wx = x+Math.cos(a)*rad, wz = z+Math.sin(a)*rad;
+      B.tuft.add(wx,.36,wz, .1,.28,.1, 0,R(0,3),0, 0x4f9a3f); B.bloom.add(wx,.66,wz, .17,.15,.17, R(0,3),R(0,3),0, cols[ci]); } });
+    B.tuft.add(x,.36,z, .14,.7,.14, 0,0,0, 0x4f9a3f); B.bloom.add(x,1.1,z, .26,.22,.26, 0,0,0, cols[0]);
+  };
+
+  /* 4. 步道行道樹：沿著每一圈步道兩側，木棉與檳榔交錯 */
+  pathRings.forEach((P, ri) => { const n = Math.round(TAU*P/5.5); for(let k=0;k<n;k++){ const side = k%2 ? 1 : -1, rad = P + side*2.15, a = k/n*TAU + ri*0.2, x = Math.cos(a)*rad, z = Math.sin(a)*rad;
+    if(!free(x,z,.6)) continue; if((k>>1)%2) kapok(x,z,R(.7,.85)); else betel(x,z,R(.7,.85)); placed.push({x,z,r:.8}); } });
 
   for(let gx=-50; gx<=50; gx+=3.3) for(let gz=-50; gz<=50; gz+=3.3){
     const x = gx + R(-.25,.25), z = gz + R(-.25,.25), a = ang(x,z);
     if(!inSector(a, ORCHARD[0], 1.15) || !free(x,z,1.5)) continue;
     const row = Math.round(gz/3.3) & 1;
-    fruitTree(x, z, R(.85,1.05), row ? 0xf0a830 : 0xd63a4a);
+    if(Math.round(gx/3.3) % 3 === 0) banana(x, z, R(.85,1.0)); else fruitTree(x, z, R(.85,1.05), row ? 0xf0a830 : 0xd63a4a);
     placed.push({x,z,r:1.5});
   }
   for(let gx=-50; gx<=50; gx+=1.5) for(let gz=-50; gz<=50; gz+=1.7){
@@ -1897,15 +1958,9 @@ function buildVegetation(){
   for(let i=0;i<2000 && beds<20;i++){
     const a = R(...GARDEN), r = rr(12, 48), x = Math.cos(a)*r, z = Math.sin(a)*r;
     if(!free(x,z,2.0)) continue;
-    const ry = -a - Math.PI/2, col = FLOWERS[beds % FLOWERS.length];
-    B.box.add(x,0,z, 3.2,.32,1.6, 0,ry,0, 0x8b5e3c);
-    B.box.add(x,0,z, 2.95,.36,1.35, 0,ry,0, 0x5c4230);
-    for(let p=0;p<6;p++) for(let q=0;q<3;q++){
-      const lx = -1.2 + p*.48, lz = -.42 + q*.42;
-      const wx = x + lx*Math.cos(ry) + lz*Math.sin(ry), wz = z - lx*Math.sin(ry) + lz*Math.cos(ry);
-      B.tuft.add(wx,.36,wz, .1,.25,.1, 0,R(0,3),0, 0x4f9a3f);
-      B.bloom.add(wx,.62,wz, .17,.15,.17, R(0,3),R(0,3),0, col);
-    }
+    const ry = -a - Math.PI/2, cols = BEDCOL[beds % BEDCOL.length], kind = beds % 4;
+    if(kind === 3) bedRound(x, z, R(.75,.95), cols);
+    else { const sz = [[3.2,1.6],[2.2,1.2],[4.2,1.7]][kind]; bedRect(x, z, ry, sz[0], sz[1], cols); }
     placed.push({x,z,r:2.0}); beds++;
   }
   for(let i=0,n=0;i<1000 && n<18;i++){
@@ -1922,7 +1977,7 @@ function buildVegetation(){
   for(let i=0,n=0;i<3000 && n<95;i++){
     const a = R(...FOREST), r = rr(11, 48.4), x = Math.cos(a)*r, z = Math.sin(a)*r, s = R(.85,1.3);
     if(!free(x,z,1.5*s)) continue;
-    if(rng() < .6) pine(x,z,s); else roundTree(x,z,s, pick([0x3f8f3f,0x347d39,0x4a9a44]));
+    const u = rng(); if(u < .25) pine(x,z,s); else if(u < .62) banyan(x,z,s*.85); else if(u < .78) golden(x,z,s*.9); else roundTree(x,z,s, pick([0x3f8f3f,0x347d39,0x4a9a44]));
     placed.push({x,z,r:1.5*s}); n++;
   }
   for(let i=0,n=0;i<1200 && n<26;i++){
@@ -1934,7 +1989,7 @@ function buildVegetation(){
   for(let i=0,n=0;i<1500 && n<30;i++){
     const a = R(0,TAU), r = rr(11, 48.4), x = Math.cos(a)*r, z = Math.sin(a)*r;
     if(!outside(a) || !free(x,z,1.6)) continue;
-    roundTree(x,z,R(.9,1.15), pick([0x4f9e45,0x5aa84a])); placed.push({x,z,r:1.6}); n++;
+    const u = rng(); if(u < .35) kapok(x,z,R(.85,1.0)); else if(u < .65) golden(x,z,R(.85,1.0)); else roundTree(x,z,R(.9,1.15), pick([0x4f9e45,0x5aa84a])); placed.push({x,z,r:1.6}); n++;
   }
   for(let i=0,n=0;i<1500 && n<42;i++){
     const r = rr(11, 48.4), a = R(0,TAU), x = Math.cos(a)*r, z = Math.sin(a)*r;
@@ -1943,7 +1998,7 @@ function buildVegetation(){
   }
 
   const GRASS = [0x6fb24e,0x86c35c,0x5a9e44,0x9bcf6b];
-  for(let i=0;i<4400;i++){
+  for(let i=0;i<2500;i++){   /* 草叢 4400 → 2500 */
     const r = Math.sqrt(rng())*48.4, a = R(0,TAU), x = Math.cos(a)*r, z = Math.sin(a)*r;
     if(!free(x,z,.15,false)) continue;
     B.tuft.add(x,0,z, R(.14,.22),R(.4,.9),R(.14,.22), R(-.15,.15),R(0,TAU),R(-.15,.15), pick(GRASS));
