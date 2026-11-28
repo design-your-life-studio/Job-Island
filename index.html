@@ -4569,7 +4569,166 @@ const DESIGNS = [
       const a = car(true), b = car(false);
       a.position.z = 0; return [a, b];
   }},
-  { key:'toy', name:'積木玩具火車', build(){
+  { key:'lrt', name:'高雄輕軌', build(){
+      /* 參考高雄環狀輕軌 CAF Urbos 3（低多邊形重新建模，不使用寫實模型）：
+         白色車身、黑色車窗帶、綠色大斜紋；兩端都是駕駛室（雙向車），車頭有綠色 C 形弧帶與綠色下保險桿；
+         低底盤（車身離軌道很近）、車廂之間有黑色伸縮蛇腹；整列五節：車頭＋三節中間車廂＋車尾 */
+      const W = 0.92, H = 0.95, YC = 1.42, N = 64, BAND0 = -0.08, BAND1 = 0.6;
+      const GRN = new T.Color(0x1f7a3c);
+      /* 斷面：上方圓角大、下方圓角小，車窗帶以上略為內收 */
+      const sec = [];
+      { const pts = [], rt = 0.36, rb = 0.16, cw = 1, add = (x, y) => pts.push([x, y]);
+        for(let i=0;i<=8;i++){ const a = -Math.PI/2 + i/8*Math.PI/2; add(cw - rb + Math.cos(a)*rb, -1 + rb + Math.sin(a)*rb); }
+        for(let i=0;i<=10;i++){ const a = i/10*Math.PI/2; add(cw - rt + Math.cos(a)*rt, 1 - rt + Math.sin(a)*rt); }
+        for(let i=0;i<=10;i++){ const a = Math.PI/2 + i/10*Math.PI/2; add(-cw + rt + Math.cos(a)*rt, 1 - rt + Math.sin(a)*rt); }
+        for(let i=0;i<=8;i++){ const a = Math.PI + i/8*Math.PI/2; add(-cw + rb + Math.cos(a)*rb, -1 + rb + Math.sin(a)*rb); }
+        /* 依周長重新取樣成 N 點 */
+        const L0 = [0]; for(let i=1;i<=pts.length;i++){ const a = pts[i-1], b = pts[i % pts.length]; L0.push(L0[i-1] + Math.hypot(b[0]-a[0], b[1]-a[1])); }
+        const tot = L0[L0.length-1];
+        for(let k=0;k<N;k++){ const s = k/N*tot; let i = 1; while(L0[i] < s) i++; const f = (s - L0[i-1])/(L0[i] - L0[i-1]), a = pts[i-1], b = pts[i % pts.length];
+          let x = a[0] + (b[0]-a[0])*f, y = a[1] + (b[1]-a[1])*f; if(y > BAND1) x *= 1 - 0.09*(y - BAND1)/(1 - BAND1); sec.push([x, y]); }
+      }
+      /* 著色器：白底＋綠色大斜紋（車窗帶以上、以下各一段）＋黑色車窗帶；車頭畫擋風玻璃、側窗、綠色 C 形弧帶、綠色保險桿 */
+      const mkMat = (off, zn, ln) => { const m = new T.MeshLambertMaterial({color:0xffffff, side:T.DoubleSide});
+        m.onBeforeCompile = sh => {
+          sh.uniforms.uOff = {value:off}; sh.uniforms.uZn = {value:zn}; sh.uniforms.uLn = {value:ln};
+          sh.vertexShader = 'attribute vec3 sect;\nvarying vec3 vSect;\nvarying vec3 vP;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSect = sect; vP = position;');
+          sh.fragmentShader = 'varying vec3 vSect;\nvarying vec3 vP;\nuniform float uOff, uZn, uLn;\n' + sh.fragmentShader
+            .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `
+            float x0 = abs(vSect.x), y0 = vSect.y, t = vSect.z, vPz = vP.z;
+            float pX = abs(vP.x)/${W.toFixed(3)}, pY = (vP.y - ${YC.toFixed(3)})/${H.toFixed(3)};
+            float side = step(0.62, x0);
+            float nose = step(0.001, t);
+            float front = step(0.8, t);                        /* 車頭正面（鼻端最後收口的那一圈） */
+            float u = (vPz - uZn)/max(uLn, 0.001);            /* 0＝車頭起點、1＝鼻端；車身段為負值 */
+            float hasNose = step(0.001, uLn);
+            /* 綠色大斜紋：往上越靠車尾（「/」方向），只在側面、避開車頭 */
+            float stripe = step(fract((vPz + y0*1.05 + uOff)/4.7), 0.4);
+            float zone = max(step(${BAND1.toFixed(2)} + 0.02, y0), step(y0, ${BAND0.toFixed(2)} - 0.02));
+            float g = stripe * zone * side * (1.0 - nose) * (1.0 - hasNose*step(-1.35, u));
+            float band = side * step(${BAND0.toFixed(2)}, y0) * step(y0, ${BAND1.toFixed(2)}) * (1.0 - nose);
+            /* 車頭側面（依模型側面）：以公尺計的側視座標，C 形綠弧從車頂前緣繞到側窗後方，再往前下接到保險桿 */
+            vec2 sv = vec2((vPz - uZn)*1.31/max(uLn, 0.001), pY*${H.toFixed(3)});   /* 弧帶依車頭長度等比例縮放 */
+            float dC = length(sv - vec2(1.025, 0.109));
+            float arc = hasNose * (1.0 - front) * step(0.3, x0) * step(0.75, dC) * step(dC, 0.91) * step(-0.85, pY) * step(pY, 0.97);
+            float cabWin = hasNose * (1.0 - front) * side * step(dC, 0.72) * step(-0.28, pY) * step(pY, 0.8);
+            float lowG = 0.0;
+            /* 車頭正面：上緣綠帶、往後斜的大片擋風玻璃、白色燈板、綠色保險桿（下方再留一道白邊） */
+            float topBand = 0.0;
+            float shield = front * step(-0.3, pY) * step(pY, 0.74) * step(pX, 0.9);
+            float bump = front * step(pY, -0.56) * step(-0.86, pY);
+            vec3 col = vec3(0.95, 0.955, 0.95);
+            col = mix(col, vec3(${GRN.r.toFixed(3)}, ${GRN.g.toFixed(3)}, ${GRN.b.toFixed(3)}), max(max(g, arc), max(max(bump, topBand), lowG)));
+            col = mix(col, vec3(0.085, 0.095, 0.11), max(band, max(shield, cabWin)));
+            vec4 diffuseColor = vec4(col, opacity);`);
+        }; m.customProgramCacheKey = () => 'lrt' + off + '_' + zn + '_' + ln; return m; };
+      const loft = (slices, mat) => {
+        const pos = [], st = [], idx = [];
+        slices.forEach(s => sec.forEach(([x0, y0]) => { const [x, y, z] = s.f(x0, y0); pos.push(x, y, z); st.push(x0, y0, s.t); }));
+        for(let j=0;j<slices.length-1;j++) for(let i=0;i<N;i++){ const a = j*N + i, b = j*N + (i+1)%N, c = a + N, d = b + N; idx.push(a, c, b, b, c, d); }
+        const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('sect', new T.Float32BufferAttribute(st, 3)); g.setIndex(idx); g.computeVertexNormals();
+        const m = new T.Mesh(g, mat); m.castShadow = true; m.receiveShadow = true; return m;
+      };
+      const flatAt = z => (x0, y0) => [x0*W, YC + y0*H, z];
+      const capAt = (z, dir) => { const s = new T.Shape(); sec.forEach(([x0,y0],i) => { i ? s.lineTo(x0*W, YC + y0*H) : s.moveTo(x0*W, YC + y0*H); });
+        const m = new T.Mesh(new T.ShapeGeometry(s), L(0x2a2e33)); m.position.z = z; if(dir < 0) m.rotation.y = Math.PI; return m; };
+      const glass = L(0x33424d), door = L(0x2a3640), frame = L(0x14171a), step = L(0xf0a020), roofM = L(0x5f666c), roofD = L(0x3c4247), lamp = L(0xfff6d8), tail = L(0xd23a32), bellowM = L(0x1b1d20);
+      /* 圓角平面（車窗、車門），貼在側面外側 */
+      const rr = (w, h, r) => { const s = new T.Shape(), x = -w/2, y = -h/2;
+        s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return new T.ShapeGeometry(s, 3); };
+      const yOf = y0 => YC + y0*H;
+      const panel = (g, geo, m, z, y, win) => [-1, 1].forEach(sd => { const o = new T.Mesh(geo, m); o.position.set(sd*(W + 0.006), y, z); o.rotation.y = sd*Math.PI/2; if(win) o.userData.win = true; g.add(o); });
+      /* 依車門位置把車窗帶分段，每段放整數扇圓角窗，不會出現半扇 */
+      const dress = (g, z0, z1, doors) => {
+        const DW = 0.72, wy0 = yOf(BAND0) + 0.07, wy1 = yOf(BAND1) - 0.07;
+        const dGeo = rr(DW - 0.08, yOf(BAND1) - 0.05 - (YC - H + 0.08), 0.06), dy = (yOf(BAND1) - 0.05 + YC - H + 0.08)/2;
+        const lineGeo = new T.PlaneGeometry(0.025, yOf(BAND1) - 0.05 - (YC - H + 0.08));
+        doors.forEach(z => {
+          panel(g, dGeo, door, z, dy, true);
+          [-1, 1].forEach(sd => { const ln = new T.Mesh(lineGeo, frame); ln.position.set(sd*(W + 0.01), dy, z); ln.rotation.y = sd*Math.PI/2; g.add(ln);
+            const st = new T.Mesh(new T.BoxGeometry(0.03, 0.05, DW - 0.12), step); st.position.set(sd*(W + 0.012), YC - H + 0.1, z); g.add(st); });
+        });
+        const cuts = [z0, ...doors.slice().sort((a,b) => a - b).flatMap(z => [z - DW/2 - 0.06, z + DW/2 + 0.06]), z1];
+        for(let i=0;i<cuts.length;i+=2){ const a = cuts[i], b = cuts[i+1], len = b - a; if(len < 0.5) continue;
+          const n = Math.max(1, Math.round(len/1.0)), pw = len/n;
+          for(let k=0;k<n;k++){ const zc = a + pw*(k + 0.5); panel(g, rr(pw - 0.12, wy1 - wy0, 0.09), glass, zc, (wy0 + wy1)/2, true); }
+        }
+      };
+      const roofKit = (g, z0, z1, panto) => {
+        const yr = YC + H;
+        [[z0 + 0.5, 1.1], [(z0 + z1)/2 + (panto ? 0.9 : 0), 1.3]].forEach(([z, l]) => box(g, 1.05, 0.22, l, roofM, 0, yr + 0.06, z));
+        box(g, 0.7, 0.14, 0.6, roofD, 0, yr + 0.22, z0 + 0.5);
+        if(panto){   /* 收折的集電弓（車站充電用）：下臂＋上臂＋弓頭 */
+          const pz = (z0 + z1)/2 - 0.9;
+          box(g, 0.8, 0.08, 0.5, roofD, 0, yr + 0.02, pz);
+          const a1 = box(g, 0.05, 0.05, 0.95, frame, 0, yr + 0.22, pz + 0.2); a1.rotation.x = 0.35;
+          const a2 = box(g, 0.05, 0.05, 0.95, frame, 0, yr + 0.3, pz - 0.1); a2.rotation.x = -0.25;
+          box(g, 1.0, 0.05, 0.08, frame, 0, yr + 0.42, pz - 0.48);
+          [-0.5, 0.5].forEach(x => { const h = box(g, 0.05, 0.05, 0.22, frame, x, yr + 0.4, pz - 0.42); h.rotation.x = 0.6; });
+        }
+      };
+      const bogies = (g, zs) => wheels(g, zs, 0.26, L(0x2a2d31), L(0x8a9096));
+      const bellows = (g, z) => {   /* 車廂之間的黑色伸縮蛇腹 */
+        const b = new T.Group(); b.position.z = z; g.add(b);
+        const core = new T.Mesh(new T.BoxGeometry(W*1.7, H*1.7, 0.36), bellowM); core.position.y = YC - 0.04; b.add(core);
+        for(let i=-2;i<=2;i++){ const r = new T.Mesh(new T.BoxGeometry(W*1.76, H*1.76, 0.035), L(0x2c2f33)); r.position.set(0, YC - 0.04, i*0.07); b.add(r); }
+      };
+      /* 車頭（駕駛室朝 +z） */
+      const cabCar = () => {
+        const g = new T.Group(), Z0 = -2.4, LN = 1.68, ZN = 2.4 - LN;
+        const sl = [];
+        for(let k=0;k<=6;k++) sl.push({z:0, t:0, f:flatAt(Z0 + (ZN - Z0)*k/6)});
+        /* 車頭側面輪廓（依模型）：下段幾乎垂直，往上是一大片往後斜的擋風玻璃，一路斜到車頂前緣 */
+        /* 側面輪廓（以車頭長度的比例 A 表示，依模型側面量）：下段近乎垂直 → 擋風玻璃往後斜 → 頂端圓弧收回車頂 */
+        const zf = y0 => { let A;
+          if(y0 < -0.3) A = 1.0 - 0.12*(y0 + 1)/0.7;
+          else { const v = Math.min(1, (y0 + 0.3)/1.3); A = 0.88 - 0.4*v - 0.45*(1 - Math.sqrt(Math.max(0, 1 - v*v))); }   /* 擋風玻璃往上平順彎成大圓弧接到車頂，頂端切線水平 */
+          return ZN + A*LN; };
+        const PB = 0.16;   /* 平面上車頭兩側往後收的量（正面略呈弧形） */
+        /* 前 85%：整圈斷面往前推到側面輪廓；最後 15%：斷面往中心收，形成往後斜的車頭正面 */
+        for(let k=1;k<=16;k++){ const t = k/16;
+          sl.push({z:0, t, f:(x0, y0) => {
+            const a = Math.min(1, t/0.85), s = t <= 0.85 ? 1 : Math.cos((t - 0.85)/0.15*Math.PI/2);
+            const zFront = zf(y0) - PB*s*s;
+            const z = t <= 0.85 ? ZN + (zFront - ZN)*Math.pow(a, 0.9) : zFront;
+            const x = x0*W*s*(1 - 0.05*a*a), y = YC + y0*H;
+            return [x, y, z]; }}); }
+        g.zf = zf;
+        g.add(loft(sl, mkMat(0.6, ZN, LN)));
+        g.add(capAt(Z0, -1));
+        dress(g, Z0 + 0.2, ZN - 0.1, [ZN - 0.5]);
+        roofKit(g, Z0, ZN, false);
+        /* 頭燈（白）與尾燈（紅）、車頭 logo 位置的小點綴 */
+        /* 車頭燈：每側一顆白色頭燈＋下方一顆紅色尾燈，共四顆 */
+        [-1, 1].forEach(sd => [[-0.36, lamp], [-0.48, tail]].forEach(([y0, m]) => {
+          const sx = 0.74, s = Math.sqrt(1 - Math.pow(1 - sx, 2)), o = new T.Mesh(new T.SphereGeometry(0.06, 10, 8), m);
+          o.scale.z = 0.5; o.position.set(sd*sx*W*0.97, yOf(y0), zf(y0) - PB*sx*sx + 0.012); g.add(o);
+          const ring = new T.Mesh(new T.CircleGeometry(0.085, 16), frame); ring.position.set(o.position.x, o.position.y, o.position.z - 0.008); g.add(ring); }));
+        bogies(g, [ZN - 0.4, Z0 + 0.7]);
+        bellows(g, Z0 - 0.08);
+        return g;
+      };
+      /* 中間車廂 */
+      const midCar = (panto, off, last) => {
+        const g = new T.Group(), Z0 = -2.4, Z1 = 2.4, sl = [];
+        for(let k=0;k<=8;k++) sl.push({z:0, t:0, f:flatAt(Z0 + (Z1 - Z0)*k/8)});
+        g.add(loft(sl, mkMat(off, 0, 0)));
+        g.add(capAt(Z0, -1)); g.add(capAt(Z1, 1));
+        dress(g, Z0 + 0.2, Z1 - 0.2, [0.55]);
+        roofKit(g, Z0, Z1, panto);
+        bogies(g, [0]);
+        if(!last) bellows(g, Z0 - 0.08);
+        return g;
+      };
+      const a = cabCar();
+      const rear = new T.Group(), rc = cabCar(); rc.rotation.y = Math.PI; rear.add(rc);
+      rc.children.filter(o => o.isGroup && o.position.z < -2).forEach(o => rc.remove(o));   /* 車尾不用再接蛇腹 */
+      return [a, midCar(false, 1.7), midCar(true, 0.3), midCar(false, 2.4), rear];
+  }}
+];
+/* 積木玩具火車：已由「高雄輕軌」取代，程式碼保留；要切回時把 DESIGN_TOY 放回上面 DESIGNS 陣列（取代 lrt 那一項）即可 */
+const DESIGN_TOY = { key:'toy', name:'積木玩具火車', build(){
       const blu = L(0x3a86d1), yel = L(0xf0b030), red = L(0xe2453a), grn = L(0x46b39a), pur = L(0x9176cf), wht = L(0xfaf6ec);
       const a = new T.Group();
       box(a, 1.6, 0.5, 4.2, red, 0, 0.75, 0);
@@ -4589,8 +4748,7 @@ const DESIGNS = [
       const tri = new T.Mesh(new T.ConeGeometry(0.45, 0.8, 3), yel); tri.position.set(-0.3, 2.3, 1.2); b.add(tri);
       [[1.2,yel],[-1.2,red]].forEach(([z,m]) => [-0.62,0.62].forEach(x => { const w = new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.22, 16), m); w.rotation.z = Math.PI/2; w.position.set(x*1.05, 0.42, z); b.add(w); }));
       return [a, b];
-  }}
-];
+  }};
 
 
 /* ---------- 軌道：鋪在草地最外圈（草地之後才接斜坡與沙灘） ---------- */
@@ -5563,7 +5721,7 @@ function openVenueFor(v){
     '總音量':'Volume', '背景音樂':'Music', '環境音':'Ambience', '互動音效':'Effects', '海風烏克麗麗':'Sea Breeze Ukulele',
     /* 車站、跟隨 */
     '求職島站':'Job Island Station', '優職排行榜':'Top Jobs Chart', '建築造型參考：':'Building shape based on: ', '，已重新上色）':', recolored)', '高薪榜':'Top Pay', '新鮮人榜':'Entry Level', '國際人才榜':'Global Talent', '大量徵才榜':'Most Openings', '流行音樂中心站':'Music Center Station', '求職島站．列車樣式':'Job Island Station · Train style',
-    '蒸汽小火車':'Steam train', '台灣高鐵':'Taiwan High Speed Rail', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train',
+    '蒸汽小火車':'Steam train', '台灣高鐵':'Taiwan High Speed Rail', '流線子彈列車':'Bullet train', '積木玩具火車':'Toy block train', '高雄輕軌':'Kaohsiung LRT',
     '跟隨島民中，點擊空白處取消':'Following an islander. Tap anywhere to stop.', '跟隨列車中，點擊空白處取消':'Following the train. Tap anywhere to stop.',
     /* 引導 */
     '從這裡開始！填':'Start here! Fill in', '個條件，找到適合你的攤位':'details to find booths that fit you',
